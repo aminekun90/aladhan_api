@@ -14,6 +14,7 @@ license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.118.0",
+    "soco>=0.30.12",
     "uvicorn[standard]>=0.37.0",
 ]
 
