@@ -1,6 +1,9 @@
-from datetime import date
-from typing import Optional
+from datetime import date, timedelta
+from typing import Optional, List, Dict
+from calendar import monthrange
+
 from src.calculations.adhan_calc import PrayerTimes
+
 
 def get_prayer_times(
     base_date: date,
@@ -9,8 +12,7 @@ def get_prayer_times(
     method: str,
     madhab: str,
     tz: Optional[str]
-):
-    # create an instance of PrayerTimes
+) -> Dict:
     pt = PrayerTimes(method=method, madhab=madhab, tz=tz)
     times = pt.compute(base_date, lat, lon)
 
@@ -20,5 +22,36 @@ def get_prayer_times(
         "longitude": lon,
         "method": method,
         "madhab": madhab,
-        "times": {k: (v if v else None) for k, v in times.items()}
+        "times": {k: (v if v else None) for k, v in times.items()},
     }
+
+
+def get_month_prayer_times(
+    year: int,
+    month: int,
+    lat: float,
+    lon: float,
+    method: str,
+    madhab: str,
+    tz: Optional[str]
+) -> List[Dict]:
+    num_days = monthrange(year, month)[1]
+    results = []
+    for day in range(1, num_days + 1):
+        base_date = date(year, month, day)
+        results.append(get_prayer_times(base_date, lat, lon, method, madhab, tz))
+    return results
+
+
+def get_year_prayer_times(
+    year: int,
+    lat: float,
+    lon: float,
+    method: str,
+    madhab: str,
+    tz: Optional[str]
+) -> List[Dict]:
+    results = []
+    for month in range(1, 13):
+        results.extend(get_month_prayer_times(year, month, lat, lon, method, madhab, tz))
+    return results
