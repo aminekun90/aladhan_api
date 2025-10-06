@@ -43,7 +43,8 @@ adhan-api/
 
 ## Installation
 
-> Requires Python 3.12+  
+> Requires Python 3.12+
+> Check .python-version file
 
 1. Clone the repository:
 
