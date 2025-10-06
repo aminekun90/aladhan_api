@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.6
+
+# ---- Base build stage ----
+FROM --platform=$BUILDPLATFORM python:3.13-slim AS base
+
+WORKDIR /app
+
+# Set environment vars
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/root/.local/bin:$PATH"
+
+# Install system deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy project files
+COPY pyproject.toml README.md ./
+COPY src ./src
+
+# Install dependencies using hatchling
+RUN pip install --upgrade pip \
+    && pip install hatchling \
+    && pip install .
+
+# ---- Runtime stage ----
+FROM python:3.13-slim AS runtime
+
+WORKDIR /app
+COPY --from=base /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=base /usr/local/bin /usr/local/bin
+COPY src ./src
+
+EXPOSE 8000
+
+# Default command (Uvicorn)
+CMD ["uvicorn", "src.adhan.main:app", "--host", "0.0.0.0", "--port", "8000"]

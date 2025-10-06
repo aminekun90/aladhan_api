@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  adhan-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # You can uncomment to build for a specific arch (optional)
+      # platforms:
+      #   - linux/arm/v7
+      #   - linux/arm64
+      #   - linux/amd64
+    container_name: adhan-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional environment variables (you can add more)
+      - TZ=Europe/Paris
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+      - LOG_LEVEL=info
+    volumes:
+      # Mount your source code for live reload (optional, only for dev)
+      - ./src:/app/src
+    command: >
+      uvicorn src.adhan.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+    restart: unless-stopped

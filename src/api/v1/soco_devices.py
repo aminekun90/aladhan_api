@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from typing import List
 from src.schemas.soco_device import SoCoDevice
 
 from src.libraries.soco_service import SoCoService
-from soco import SoCo
+
 
 
 
