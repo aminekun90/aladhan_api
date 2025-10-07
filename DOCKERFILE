@@ -1,39 +1,52 @@
 # syntax=docker/dockerfile:1.6
 
-# ---- Base build stage ----
-FROM --platform=$BUILDPLATFORM python:3.13-slim AS base
+# ---- Frontend build stage ----
+FROM node:22 AS frontend-build
+
+WORKDIR /app/frontend
+
+# Copy frontend source
+COPY frontend/package.json frontend/yarn.lock ./
+COPY frontend/ ./ 
+
+# Install dependencies and build
+RUN yarn install --frozen-lockfile && yarn build
+
+# ---- Backend build stage ----
+FROM python:3.13-slim AS backend-build
 
 WORKDIR /app
 
-# Set environment vars
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/root/.local/bin:$PATH"
-
-# Install system deps
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
+    build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# Copy backend source and pyproject
 COPY pyproject.toml README.md ./
 COPY src ./src
 
-# Install dependencies using hatchling
+# Install Python dependencies using hatchling
 RUN pip install --upgrade pip \
     && pip install hatchling \
     && pip install .
+
+# Copy frontend dist from previous stage
+COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 
 # ---- Runtime stage ----
 FROM python:3.13-slim AS runtime
 
 WORKDIR /app
-COPY --from=base /usr/local/lib/python3.13 /usr/local/lib/python3.13
-COPY --from=base /usr/local/bin /usr/local/bin
+
+# Copy installed Python packages
+COPY --from=backend-build /usr/local/lib/python3.13 /usr/local/lib/python3.13
+COPY --from=backend-build /usr/local/bin /usr/local/bin
+
+# Copy backend + built frontend
 COPY src ./src
 
 EXPOSE 8000
 
-# Default command (Uvicorn)
-CMD ["uvicorn", "src.adhan.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
