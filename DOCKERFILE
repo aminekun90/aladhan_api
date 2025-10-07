@@ -1,52 +1,82 @@
 # syntax=docker/dockerfile:1.6
 
-# ---- Frontend build stage ----
+###############################################
+# === Stage 1: Frontend build ===
+###############################################
 FROM node:22 AS frontend-build
 
 WORKDIR /app/frontend
 
-# Copy frontend source
+# Copy dependency files first for caching
 COPY frontend/package.json frontend/yarn.lock ./
-COPY frontend/ ./ 
-RUN yarn config set network-timeout 600000 -g \
-    && yarn install --frozen-lockfile \
-    && yarn build --outDir dist
 
-# ---- Backend build stage ----
-FROM python:3.13-slim AS backend-build
+# Install dependencies + build
+RUN yarn config set network-timeout 600000 -g \
+    && yarn install --frozen-lockfile
+
+COPY frontend/ ./
+RUN yarn build --outDir dist
+
+
+###############################################
+# === Stage 2: Backend build ===
+###############################################
+FROM python:3.13-slim-bookworm AS backend-build
 
 WORKDIR /app
 
-# Install system dependencies
+# Install build dependencies (for native packages)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential curl \
+    build-essential \
+    python3-dev \
+    libxml2-dev \
+    libxslt-dev \
+    libffi-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend source and pyproject
-COPY pyproject.toml README.md ./
+# Copy backend dependency files for caching
+COPY pyproject.toml uv.lock* ./
+
+# Install uv and dependencies
+RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-installer.sh | sh \
+    && export PATH="$HOME/.local/bin:$PATH" \
+    && uv sync --locked --no-install-project --no-dev
+
+# Copy backend source
 COPY src ./src
 
-# Install Python dependencies using hatchling
-RUN pip install --upgrade pip \
-    && pip install hatchling \
-    && pip install .
-
-# Copy frontend dist from previous stage
+# Copy frontend dist output
 COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 
-# ---- Runtime stage ----
-FROM python:3.13-slim AS runtime
+
+###############################################
+# === Stage 3: Runtime ===
+###############################################
+FROM python:3.13-slim-bookworm AS runtime
 
 WORKDIR /app
 
-# Copy installed Python packages
-COPY --from=backend-build /usr/local/lib/python3.13 /usr/local/lib/python3.13
-COPY --from=backend-build /usr/local/bin /usr/local/bin
+# Install only runtime libraries (lighter)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2 \
+    libxslt1.1 \
+    libffi8 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy backend + built frontend
+# Copy prebuilt environment + uv binary
+COPY --from=backend-build /app/.venv /app/.venv
+COPY --from=backend-build /root/.local /root/.local
+
+# Copy backend (with frontend dist)
 COPY src ./src
+
+# Setup env and PATH
+ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 8000
 
-# Run FastAPI
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI via uv
+CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
