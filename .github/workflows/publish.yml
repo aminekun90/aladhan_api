@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Restore cached or previous artifact for cities.db
+      # 2️⃣ Restore cached cities.db
       - name: Restore cached cities.db
         id: restore-db
         uses: actions/cache@v4
@@ -24,19 +24,26 @@ jobs:
           path: backend/src/data/cities.db
           key: cities-db-v1
 
-      # 3️⃣ If not cached, generate cities.db using data_tools
-      - name: Generate cities.db (if missing)
+      # 3️⃣ Install Python & uv for data_tools
+      - name: Set up Python & uv
+        run: |
+          python -m pip install --upgrade pip
+          curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-installer.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          uv --version
+
+      # 4️⃣ Generate cities.db if missing
+      - name: Generate cities.db (if cache miss)
         if: steps.restore-db.outputs.cache-hit != 'true'
         run: |
           echo "cities.db not found in cache — building it..."
-          python -m pip install --upgrade pip
-          python -m pip install -r data_tools/src/requirements.txt || true
-          python data_tools/src/main.py \
+          uv sync --locked --no-install-project --no-dev -r data_tools/uv.lock
+          uv run python data_tools/src/main.py \
             --download https://download.geonames.org/export/dump/allCountries.zip \
             --output backend/src/data/cities.db
           ls -lh backend/src/data
 
-      # 4️⃣ Upload cities.db as an artifact (optional backup)
+      # 5️⃣ Upload cities.db artifact (optional backup)
       - name: Upload cities.db artifact
         if: steps.restore-db.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
@@ -45,37 +52,31 @@ jobs:
           path: backend/src/data/cities.db
           retention-days: 30
 
-      # 5️⃣ Set up QEMU for ARM emulation
+      # 6️⃣ Set up QEMU for multi-arch Docker
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      # 6️⃣ Set up Docker Buildx (multi-arch build)
+      # 7️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 7️⃣ Log in to Docker Hub
+      # 8️⃣ Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
-      # 8️⃣ Extract version from pyproject.toml
+      # 9️⃣ Extract version from pyproject.toml
       - name: Extract version
         id: version
         run: |
           version=$(grep -Po '(?<=^version = ")[^"]*' backend/pyproject.toml)
           echo "VERSION=$version" >> $GITHUB_ENV
 
-      # 9️⃣ Build & push multi-arch Docker image
+      # 🔟 Build & push multi-arch Docker image
       - name: Build and push Docker image
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --cache-from=type=registry,ref=aminekun90/adhan-api:cache \
-            --cache-to=type=registry,ref=aminekun90/adhan-api:cache,mode=max \
-            -f backend/DOCKERFILE \
-            -t aminekun90/adhan-api:latest \
-            -t aminekun90/adhan-api:${VERSION} \
-            --push \
-            .
+            --c
