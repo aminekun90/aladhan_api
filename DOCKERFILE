@@ -1,29 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
 ##########################################################
-# === Stage 0: Download & Build cities.db (cached) ===
-##########################################################
-FROM python:3.13-slim AS db-build
-
-WORKDIR /app
-
-# Install system deps for data_tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl unzip build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy data_tools source
-COPY data_tools/src ./src
-
-# Download and generate cities.db (use caching by checking if db exists)
-RUN mkdir -p /app/src/data && \
-    if [ ! -f /app/src/data/cities.db ]; then \
-    python src/main.py \
-    --download https://download.geonames.org/export/dump/allCountries.zip \
-    --output src/data/cities.db; \
-    fi
-
-##########################################################
 # === Stage 1: Frontend build ===
 ##########################################################
 FROM node:22 AS frontend-build
@@ -53,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy backend dependency files first (Docker cache)
-COPY pyproject.toml uv.lock* ./
+COPY backend/pyproject.toml backend/uv.lock* ./
 
 # Install uv and Python dependencies
 RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-installer.sh | sh \
@@ -61,13 +38,13 @@ RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-insta
     && uv sync --locked --no-install-project --no-dev
 
 # Copy backend source
-COPY src ./src
+COPY backend/src ./src
 
 # Copy frontend dist
 COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 
-# Copy prebuilt cities.db
-COPY --from=db-build /app/src/data/cities.db ./src/data/cities.db
+# Copy prebuilt cities.db from workflow context
+COPY backend/src/data/cities.db ./src/data/cities.db
 
 ##########################################################
 # === Stage 3: Runtime ===
