@@ -39,9 +39,9 @@ jobs:
           echo "cities.db not found in cache — building it..."
           cd data_tools
           uv sync --locked --no-install-project --no-dev
-          uv run python src/main.py \
-            --download https://download.geonames.org/export/dump/allCountries.zip \
-            --output ../backend/src/data/cities.db
+          uv run python main.py \
+          --download https://download.geonames.org/export/dump/allCountries.zip \
+          --output ../backend/src/data/cities.db
           ls -lh ../backend/src/data
 
       # 5️⃣ Upload cities.db artifact (optional backup)
