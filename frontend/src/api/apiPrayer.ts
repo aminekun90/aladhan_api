@@ -25,7 +25,7 @@ export async function getPrayers(): Promise<{ prayers: Prayer[], date: DateInfo 
     });
 
     const finalPrayers: Prayer[] = [];
-    const prayerData = prayers.timings;
+    const prayerData: { [key: string]: string } = prayers.timings;
     const date = prayers.date;
     for (const prayerName in prayerData) {
         if (Object.hasOwn(prayerData, prayerName)) {
