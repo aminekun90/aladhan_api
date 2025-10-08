@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   root: path.resolve(__dirname, "."),
   build: {
-    outDir: '../src/frontend/dist'
+    outDir: '../backend/src/frontend/dist'
   },
   resolve: {
     alias: {
