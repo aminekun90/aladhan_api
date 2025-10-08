@@ -37,7 +37,7 @@ jobs:
         if: steps.restore-db.outputs.cache-hit != 'true'
         run: |
           echo "cities.db not found in cache — building it..."
-          uv sync --locked --no-install-project --no-dev -r data_tools/uv.lock
+          uv sync --locked --no-install-project --no-dev
           uv run python data_tools/src/main.py \
             --download https://download.geonames.org/export/dump/allCountries.zip \
             --output backend/src/data/cities.db
