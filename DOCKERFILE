@@ -1,35 +1,38 @@
 # syntax=docker/dockerfile:1.6
 
 ##########################################################
-# === Stage 1: Frontend build ===
+# === Stage 0: Frontend build ===
 ##########################################################
 FROM node:22 AS frontend-build
 
 WORKDIR /app/frontend
 
-# Copy frontend dependencies first (leverage Docker cache)
+# Copy frontend dependencies first (cacheable)
 COPY frontend/package.json frontend/yarn.lock ./
 
-# Install dependencies
-RUN yarn config set network-timeout 600000 -g && yarn install --frozen-lockfile
+# Install frontend dependencies
+RUN yarn config set network-timeout 600000 -g \
+    && yarn install --frozen-lockfile
 
 # Copy frontend source and build
 COPY frontend/ ./
 RUN yarn build --outDir dist
 
 ##########################################################
-# === Stage 2: Backend build ===
+# === Stage 1: Backend build ===
 ##########################################################
 FROM python:3.13-slim-bookworm AS backend-build
 
+# Optional: allow passing target architecture as build arg
+ARG TARGETARCH
 WORKDIR /app
 
-# Install build dependencies for Python native packages
+# Install system dependencies needed for Python builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential python3-dev libxml2-dev libxslt-dev libffi-dev curl \
+    build-essential libxml2-dev libxslt-dev libffi-dev curl unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend dependency files first (Docker cache)
+# Copy backend dependency files (cacheable)
 COPY backend/pyproject.toml backend/uv.lock* ./
 
 # Install uv and Python dependencies
@@ -40,14 +43,14 @@ RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-insta
 # Copy backend source
 COPY backend/src ./src
 
-# Copy frontend dist
+# Copy frontend build from frontend stage
 COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 
-# Copy prebuilt cities.db from workflow context
+# Copy prebuilt cities.db from workflow artifact (already in backend/src/data)
 COPY backend/src/data/cities.db ./src/data/cities.db
 
 ##########################################################
-# === Stage 3: Runtime ===
+# === Stage 2: Runtime ===
 ##########################################################
 FROM python:3.13-slim-bookworm AS runtime
 
@@ -55,14 +58,14 @@ WORKDIR /app
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxml2 libxslt1.1 libffi8 \
+    libxml2 libxslt1.1 libffi8 curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy uv + prebuilt venv from backend build
 COPY --from=backend-build /app/.venv /app/.venv
 COPY --from=backend-build /root/.local /root/.local
 
-# Copy backend (including frontend dist and cities.db)
+# Copy backend source, frontend dist, and cities.db
 COPY --from=backend-build /app/ .
 
 # Environment
