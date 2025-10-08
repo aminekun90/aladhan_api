@@ -82,7 +82,7 @@ jobs:
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
             --cache-from=type=registry,ref=aminekun90/adhan-api:cache \
             --cache-to=type=registry,ref=aminekun90/adhan-api:cache,mode=max \
-            -f backend/DOCKERFILE \
+            -f DOCKERFILE \
             -t aminekun90/adhan-api:latest \
             -t aminekun90/adhan-api:${VERSION} \
             --push \
