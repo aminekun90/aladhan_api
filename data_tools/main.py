@@ -1,11 +1,12 @@
 import os
+import argparse
 import sqlite3
 import csv
 import zipfile
 import requests
 from tqdm import tqdm
 
-DATA_DIR = "src/data"
+DATA_DIR = "../backend/src/data"
 DB_FILE = os.path.join(DATA_DIR, "cities.db")
 ZIP_FILE = os.path.join(DATA_DIR, "allCountries.zip")
 TXT_FILE = os.path.join(DATA_DIR, "allCountries.txt")
@@ -33,8 +34,8 @@ def extract_zip(zip_path: str, extract_to: str):
         zf.extractall(extract_to)
 
 
-def import_to_sqlite():
-    conn = sqlite3.connect(DB_FILE)
+def import_to_sqlite(db_file, txt_file):
+    conn = sqlite3.connect(db_file if db_file else DB_FILE)
     cur = conn.cursor()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS cities (
@@ -46,10 +47,10 @@ def import_to_sqlite():
     """)
 
     print("Counting total lines...")
-    with open(TXT_FILE, "r", encoding="utf-8") as f:
+    with open(txt_file if txt_file else TXT_FILE, "r", encoding="utf-8") as f:
         total = sum(1 for _ in f)
 
-    with open(TXT_FILE, "r", encoding="utf-8") as f:
+    with open(txt_file if txt_file else TXT_FILE, "r", encoding="utf-8") as f:
         reader = csv.reader(f, delimiter="\t")
         batch = []
         for row in tqdm(reader, total=total, desc="Importing cities"):
@@ -81,14 +82,33 @@ def import_to_sqlite():
 
 
 def main():
-    os.makedirs(DATA_DIR, exist_ok=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--download",
+        default="https://download.geonames.org/export/dump/allCountries.zip",
+        help="URL to download GeoNames data from"
+    )
+    parser.add_argument(
+        "--output",
+        default="../backend/src/data/cities.db",
+        help="Output path for cities.db"
+    )
+    args = parser.parse_args()
 
-    if not os.path.exists(ZIP_FILE):
-        download_file(URL, ZIP_FILE)
-    if not os.path.exists(TXT_FILE):
-        extract_zip(ZIP_FILE, DATA_DIR)
-    if not os.path.exists(DB_FILE):
-        import_to_sqlite()
+    # update globals or just local variables
+    data_dir = os.path.dirname(args.output)
+    db_file = args.output
+    zip_file = os.path.join(data_dir, "allCountries.zip")
+    txt_file = os.path.join(data_dir, "allCountries.txt")
+
+    os.makedirs(data_dir, exist_ok=True)
+
+    if not os.path.exists(zip_file):
+        download_file(args.download, zip_file)
+    if not os.path.exists(txt_file):
+        extract_zip(zip_file, data_dir)
+    if not os.path.exists(db_file):
+        import_to_sqlite(db_file, txt_file)
     else:
         print("Database already exists, skipping import.")
 
