@@ -37,11 +37,12 @@ jobs:
         if: steps.restore-db.outputs.cache-hit != 'true'
         run: |
           echo "cities.db not found in cache — building it..."
+          cd data_tools
           uv sync --locked --no-install-project --no-dev
-          uv run python data_tools/src/main.py \
+          uv run python src/main.py \
             --download https://download.geonames.org/export/dump/allCountries.zip \
-            --output backend/src/data/cities.db
-          ls -lh backend/src/data
+            --output ../backend/src/data/cities.db
+          ls -lh ../backend/src/data
 
       # 5️⃣ Upload cities.db artifact (optional backup)
       - name: Upload cities.db artifact
@@ -79,4 +80,10 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --c
+            --cache-from=type=registry,ref=aminekun90/adhan-api:cache \
+            --cache-to=type=registry,ref=aminekun90/adhan-api:cache,mode=max \
+            -f backend/DOCKERFILE \
+            -t aminekun90/adhan-api:latest \
+            -t aminekun90/adhan-api:${VERSION} \
+            --push \
+            .
