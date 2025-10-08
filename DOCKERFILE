@@ -86,7 +86,7 @@ COPY --from=backend-build /app/.venv /app/.venv
 COPY --from=backend-build /root/.local /root/.local
 
 # Copy backend (including frontend dist and cities.db)
-COPY src ./src
+COPY --from=backend-build /app/ .
 
 # Environment
 ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
