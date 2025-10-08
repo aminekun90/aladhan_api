@@ -18,27 +18,26 @@ export async function getAzanList(): Promise<AudioFilePath[]> {
 }
 
 export async function getPrayers(): Promise<{ prayers: Prayer[], date: DateInfo }> {
-    const prayers = await api.get<{ status: boolean, result: { timings: string[], date: DateInfo } }>(`${CONFIG.getPrayers}`, {
+    const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=47.23999925644779&lon=-1.5304936560937061`, {
         headers: {
             'Content-Type': 'application/json'
         }
     });
-    if (prayers.status) {
-        const finalPrayers: Prayer[] = [];
-        const prayerData = prayers.result.timings;
-        const date = prayers.result.date;
-        for (const prayerName in prayerData) {
-            if (Object.hasOwn(prayerData, prayerName)) {
-                const time = prayerData[prayerName];
-                const prayer = Prayer.fromJson({ prayerName, time });
-                finalPrayers.push(prayer);
-            }
+
+    const finalPrayers: Prayer[] = [];
+    const prayerData = prayers.timings;
+    const date = prayers.date;
+    for (const prayerName in prayerData) {
+        if (Object.hasOwn(prayerData, prayerName)) {
+            const time = prayerData[prayerName];
+            const prayer = Prayer.fromJson({ prayerName, time });
+            finalPrayers.push(prayer);
         }
-        const sortedPrayers = finalPrayers.sort((a, b) => a.getTime().getTime() - b.getTime().getTime());
-        return { date, prayers: sortedPrayers };
     }
-    return { prayers: [], date: { hijri: { weekday: { ar: "" }, day: "", month: { ar: "" }, year: "" } } };
+    const sortedPrayers = finalPrayers.toSorted((a, b) => a.getTime().getTime() - b.getTime().getTime());
+    return { date, prayers: sortedPrayers };
 }
+
 
 export async function getSettings(): Promise<Settings | void> {
     const settingsResp = await api.get<{ status: boolean, result: Settings }>(`${CONFIG.getSettings}`, {
@@ -68,13 +67,13 @@ export async function allTimings(month?: number, year?: number): Promise<Timing[
     const finalMonth = month ?? (currentDate.getMonth() + 1).toString();
     const finalYear = year ?? currentDate.getFullYear().toString();
 
-    const finalUrl = `${CONFIG.allTimings}/${finalMonth}/${finalYear}`;
+    const finalUrl = `${CONFIG.allTimings}?month=${finalMonth}&year=${finalYear}&lat=47.23999925644779&lon=-1.5304936560937061`;
 
-    const response = await api.get<{ status: boolean, result: { timings: Timing[] } }>(finalUrl, {
+    const response = await api.get<Timing[]>(finalUrl, {
         headers: {
             'Content-Type': 'application/json',
         },
     });
-    return response.result.timings;
+    return response;
 
 }

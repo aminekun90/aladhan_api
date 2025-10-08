@@ -1,44 +1,61 @@
 # syntax=docker/dockerfile:1.6
 
-###############################################
+##########################################################
+# === Stage 0: Download & Build cities.db (cached) ===
+##########################################################
+FROM python:3.13-slim AS db-build
+
+WORKDIR /app
+
+# Install system deps for data_tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl unzip build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy data_tools source
+COPY data_tools/src ./src
+
+# Download and generate cities.db (use caching by checking if db exists)
+RUN mkdir -p /app/src/data && \
+    if [ ! -f /app/src/data/cities.db ]; then \
+    python src/main.py \
+    --download https://download.geonames.org/export/dump/allCountries.zip \
+    --output src/data/cities.db; \
+    fi
+
+##########################################################
 # === Stage 1: Frontend build ===
-###############################################
+##########################################################
 FROM node:22 AS frontend-build
 
 WORKDIR /app/frontend
 
-# Copy dependency files first for caching
+# Copy frontend dependencies first (leverage Docker cache)
 COPY frontend/package.json frontend/yarn.lock ./
 
-# Install dependencies + build
-RUN yarn config set network-timeout 600000 -g \
-    && yarn install --frozen-lockfile
+# Install dependencies
+RUN yarn config set network-timeout 600000 -g && yarn install --frozen-lockfile
 
+# Copy frontend source and build
 COPY frontend/ ./
 RUN yarn build --outDir dist
 
-
-###############################################
+##########################################################
 # === Stage 2: Backend build ===
-###############################################
+##########################################################
 FROM python:3.13-slim-bookworm AS backend-build
 
 WORKDIR /app
 
-# Install build dependencies (for native packages)
+# Install build dependencies for Python native packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3-dev \
-    libxml2-dev \
-    libxslt-dev \
-    libffi-dev \
-    curl \
+    build-essential python3-dev libxml2-dev libxslt-dev libffi-dev curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend dependency files for caching
+# Copy backend dependency files first (Docker cache)
 COPY pyproject.toml uv.lock* ./
 
-# Install uv and dependencies
+# Install uv and Python dependencies
 RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-installer.sh | sh \
     && export PATH="$HOME/.local/bin:$PATH" \
     && uv sync --locked --no-install-project --no-dev
@@ -46,36 +63,37 @@ RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-insta
 # Copy backend source
 COPY src ./src
 
-# Copy frontend dist output
+# Copy frontend dist
 COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 
+# Copy prebuilt cities.db
+COPY --from=db-build /app/src/data/cities.db ./src/data/cities.db
 
-###############################################
+##########################################################
 # === Stage 3: Runtime ===
-###############################################
+##########################################################
 FROM python:3.13-slim-bookworm AS runtime
 
 WORKDIR /app
 
-# Install only runtime libraries (lighter)
+# Install only runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxml2 \
-    libxslt1.1 \
-    libffi8 \
+    libxml2 libxslt1.1 libffi8 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy prebuilt environment + uv binary
+# Copy uv + prebuilt venv from backend build
 COPY --from=backend-build /app/.venv /app/.venv
 COPY --from=backend-build /root/.local /root/.local
 
-# Copy backend (with frontend dist)
+# Copy backend (including frontend dist and cities.db)
 COPY src ./src
 
-# Setup env and PATH
+# Environment
 ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# Expose port
 EXPOSE 8000
 
 # Run FastAPI via uv
