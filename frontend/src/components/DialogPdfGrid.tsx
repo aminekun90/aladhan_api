@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 export function DialogPdfGrid({ openDialog, onClose, events, title }: Readonly<{ openDialog: boolean, onClose: () => void, events: Timing[], title: string }>) {
     const rows: PrayerRow[] = events.map((event, index) => {
+
         return {
             id: index + 1,
             date: Intl.DateTimeFormat('fr-FR', {
@@ -13,14 +14,14 @@ export function DialogPdfGrid({ openDialog, onClose, events, title }: Readonly<{
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
-            }).format(parseInt(event.date.timestamp) * 1000),
-            hijri: event.date.hijri.weekday.ar + " " + event.date.hijri.day + " " + event.date.hijri.month.ar + " " + event.date.hijri.year,
-            imsak: event.timings.Imsak,
-            fajr: event.timings.Fajr,
-            dhuhr: event.timings.Dhuhr,
-            asr: event.timings.Asr,
-            maghrib: event.timings.Maghrib,
-            isha: event.timings.Isha,
+            }).format(new Date(event.date).getTime()),
+            hijri: event.hijri_date,
+            imsak: event.times.Imsak,
+            fajr: event.times.Fajr,
+            dhuhr: event.times.Dhuhr,
+            asr: event.times.Asr,
+            maghrib: event.times.Maghrib,
+            isha: event.times.Isha,
         }
     });
     const data = {

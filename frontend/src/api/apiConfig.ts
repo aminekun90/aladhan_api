@@ -5,7 +5,7 @@ import axios, { AxiosRequestConfig } from "axios";
 export async function get<T>(url: string, axiosOption: AxiosRequestConfig): Promise<T> {
     try {
         const { protocol, hostname, port } = window.location;
-        console.log(protocol, hostname, port);
+
         CONFIG.apiURL = `${protocol}//${hostname}${port ? ':' + port : ''}` + '/api/v1/';
         const response = await axios.get<T>(CONFIG.apiURL + url, axiosOption);
         if ([200, 201].includes(response.status)) {

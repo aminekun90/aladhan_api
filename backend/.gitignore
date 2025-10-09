@@ -207,4 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 # data_tools generated data
-data/cities.db
+src/data/**.**

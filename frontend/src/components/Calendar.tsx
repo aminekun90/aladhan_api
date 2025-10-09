@@ -30,11 +30,8 @@ export function DateCalendarComponent() {
         const formattedDate = selectedDate.format("DD-MM-YYYY");
 
         const filteredEvents = events.filter((event: Timing) => {
-            const eventDateParts = event.date.gregorian.date.split("-");
-            const eventDay = parseInt(eventDateParts[0], 10);
-            const eventMonth = parseInt(eventDateParts[1], 10) - 1;
-            const eventYear = parseInt(eventDateParts[2], 10);
-            const eventDate = dayjs(new Date(eventYear, eventMonth, eventDay)).format("DD-MM-YYYY");
+
+            const eventDate = dayjs(new Date(event.date)).format("DD-MM-YYYY");
 
             return eventDate === formattedDate;
         });
@@ -71,11 +68,11 @@ export function DateCalendarComponent() {
                     {
                         eventsForSelectedDay.length > 0 ? (
                             eventsForSelectedDay.map((event: Timing, index) => {
-                                return <Stack direction="column" spacing={1} key={`${event.date.gregorian.date}-${index}`}>
-                                    <Typography dir="rtl" key={event.date.hijri.weekday.ar + " " + event.date.hijri.day + " " + event.date.hijri.month.ar + " " + event.date.hijri.year}>{event.date.hijri.weekday.ar + " " + event.date.hijri.day + " " + event.date.hijri.month.ar + " " + event.date.hijri.year}</Typography>
+                                return <Stack direction="column" spacing={1} key={`${event.date}-${index}`}>
+                                    <Typography dir="rtl" key={event.hijri_date}>{event.hijri_date}</Typography>
 
                                     {(["Imsak", "Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as TimingKey[]).map((key) => (
-                                        <Chip key={`${index}-${key}`} label={`${key}: ${event.timings[key]}`} />
+                                        <Chip key={`${index}-${key}`} label={`${key}: ${event.times[key]}`} />
                                     ))}
                                 </Stack>;
                             }

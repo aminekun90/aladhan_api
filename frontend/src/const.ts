@@ -1,5 +1,5 @@
 export const CONFIG = {
-  apiURL: "http://localhost:8000/api/v1/",
+  apiURL: "http://localhost/api/v1/",
   getSoCoDevice: "soco/devices",
   getBleDevices: "bluetoothScan",
   getPrayers: "prayer-times",

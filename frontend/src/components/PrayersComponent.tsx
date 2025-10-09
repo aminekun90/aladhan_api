@@ -1,4 +1,3 @@
-import { DateInfo } from '@/models/prayer';
 import { Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useQuery } from '@tanstack/react-query';
@@ -6,14 +5,14 @@ import { useEffect } from 'react';
 import { getPrayers } from '../api/apiPrayer';
 import { PrayerCard } from './PrayerCard';
 
-export function PrayersComponent({ updateDate }: Readonly<{ updateDate: (date: DateInfo) => void }>) {
+export function PrayersComponent({ updateDate }: Readonly<{ updateDate: (date: string) => void }>) {
     const { data, error, isLoading } = useQuery({
         queryKey: ["prayers"],
         queryFn: getPrayers,
     });
     useEffect(() => {
         if (data) {
-            updateDate(data.date);
+            updateDate(data.hijri_date);
         }
     }, [data, updateDate]);
     return (

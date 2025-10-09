@@ -1,11 +1,11 @@
 
 export class Device {
-  private name: string;
-  private ip?: string;
+  private readonly name: string;
+  private readonly ip?: string;
   private currentlyPlayingTitle: {
     title?: string,
   };
-  private isPlaying: boolean;
+  private readonly isPlaying: boolean;
   private volume: number;
   private rawAttributes: RawData;
   constructor(name: string = "", ip?: string) {

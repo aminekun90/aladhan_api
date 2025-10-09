@@ -25,42 +25,41 @@ jobs:
           key: cities-db-v1
 
       # 3️⃣ Install Python & uv for data_tools
-      - name: Set up Python & uv
-        run: |
-          python -m pip install --upgrade pip
-          curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-installer.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
-          uv --version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/src/data_tools/.python-version
 
-      # 4️⃣ Generate cities.db if cache miss
+      # 4️⃣ Generate cities.db if cache miss (move to container first runtime)
       - name: Generate cities.db (if cache miss)
         if: steps.restore-db.outputs.cache-hit != 'true'
         run: |
           echo "cities.db not found in cache — building it..."
-          mkdir -p backend/src/data
-          cd data_tools
-          uv sync --locked --no-install-project --no-dev
-          uv run python main.py \
-            --download https://download.geonames.org/export/dump/allCountries.zip \
-            --output ../backend/src/data/cities.db
+          # mkdir -p backend/src/data
+          # cd data_tools
+          # uv sync --locked --no-install-project --no-dev
+          # uv run python main.py \
+          #   --download https://download.geonames.org/export/dump/allCountries.zip \
+          #   --output ../backend/src/data/cities.db
+          echo "This step will be moved to container runtime..."
           ls -lh ../backend/src/data
 
       # 5️⃣ Save cache for future runs
-      - name: Save cities.db cache
-        if: steps.restore-db.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          path: backend/src/data
-          key: cities-db-v1
+      # - name: Save cities.db cache
+      #   if: steps.restore-db.outputs.cache-hit != 'true'
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: backend/src/data
+      #     key: cities-db-v1
 
       # 6️⃣ Upload cities.db artifact (optional backup)
-      - name: Upload cities.db artifact
-        if: steps.restore-db.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: cities-db
-          path: backend/src/data
-          retention-days: 30
+      # - name: Upload cities.db artifact
+      #   if: steps.restore-db.outputs.cache-hit != 'true'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: cities-db
+      #     path: backend/src/data
+      #     retention-days: 30
 
       # 7️⃣ Set up QEMU for multi-arch Docker
       - name: Set up QEMU

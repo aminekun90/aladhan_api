@@ -6,7 +6,6 @@ import { DateClock } from "@/components/Clock";
 import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
-import { DateInfo } from '@/models/prayer';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { alpha, Box, createTheme, CssBaseline, IconButton, Stack, ThemeProvider, Typography } from "@mui/material";
 import { grey } from "@mui/material/colors";
@@ -63,7 +62,7 @@ function App() {
             <Typography dir="rtl" variant="h4" sx={{ textAlign: 'center', margin: '1em 0', }}>{currentHijirDate}</Typography>
             {settings.isLoading && <Typography>Loading...</Typography>}
             {!!settings.data && <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{(settings.data).api.city + " | " + (settings.data).api.country}</Typography>}
-            <PrayersComponent updateDate={(date: DateInfo) => { setCurrentHijirDate(date.hijri.weekday.ar + " " + date.hijri.day + " " + date.hijri.month.ar + " " + date.hijri.year) }} />
+            <PrayersComponent updateDate={(date: string) => { setCurrentHijirDate(date) }} />
             <DevicesComponent />
             <DateCalendarComponent />
           </Grid>

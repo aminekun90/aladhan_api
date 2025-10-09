@@ -1,7 +1,7 @@
 
 import * as api from "@/api/apiConfig";
 import { CONFIG } from "@/const";
-import { DateInfo, Prayer } from "@/models/prayer";
+import { Prayer } from "@/models/prayer";
 import { Settings } from "@/models/Settings";
 import { Timing } from "@/models/Timing";
 export type AudioFilePath = { id: string; description: string };
@@ -17,25 +17,17 @@ export async function getAzanList(): Promise<AudioFilePath[]> {
     return [];
 }
 
-export async function getPrayers(): Promise<{ prayers: Prayer[], date: DateInfo }> {
+export async function getPrayers(): Promise<{ prayers: Prayer[], date: string, hijri_date: string }> {
     const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=47.23999925644779&lon=-1.5304936560937061`, {
         headers: {
             'Content-Type': 'application/json'
         }
     });
 
-    const finalPrayers: Prayer[] = [];
-    const prayerData: { [key: string]: string } = prayers.timings;
+    const prayerOrder = ["Imsak", "Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
     const date = prayers.date;
-    for (const prayerName in prayerData) {
-        if (Object.hasOwn(prayerData, prayerName)) {
-            const time = prayerData[prayerName];
-            const prayer = Prayer.fromJson({ prayerName, time });
-            finalPrayers.push(prayer);
-        }
-    }
-    const sortedPrayers = finalPrayers.toSorted((a, b) => a.getTime().getTime() - b.getTime().getTime());
-    return { date, prayers: sortedPrayers };
+    const hijri_date = prayers.hijri_date;
+    return { date, hijri_date, prayers: prayerOrder.map((key: string) => Prayer.fromJson({ prayerName: key, time: prayers.times[key] })) };
 }
 
 
