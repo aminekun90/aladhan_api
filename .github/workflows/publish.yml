@@ -28,7 +28,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version-file: backend/src/data_tools/.python-version
+          python-version-file: data_tools/.python-version
 
       # 4️⃣ Generate cities.db if cache miss (move to container first runtime)
       - name: Generate cities.db (if cache miss)
