@@ -42,7 +42,7 @@ jobs:
           #   --download https://download.geonames.org/export/dump/allCountries.zip \
           #   --output ../backend/src/data/cities.db
           echo "This step will be moved to container runtime..."
-          ls -lh ../backend/src/data
+          # ls -lh ../backend/src/data
 
       # 5️⃣ Save cache for future runs
       # - name: Save cities.db cache
