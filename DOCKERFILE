@@ -46,9 +46,6 @@ COPY backend/src ./src
 # Copy frontend build from frontend stage
 COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 
-# Copy prebuilt cities.db from workflow artifact (already in backend/src/data)
-COPY backend/src/data/cities.db ./src/data/cities.db
-
 ##########################################################
 # === Stage 2: Runtime ===
 ##########################################################
