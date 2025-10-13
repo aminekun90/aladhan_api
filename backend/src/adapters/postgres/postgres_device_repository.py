@@ -3,7 +3,7 @@ from src.adapters.sqlite import SQLiteDeviceRepository
 
 class PostgresDeviceRepository(SQLiteDeviceRepository):
     """PostgreSQL implementation of DeviceRepository."""
-    def __init__(self, host="localhost", db="cities", user="app", password="secret"):
+    def __init__(self, host="localhost", db="adhan_db", user="app", password="secret"):
         """Initialize with PostgreSQL connection string."""
         conn = f"postgresql+psycopg2://{user}:{password}@{host}/{db}"
         super().__init__(conn)

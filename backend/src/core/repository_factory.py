@@ -8,8 +8,10 @@ from src.domain import CityRepository, DeviceRepository, SettingsRepository
 from src.adapters.sqlite import SQLiteCityRepository, SQLiteDeviceRepository, SQLiteSettingsRepository
 from src.adapters.postgres import PostgresCityRepository, PostgresDeviceRepository, PostgresSettingsRepository
 
+from src.services.env_service import EnvService
+
 class RepositoryContainer:
-    _instance = None  # class-level instance
+    _instance = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -18,17 +20,22 @@ class RepositoryContainer:
         return cls._instance
 
     def _init_repositories(self):
-        db_type = os.environ.get("DB_TYPE", "sqlite").lower()
-        if db_type not in ["sqlite", "postgres"]:
-            print(f"Warning: Unsupported DB_TYPE '{db_type}'. Falling back to 'sqlite'.")
-            db_type = "sqlite"
+        EnvService.load_env()  # Load .env once
+        db_type = EnvService.get("DB_TYPE", "sqlite").lower()
 
         if db_type == "postgres":
-            self.city_repo: CityRepository = PostgresCityRepository()
-            self.device_repo: DeviceRepository = PostgresDeviceRepository()
-            self.setting_repo: SettingsRepository = PostgresSettingsRepository()
+            host = EnvService.get("DB_HOST", "localhost")
+            port = EnvService.get("DB_PORT", "5432")
+            db_name = EnvService.get("DB_NAME", "adhan_db")
+            user = EnvService.get("DB_USER", "app")
+            password = EnvService.get("DB_PASSWORD", "")
+            dsn = f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+
+            self.city_repo = PostgresCityRepository(dsn)
+            self.device_repo = PostgresDeviceRepository(dsn)
+            self.setting_repo = PostgresSettingsRepository(dsn)
         else:
-            self.city_repo: CityRepository = SQLiteCityRepository()
-            self.device_repo: DeviceRepository = SQLiteDeviceRepository()
-            self.setting_repo: SettingsRepository = SQLiteSettingsRepository()
+            self.city_repo = SQLiteCityRepository()
+            self.device_repo = SQLiteDeviceRepository()
+            self.setting_repo = SQLiteSettingsRepository()
 

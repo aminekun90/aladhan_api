@@ -5,12 +5,13 @@ requires-python = ">=3.12"
 [[package]]
 name = "adhan-api"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
+    { name = "python-dotenv" },
     { name = "soco" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
@@ -22,6 +23,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.118.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pytest", specifier = ">=8.4.2" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "soco", specifier = ">=0.30.12" },
     { name = "sqlalchemy", specifier = ">=2.0.44" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.37.0" },
