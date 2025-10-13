@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.v1 import prayer_times, soco_devices, cities
+from src.api.v1 import cities_router, prayer_times_router, soco_devices_router
 
 app = FastAPI(
     title="Adhan API",
@@ -26,9 +26,9 @@ PREFIX = "/api/v1"
 app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
 
 # === API routes ===
-app.include_router(prayer_times.router, prefix=PREFIX, tags=["prayer_times"])
-app.include_router(soco_devices.router, prefix=PREFIX, tags=["soco_devices"])
-app.include_router(cities.router, prefix=PREFIX, tags=["cities"])
+app.include_router(prayer_times_router, prefix=PREFIX, tags=["prayer_times"])
+app.include_router(soco_devices_router, prefix=PREFIX, tags=["soco_devices"])
+app.include_router(cities_router, prefix=PREFIX, tags=["cities"])
 
 
 # === React catch-all route (after API) ===

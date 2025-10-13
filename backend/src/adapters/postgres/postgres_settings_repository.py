@@ -1,7 +1,7 @@
 from src.adapters.sqlite import SQLiteSettingsRepository
 from src.domain import SettingsRepository
 
-class PostgresSettingsRepository(SQLiteSettingsRepository,SettingsRepository):
+class PostgresSettingsRepository(SQLiteSettingsRepository):
     """PostgreSQL implementation of SettingsRepository."""
     def __init__(self, host="localhost", db="cities", user="app", password="secret"):
         """Initialize with PostgreSQL connection string."""

@@ -29,13 +29,14 @@ class DeviceRepository(ABC):
     def search_devices(self, name: str) -> list[Device]:
         ...
     @abstractmethod
-    def get_device_by_ip(self, ip: str) -> dict:
+    def get_device_by_ip(self, ip: str) -> Optional[Device]:
         ...
     
     @abstractmethod
-    def get_device_by_id(self, device_id: str) -> dict:
+    def get_device_by_id(self, device_id: str) -> Optional[Device]:
         ...
     
     @abstractmethod
     def get_device(self, device_id: str) -> Optional[Device]:
+        """ Get a device by its ID."""
         ...

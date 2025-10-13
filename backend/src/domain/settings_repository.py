@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
+from typing import Optional
+from src.domain.models import Setting
 
 class SettingsRepository(ABC):
     
     @abstractmethod
-    def get_setting(self, key: str) -> str:
+    def get_setting(self, key: str) -> Optional[Setting]:
         ...
     
+    @abstractmethod
+    def list_settings(self) -> list[Setting]:
+        ...
     @abstractmethod
     def set_setting(self, key: str, value: str) -> None:
         ...
@@ -13,10 +18,7 @@ class SettingsRepository(ABC):
     @abstractmethod
     def delete_setting(self, key: str) -> None:
         ...
-    
-    @abstractmethod
-    def list_settings(self) -> dict:
-        ...
+
     
     @abstractmethod
     def update_setting(self, key: str, value: str) -> None:

@@ -13,7 +13,7 @@ def get_prayer_times(
     madhab: str,
     tz: Optional[str]
 ) -> Dict:
-    pt = PrayerTimes(method=method, madhab=madhab, tz=tz)
+    pt = PrayerTimes(method=method, madhab=madhab, tz=tz if tz else "UTC")
     times = pt.compute(base_date, lat, lon)
     hijri_date = Gregorian.fromdate(base_date).to_hijri()
     return {
