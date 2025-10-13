@@ -23,13 +23,13 @@ RUN yarn build --outDir dist
 ##########################################################
 FROM python:3.13-slim-bookworm AS backend-build
 
-# Optional: allow passing target architecture as build arg
 ARG TARGETARCH
 WORKDIR /app
 
-# Install system dependencies needed for Python builds
+# Install system dependencies needed for Python builds + PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libxml2-dev libxslt-dev libffi-dev curl unzip \
+    libpq-dev gcc python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy backend dependency files (cacheable)
