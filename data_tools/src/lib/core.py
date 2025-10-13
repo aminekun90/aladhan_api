@@ -45,9 +45,9 @@ def extract_zip(zip_path: str, extract_to: str,txt_file = TXT_FILE):
 def import_to_sqlite(db_file, txt_file,force = False):
     """Import data from the text file into SQLite database."""
     
-    # if db file exists, skip
-    if os.path.exists(db_file) and not force:
-        print("Database already exists, skipping import.")
+    # if db file exists and not empty, skip
+    if os.path.exists(db_file) and os.path.getsize(db_file) > 0 and not force:
+        print("Database already exists and is not empty, skipping import.")
         return
 
     print("Creating database...")
@@ -55,6 +55,7 @@ def import_to_sqlite(db_file, txt_file,force = False):
     cur = conn.cursor()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS cities (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         lat REAL,
         lon REAL,
@@ -80,13 +81,18 @@ def import_to_sqlite(db_file, txt_file,force = False):
                 continue
 
             if len(batch) >= BATCH_SIZE:
-                cur.executemany("INSERT INTO cities VALUES (?, ?, ?, ?)", batch)
+                cur.executemany(
+                    "INSERT INTO cities (name, lat, lon, country) VALUES (?, ?, ?, ?)", batch
+                )
                 conn.commit()
                 batch.clear()
 
         if batch:
-            cur.executemany("INSERT INTO cities VALUES (?, ?, ?, ?)", batch)
+            cur.executemany(
+                "INSERT INTO cities (name, lat, lon, country) VALUES (?, ?, ?, ?)", batch
+            )
             conn.commit()
+
 
     print("Creating indexes...")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_name ON cities(name);")
@@ -130,4 +136,8 @@ def main():
     extract_zip(zip_file, data_dir,txt_file = txt_file)
     
     import_to_sqlite(db_file, txt_file,force = args.force)
+    # show all files in data dir with full path
+    print("Files in data directory:")
+    for f in os.listdir(data_dir):
+        print(os.path.join(data_dir, f))
     

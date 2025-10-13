@@ -13,9 +13,12 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.17.0",
     "fastapi>=0.118.0",
+    "psycopg2-binary>=2.9.11",
     "pytest>=8.4.2",
     "soco>=0.30.12",
+    "sqlalchemy>=2.0.44",
     "uvicorn[standard]>=0.37.0",
 ]
 

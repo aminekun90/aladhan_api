@@ -1,0 +1,1 @@
+# Infrastructure (DB, APIs, etc.) adapters
