@@ -13,7 +13,7 @@ import {
     useTheme,
 } from "@mui/material";
 
-export default function DeviceCard({ device }: Readonly<{ device: Device }>) {
+export default function DeviceCard({ device, available }: Readonly<{ device: Device, available?: boolean }>) {
     const theme = useTheme();
 
     return (
@@ -26,6 +26,13 @@ export default function DeviceCard({ device }: Readonly<{ device: Device }>) {
                 alignItems: "center",
                 maxWidth: 200,
                 mx: "auto",
+                cursor: 'pointer',
+                opacity: available ? 1 : 0.5,
+                bgcolor: available ? theme.palette.background.paper : theme.palette.grey[800],
+                boxShadow: available ? 3 : 0,
+                "&:hover": {
+                    boxShadow: available ? 6 : 0,
+                },
             }}
         >
             <CardMedia

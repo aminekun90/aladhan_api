@@ -1,3 +1,4 @@
 from .postgres_city_repository import PostgresCityRepository
 from .postgres_device_repository import PostgresDeviceRepository
 from .postgres_settings_repository import PostgresSettingsRepository
+from .postgres_audio_repository import PostgresAudioRepository

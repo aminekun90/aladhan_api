@@ -3,6 +3,8 @@ from soco import SoCo, discover
 from typing import List, Dict, Any
 from fastapi.encoders import jsonable_encoder
 
+from src.domain.models import Device
+
 
 class SoCoService:
     def _serialize_device(self, device: SoCo) -> Dict[str, Any]:
@@ -64,6 +66,11 @@ class SoCoService:
         if not devices:
             return None
         devices = iter(devices) if isinstance(devices, set) else devices
-        print(f"Discovered Sonos device(s). {devices}")
         data = [self._serialize_device(device) for device in devices]
         return jsonable_encoder(data)  # ensures final serialization safety
+    
+    def from_list(self, devices: List[Dict[str, Any]] | None) -> List[Device]:
+        if not devices:
+            return []
+        """Convert list of device dicts to list of Device domain models."""
+        return [Device(id=None,ip=d["ip_address"], name=d["name"], raw_data=d) for d in devices] if devices else []

@@ -1,12 +1,6 @@
-import os
-from src.adapters.sqlite.sqlite_city_repository import SQLiteCityRepository
-from src.adapters.postgres.postgres_city_repository import PostgresCityRepository
-from src.domain import CityRepository
 
-import os
-from src.domain import CityRepository, DeviceRepository, SettingsRepository
-from src.adapters.sqlite import SQLiteCityRepository, SQLiteDeviceRepository, SQLiteSettingsRepository
-from src.adapters.postgres import PostgresCityRepository, PostgresDeviceRepository, PostgresSettingsRepository
+from src.adapters.sqlite import SQLiteCityRepository, SQLiteDeviceRepository, SQLiteSettingsRepository, SQLiteAudioRepository
+from src.adapters.postgres import PostgresCityRepository, PostgresDeviceRepository, PostgresSettingsRepository, PostgresAudioRepository
 
 from src.services.env_service import EnvService
 
@@ -34,8 +28,15 @@ class RepositoryContainer:
             self.city_repo = PostgresCityRepository(dsn)
             self.device_repo = PostgresDeviceRepository(dsn)
             self.setting_repo = PostgresSettingsRepository(dsn)
+            self.audio_repo = PostgresAudioRepository(dsn)
+            
         else:
-            self.city_repo = SQLiteCityRepository()
-            self.device_repo = SQLiteDeviceRepository()
-            self.setting_repo = SQLiteSettingsRepository()
-
+            db_path = EnvService.get("DB_PATH", "src/data/cities.db") 
+            dbs = f"sqlite:///{db_path}"
+            self.city_repo = SQLiteCityRepository(db_path=dbs)
+            self.device_repo = SQLiteDeviceRepository(db_path=dbs)
+            self.setting_repo = SQLiteSettingsRepository(db_path=dbs)
+            self.audio_repo = SQLiteAudioRepository(db_path=dbs)
+    
+    def get_db_engine(self):
+        return self.city_repo.engine  # Assuming all repos share the same engine

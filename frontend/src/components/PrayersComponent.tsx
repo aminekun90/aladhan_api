@@ -1,5 +1,5 @@
 import { Typography } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Grid } from '@mui/system';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getPrayers } from '../api/apiPrayer';

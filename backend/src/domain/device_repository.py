@@ -10,7 +10,7 @@ class DeviceRepository(ABC):
         ...
     
     @abstractmethod
-    def delete_device(self, device_id: str) -> None:
+    def delete_device(self, device_id: int) -> None:
         ...
     
     @abstractmethod
@@ -22,7 +22,7 @@ class DeviceRepository(ABC):
         ...
     
     @abstractmethod
-    def update_device(self, device_id: str, new_data: dict) -> None:
+    def update_device(self, device_id: int, new_data: dict) -> None:
         ...
     
     @abstractmethod
@@ -33,10 +33,15 @@ class DeviceRepository(ABC):
         ...
     
     @abstractmethod
-    def get_device_by_id(self, device_id: str) -> Optional[Device]:
+    def get_device_by_id(self, device_id: int) -> Optional[Device]:
         ...
     
     @abstractmethod
-    def get_device(self, device_id: str) -> Optional[Device]:
+    def get_device(self, device_id: int) -> Optional[Device]:
         """ Get a device by its ID."""
+        ...
+    
+    @abstractmethod
+    def upsert_devices_bulk(self, devices: list[Device]) -> None:
+        """ Add multiple devices to the database."""
         ...

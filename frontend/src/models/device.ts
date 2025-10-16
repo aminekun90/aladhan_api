@@ -1,5 +1,6 @@
 
 export class Device {
+  private readonly id?: number;
   private readonly name: string;
   private readonly ip?: string;
   private currentlyPlayingTitle: {
@@ -8,13 +9,18 @@ export class Device {
   private readonly isPlaying: boolean;
   private volume: number;
   private rawAttributes: RawData;
-  constructor(name: string = "", ip?: string) {
+  constructor(id?: number, name: string = "", ip?: string) {
+    this.id = id;
     this.name = name;
     this.ip = ip;
     this.currentlyPlayingTitle = {};
     this.isPlaying = false;
     this.volume = 0;
     this.rawAttributes = {} as RawData;
+  }
+
+  getId(): number | undefined {
+    return this.id;
   }
 
   setVolume(volume: number): void {
@@ -45,20 +51,35 @@ export class Device {
   getRawAttributes() {
     return this.rawAttributes;
   }
-  static fromJson(jsonObj: RawData): Device {
-    const device = new Device(jsonObj.name, jsonObj.ip_adress);
-    device.setPlayingTitle(jsonObj.track_info);
-    device.setVolume(jsonObj.volume);
-    device.rawAttributes = jsonObj;
+  static fromJson(json: RawData): Device {
+    const device = new Device(undefined, json.name, json.ip_address);
+    device.setPlayingTitle(json.track_info);
+    device.setVolume(json.volume);
+    device.rawAttributes = json;
+    return device;
+  }
+  static fromResponse(response: ResponseDevice): Device {
+    const device = new Device(response.id, response.name, response.ip);
+    device.setPlayingTitle(response.raw_data.track_info);
+    device.setVolume(response.raw_data.volume);
+    device.rawAttributes = response.raw_data;
     return device;
   }
 }
+export interface ResponseDevice {
+  id: number,
+  name: string,
+  ip: string,
+  raw_data: RawData
+}
+
+
 export interface RawData {
 
   "name": string,
   "track_info": { title?: string },
   "current_transport_state": string,
-  "ip_adress": string,
+  "ip_address": string,
   "volume": number,
   "uid": string,
   "household_id": string,

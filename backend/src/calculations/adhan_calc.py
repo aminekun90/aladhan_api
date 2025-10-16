@@ -14,31 +14,31 @@ except ImportError:
 # -----------------------------
 from .moonsight import Fajr as MSFajr, Isha as MSIsha
 
-PRAYER_METHODS = {
-    "MWL": {"fajr": 18.0, "isha": 17.0},
-    "ISNA": {"fajr": 15.0, "isha": 15.0},
-    "EGYPT": {"fajr": 19.5, "isha": 17.5},
-    "MAKKAH": {"fajr": 18.5, "isha": ("mins", 90)},  # 90 min after Maghrib
-    "KARACHI": {"fajr": 18.0, "isha": 18.0},
-    "TEHRAN": {"fajr": 17.7, "isha": 14.0, "maghrib": 4.5, "midnight": "JAFARI"},
-    "JAFARI": {"fajr": 16.0, "isha": 14.0, "maghrib": 4.0, "midnight": "JAFARI"},
-    "GULF": {"fajr": 19.5, "isha": ("mins", 90)},
-    "KUWAIT": {"fajr": 18.0, "isha": 17.5},
-    "QATAR": {"fajr": 18.0, "isha": ("mins", 90)},
-    "SINGAPORE": {"fajr": 20.0, "isha": 18.0},
-    "FRANCE": {"fajr": 12.0, "isha": 12.0},
-    "TURKEY": {"fajr": 18.0, "isha": 17.0},
-    "RUSSIA": {"fajr": 16.0, "isha": 15.0},
-    "MOONSIGHTING": {"fajr": MSFajr, "isha": MSIsha},
-    "DUBAI": {"fajr": 18.2, "isha": 18.2},
-    "JAKIM": {"fajr": 20.0, "isha": 18.0},
-    "TUNISIA": {"fajr": 18.0, "isha": 18.0},
-    "ALGERIA": {"fajr": 18.0, "isha": 17.0},
-    "KEMENAG": {"fajr": 20.0, "isha": 18.0},
-    "MOROCCO": {"fajr": 19.0, "isha": 17.0},
-    "PORTUGAL": {"fajr": 18.0, "maghrib": ("mins", 3), "isha": ("mins", 77)},
-    "JORDAN": {"fajr": 18.0, "maghrib": ("mins", 5), "isha": 18.0},
-    "CUSTOM": {}  # To be filled dynamically
+PRAYER_METHODS: dict = {
+    "MWL": {"fajr": 18.0, "isha": 17.0,"description":"Muslim World League"},
+    "ISNA": {"fajr": 15.0, "isha": 15.0 ,"description":"Islamic Society of North America"},
+    "EGYPT": {"fajr": 19.5, "isha": 17.5 ,"description":"Egyptian General Authority of Survey"},
+    "MAKKAH": {"fajr": 18.5, "isha": ("mins", 90),"description":"Umm al-Qura University"},  # 90 min after Maghrib
+    "KARACHI": {"fajr": 18.0, "isha": 18.0, "description":"University of Islamic Sciences, Karachi"},
+    "TEHRAN": {"fajr": 17.7, "isha": 14.0, "maghrib": 4.5, "midnight": "JAFARI", "description":"Institute of Geophysics, University of Tehran"},
+    "JAFARI": {"fajr": 16.0, "isha": 14.0, "maghrib": 4.0, "midnight": "JAFARI", "description":"Shia Ithna-Ashari, Leva Institute, Qum"},
+    "GULF": {"fajr": 19.5, "isha": ("mins", 90), "description":"Gulf Region"},
+    "KUWAIT": {"fajr": 18.0, "isha": 17.5, "description":"Kuwait"},
+    "QATAR": {"fajr": 18.0, "isha": ("mins", 90), "description":"Qatar"},
+    "SINGAPORE": {"fajr": 20.0, "isha": 18.0, "description":"Singapore"},
+    "FRANCE": {"fajr": 12.0, "isha": 12.0, "description":"French Government"},
+    "TURKEY": {"fajr": 18.0, "isha": 17.0, "description":"Turkey"},
+    "RUSSIA": {"fajr": 16.0, "isha": 15.0, "description":"Russia"},
+    "MOONSIGHTING": {"fajr": MSFajr, "isha": MSIsha, "description":"Moonsighting Committee"},
+    "DUBAI": {"fajr": 18.2, "isha": 18.2, "description":"Dubai"},
+    "JAKIM": {"fajr": 20.0, "isha": 18.0, "description":"Malaysia"},
+    "TUNISIA": {"fajr": 18.0, "isha": 18.0, "description":"Tunisia"},
+    "ALGERIA": {"fajr": 18.0, "isha": 17.0, "description":"Algeria"},
+    "KEMENAG": {"fajr": 20.0, "isha": 18.0, "description":"Indonesia"},
+    "MOROCCO": {"fajr": 19.0, "isha": 17.0, "description":"Morocco"},
+    "PORTUGAL": {"fajr": 18.0, "maghrib": ("mins", 3), "isha": ("mins", 77), "description":"Portugal"},
+    "JORDAN": {"fajr": 18.0, "maghrib": ("mins", 5), "isha": 18.0, "description":"Jordan"},
+    "CUSTOM": {"fajr": 18.0, "isha": 18.0, "description":"Custom method"}  # To be filled dynamically
 }
 
 
@@ -79,7 +79,10 @@ class PrayerTimes:
         B = 2 - A + A // 4
         jd_day = int(365.25 * (yy + 4716)) + int(30.6001 * (mm + 1)) + d + B - 1524.5
         return jd_day
-
+    @staticmethod
+    def get_available_methods() -> list[dict]:
+        """Return a list of available prayer calculation methods keys and descriptions."""
+        return [{"method": k, "description": v["description"]} for k, v in PRAYER_METHODS.items()]
     @staticmethod
     def sun_position(jd: float) -> tuple[float, float]:
         d = jd - 2451545.0
@@ -209,8 +212,8 @@ class PrayerTimes:
         """Compute Fajr/Isha using the Moonsighting Committee method."""
         fajr_obj = MSFajr(base_date, math.degrees(lat_rad))
         isha_obj = MSIsha(base_date, math.degrees(lat_rad), self.shafaq)
-        fajr_utc = sunrise_utc - fajr_obj.getMinutesBeforeSunrise()
-        isha_utc = sunset_utc + isha_obj.getMinutesAfterSunset()
+        fajr_utc = sunrise_utc - fajr_obj.minutes_before_sunrise()
+        isha_utc = sunset_utc + isha_obj.minutes_after_sunset()
         return fajr_utc, isha_utc
 
 
@@ -242,7 +245,8 @@ class PrayerTimes:
         if isinstance(self.isha_cfg, tuple) and self.isha_cfg[0] == "mins":
             return sunset_utc + float(self.isha_cfg[1]) if sunset_utc else None
 
-        isha_angle = float(self.isha_cfg)
+        # angle-based
+        isha_angle = float(self.isha_cfg if isinstance(self.isha_cfg, (int, float)) else 18.0)
         isha_zenith = 90.0 + isha_angle
         return self._refine_angle(lat_rad, jd0, dec0, noon_utc, isha_zenith, direction=1)
 
@@ -358,7 +362,7 @@ class PrayerTimes:
         return self._format_times(times_dt)
 
 
-    def compute_month(self, year: str, month: int, lat: float, lon: float):
+    def compute_month(self, year: int, month: int, lat: float, lon: float):
         """Compute prayer times for a month.
         Args:
             year (_type_): _description_

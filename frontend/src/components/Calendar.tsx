@@ -3,7 +3,7 @@ import { DialogPdfGrid } from '@/components/DialogPdfGrid';
 import { Timing } from '@/models/Timing';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { Box, Card, Chip, IconButton, Stack, Typography } from "@mui/material";
-import Grid from '@mui/material/Grid2';
+import { Grid } from '@mui/system';
 import { DateCalendar, DayCalendarSkeleton, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useQuery } from '@tanstack/react-query';

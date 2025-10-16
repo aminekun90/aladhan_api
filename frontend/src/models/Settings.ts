@@ -1,19 +1,23 @@
+import { Device } from "./device";
+
 export type Settings = {
-    calculationMethods: Array<{
-        id: number,
-        description: string
-    }>,
-    api: {
-        city: string,
-        country: string,
-        selectedMethod: number,
-        forceDate: Date, // or initialize it with a default date if needed
+    id: number,
+    selected_method: string,
+    force_date: Date | null,
+    city?: {
+        readonly id: number,
+        readonly name: string
+        readonly lat: number,
+        readonly lon: number,
+        readonly country: string
     },
-    device: {
-        volume: number // or initialize with a default volume
-    },
-    playlist: {
-        fileName: string
-    },
-    enableScheduler: boolean
+    audio_id: number,
+    device_id: number,
+    city_id: number,
+    device?: Device | null,
+    audio?: AudioFile | null,
+    volume: number,
+    enable_scheduler: boolean
 }
+
+export type AudioFile = { id: number, blob: Blob, name: string };

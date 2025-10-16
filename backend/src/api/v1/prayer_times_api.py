@@ -5,7 +5,8 @@ from typing import Optional, List
 from src.services.adhan_service import (
     get_prayer_times,
     get_month_prayer_times,
-    get_year_prayer_times
+    get_year_prayer_times,
+    get_available_methods,
 )
 from src.schemas.prayer_times import PrayerTimesResponse
 TZ = "Europe/Paris"
@@ -58,3 +59,19 @@ def prayer_times_year(
     tz: Optional[str] = Query(TZ)
 ):
     return get_year_prayer_times(year, lat, lon, method, madhab, tz)
+
+@router.get("/available-methods", response_model=List[dict])
+def available_methods():
+    return get_available_methods()
+
+@router.get("/to_hijri_date")
+def to_hijri_date(
+    day: Optional[str] = Query(date.today().isoformat(), description="Date in YYYY-MM-DD format. Defaults to today if not provided."),
+):
+    from src.calculations.calendar import Gregorian
+    d = parse_date(day)
+    hijri_date = Gregorian.fromdate(d).to_hijri()
+    return {
+        "date": d.isoformat(),
+        "hijri_date": f"""{hijri_date.day_name(language="ar") } {hijri_date.day} {hijri_date.month_name(language="ar")} {hijri_date.year}"""
+    }

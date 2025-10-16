@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Query
 from typing import List, Optional
 from src.core.repository_factory import RepositoryContainer
@@ -9,7 +8,7 @@ router = APIRouter()
 repos = RepositoryContainer()
 city_service = CityService(repos.city_repo)
 
-@router.get("/api/v1/cities", response_model=List[CityResponse])
+@router.get("/cities", response_model=List[CityResponse])
 def get_cities(
     name: str = Query(..., min_length=1),
     country: Optional[str] = None

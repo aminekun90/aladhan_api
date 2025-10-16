@@ -1,19 +1,31 @@
 
-import * as api from "@/api/apiConfig";
+import api from "@/api/apiConfig";
 import { CONFIG } from "@/const";
+import { City } from "@/models/City";
+import { Device, ResponseDevice } from "@/models/device";
 import { Prayer } from "@/models/prayer";
-import { Settings } from "@/models/Settings";
+import { AudioFile, Settings } from "@/models/Settings";
 import { Timing } from "@/models/Timing";
-export type AudioFilePath = { id: string; description: string };
-export async function getAzanList(): Promise<AudioFilePath[]> {
-    const azanList = await api.get<{ status: boolean, result: AudioFilePath[] }>(`${CONFIG.getAzanList}`, {
+
+export async function getAzanList(): Promise<AudioFile[]> {
+    const azanList = await api.get<AudioFile[]>(`${CONFIG.getAzanList}`, {
         headers: {
             'Content-Type': 'application/json'
         }
     });
-    if (azanList.status) {
-        return azanList.result;
-    }
+    if (azanList)
+        return azanList;
+    return [];
+}
+
+export async function getMethods(): Promise<{ method: string, description: string }[]> {
+    const methods = await api.get<{ method: string, description: string }[]>(`${CONFIG.methods}`, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    if (methods)
+        return methods;
     return [];
 }
 
@@ -31,19 +43,35 @@ export async function getPrayers(): Promise<{ prayers: Prayer[], date: string, h
 }
 
 
-export async function getSettings(): Promise<Settings | void> {
-    const settingsResp = await api.get<{ status: boolean, result: Settings }>(`${CONFIG.getSettings}`, {
+export async function getSettings(): Promise<Settings[] | void> {
+    const settingsResp = await api.get<Array<Settings>>(`${CONFIG.getSettings}`, {
         headers: {
             'Content-Type': 'application/json'
         }
     });
-    if (settingsResp.status) {
-        return settingsResp.result;
+    if (settingsResp) {
+        console.log("API response settings", settingsResp);
+        return settingsResp.map((setting) => ({
+            ...setting,
+            device: Device.fromResponse(setting.device as unknown as ResponseDevice)
+        }));
     }
+
 }
 
 export async function saveSetting(settings: Settings) {
-    const response = await api.post(CONFIG.saveSettings, settings, {
+    // Save settings to backend transform a dict of {key: string, value: string}
+
+    const response = await api.put(CONFIG.saveSettings, [{
+        id: settings.id,
+        volume: settings.volume,
+        enable_scheduler: settings.enable_scheduler,
+        selected_method: settings.selected_method,
+        force_date: settings.force_date,
+        city_id: settings.city_id,
+        device_id: settings.device_id,
+        audio_id: settings.audio_id,
+    }], {
         headers: {
             'Content-Type': 'application/json'
         }
@@ -68,4 +96,15 @@ export async function allTimings(month?: number, year?: number): Promise<Timing[
     });
     return response;
 
+}
+
+
+export async function getCitiesByName(name: string, country?: string): Promise<City[]> {
+
+    const response = await api.get<City[]>(`${CONFIG.getCitiesByName}?name=${name}${country ? 'country=' + country : ''}`, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    return response;
 }

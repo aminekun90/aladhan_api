@@ -56,3 +56,6 @@ def get_year_prayer_times(
     for month in range(1, 13):
         results.extend(get_month_prayer_times(year, month, lat, lon, method, madhab, tz))
     return results
+
+def get_available_methods() -> List[dict]:
+    return PrayerTimes.get_available_methods()

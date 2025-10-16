@@ -7,12 +7,16 @@ import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { alpha, Box, createTheme, CssBaseline, IconButton, Stack, ThemeProvider, Typography } from "@mui/material";
+import { alpha, Box, CircularProgress, createTheme, CssBaseline, IconButton, Stack, ThemeProvider, Typography } from "@mui/material";
 import { grey } from "@mui/material/colors";
-import Grid from '@mui/material/Grid2';
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Grid } from '@mui/system';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import packageJson from '../package.json';
+import { createDeviceSettings, getDevices, getSoCoDevices } from "./api/apiDevice";
+import { Settings } from "./models/Settings";
+import { Device } from "./models/device";
+
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -22,10 +26,39 @@ function App() {
 
   const [currentHijirDate, setCurrentHijirDate] = useState<string>("");
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
-  const settings = useQuery({
+  const [currentDeviceIp, setCurrentDeviceIp] = useState<string | null | undefined>();
+  const [currentSetting, setCurrentSetting] = useState<Settings | null>(null);
+
+  const { data: devices, error: deviceError, isLoading: deviceLoading } = useQuery({
+    queryKey: ["devices"],
+    queryFn: getDevices,
+  });
+  const { data: socoDevices, error: socoDevicesError, isLoading: socoLoading } = useQuery({
+    queryKey: ["socoDevices"],
+    queryFn: getSoCoDevices,
+  });
+
+
+  const { data: settings, error: settingsError, isLoading: settingsLoading } = useQuery({
     queryKey: ["settings"],
     queryFn: getSettings,
+
   });
+
+  // mutation create device settings with device ID
+
+  const createSettingMutation = useMutation({
+    mutationFn: (device: Device) => createDeviceSettings(device.getId()),
+    onSuccess: (data: Settings | null) => {
+      console.log("✅ Settings saved successfully:", data);
+      setCurrentSetting(data);
+    }
+  })
+  useEffect(() => {
+    if (settings && settings.length > 0 && !settingsLoading) {
+      setCurrentSetting(settings.find(s => s.device?.getIp() === currentDeviceIp) || null);
+    }
+  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError],);
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -52,23 +85,42 @@ function App() {
           background: `url(${bgIslamic}) no-repeat top fixed`,
 
         }}>
-          <Grid container justifyContent="flex-end" sx={{ display: 'flex', alignItems: 'center', justifyItems: 'center', height: 60 }}>
+          {!!currentSetting && <Grid container justifyContent="flex-end" sx={{ display: 'flex', alignItems: 'center', justifyItems: 'center', height: 60 }}>
             <IconButton onClick={() => { setIsSettingOpen(true) }} sx={{ color: 'white', height: 60, width: 60 }}>
               <SettingsIcon />
             </IconButton>
-          </Grid>
+          </Grid>}
+
           <Grid sx={{ padding: 10, textAlign: 'center' }}>
             <DateClock variation="h2" />
             <Typography dir="rtl" variant="h4" sx={{ textAlign: 'center', margin: '1em 0', }}>{currentHijirDate}</Typography>
-            {settings.isLoading && <Typography>Loading...</Typography>}
-            {!!settings.data && <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{(settings.data).api.city + " | " + (settings.data).api.country}</Typography>}
+            {settingsLoading && <CircularProgress />}
+            {!!currentSetting && <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{currentSetting.city?.name + " | " + currentSetting.city?.country}</Typography>}
             <PrayersComponent updateDate={(date: string) => { setCurrentHijirDate(date) }} />
-            <DevicesComponent />
+            {deviceError && <Typography>Error fetching devices</Typography>
+            }
+            {deviceLoading && <CircularProgress />}
+            {devices && !deviceLoading && socoDevices && !socoDevicesError &&
+              !socoLoading && <DevicesComponent devices={devices} soCoDevices={socoDevices} onClick={(device: Device) => {
+                console.log("Selected device", device);
+                setCurrentDeviceIp(device.getIp());
+
+                // Find the setting for the selected device
+                const foundDeviceSettings = settings?.find(s => s.device?.getIp() === device.getIp());
+
+                if (foundDeviceSettings) {
+                  setCurrentSetting(foundDeviceSettings);
+                } else {
+                  createSettingMutation.mutate(device);
+                }
+
+                console.log("Current setting", foundDeviceSettings, device);
+              }} />}
             <DateCalendarComponent />
           </Grid>
         </Box>
         <Typography sx={{ color: 'white', fontSize: 12 }}>Version beta {packageJson.version}</Typography>
-        {!!settings.data && <SettingsDialog isOpen={isSettingOpen} onClose={() => { setIsSettingOpen(false) }} settings={settings.data} />
+        {currentDeviceIp && currentSetting && <SettingsDialog isOpen={isSettingOpen} onClose={() => { setIsSettingOpen(false) }} settings={currentSetting} />
         }</Stack>
     </ThemeProvider>
   )
