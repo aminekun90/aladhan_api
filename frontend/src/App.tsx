@@ -28,6 +28,7 @@ function App() {
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
   const [currentDeviceIp, setCurrentDeviceIp] = useState<string | null | undefined>();
   const [currentSetting, setCurrentSetting] = useState<Settings | null>(null);
+  const [deviceClicked, setDeviceClicked] = useState<boolean>(true);
 
   const { data: devices, error: deviceError, isLoading: deviceLoading } = useQuery({
     queryKey: ["devices"],
@@ -58,7 +59,7 @@ function App() {
     if (settings && settings.length > 0 && !settingsLoading) {
       setCurrentSetting(settings.find(s => s.device?.getIp() === currentDeviceIp) || null);
     }
-  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError],);
+  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError, deviceClicked],);
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -107,19 +108,24 @@ function App() {
             {deviceLoading && <CircularProgress />}
             {devices && !deviceLoading && socoDevices && !socoDevicesError &&
               !socoLoading && <DevicesComponent devices={devices} soCoDevices={socoDevices} onClick={(device: Device) => {
-                console.log("Selected device", device);
-                setCurrentDeviceIp(device.getIp());
+                setDeviceClicked(!deviceClicked);
+                if (deviceClicked) {
+                  setCurrentDeviceIp(device.getIp());
 
-                // Find the setting for the selected device
-                const foundDeviceSettings = settings?.find(s => s.device?.getIp() === device.getIp());
+                  // Find the setting for the selected device
+                  const foundDeviceSettings = settings?.find(s => s.device?.getIp() === device.getIp());
 
-                if (foundDeviceSettings) {
-                  setCurrentSetting(foundDeviceSettings);
+                  if (foundDeviceSettings) {
+                    setCurrentSetting(foundDeviceSettings);
+                  } else {
+                    createSettingMutation.mutate(device);
+                  }
+
                 } else {
-                  createSettingMutation.mutate(device);
+                  setCurrentDeviceIp(null);
+                  setCurrentSetting(null);
                 }
 
-                console.log("Current setting", foundDeviceSettings, device);
               }} />}
 
             {!!currentSetting && <DateCalendarComponent coord={{ lat: currentSetting?.city?.lat ?? 47.23999925644779, lon: currentSetting?.city?.lon ?? -1.5304936560937061 }} />}

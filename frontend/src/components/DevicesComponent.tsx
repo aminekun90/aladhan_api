@@ -15,7 +15,7 @@ export function DevicesComponent({ devices, onClick, soCoDevices }: Readonly<{ d
                         return d.getIp() === device.getIp()
                     }) : false;
                     console.log(`Device ${device.getName()} (${device.getIp()}) is ${available ? 'available' : 'not available'}`);
-                    return <DeviceCard device={device} available={available} onClick={() => {
+                    return <DeviceCard key={device.getId()} device={device} available={available} onClick={() => {
                         onClick?.(device);
                     }} />
 

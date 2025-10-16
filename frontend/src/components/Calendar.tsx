@@ -76,9 +76,6 @@ export function DateCalendarComponent({ coord }: Readonly<{ coord: { lat?: numbe
                                     ))}
                                 </Stack>;
                             }
-
-
-
                             ))
                             : (
                                 <Typography>Aucune prière trouvée.</Typography>

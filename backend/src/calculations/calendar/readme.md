@@ -42,7 +42,7 @@ print(hijri_date)  # 1445-06-15
 
 ## 📚 Documentation
 
-Please refer to <https://hijridate.readthedocs.io> for complete documentation on this package, which includes background information, benchmarking, usage examples, and API reference.
+TBD
 
 ## 🤝 Contributing
 
