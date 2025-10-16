@@ -25,7 +25,6 @@ import {
     InputLabel,
     MenuItem,
     Select,
-    SelectChangeEvent,
     Slider,
     TextField,
     Typography,
@@ -35,95 +34,66 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import "dayjs/locale/fr"; // ✅ Needed if you use adapterLocale="fr-FR"
-import { ChangeEvent, useEffect, useState } from "react";
-
+import "dayjs/locale/fr";
+import { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
+type AutocompleteValue = string | City | null;
 export function SettingsDialog({
     isOpen,
     onClose,
     settings,
 }: Readonly<{ isOpen: boolean; onClose: () => void; settings: Settings }>) {
-    // ─── Queries ─────────────────────────────────────────────
-    const { data: methods, error: methodError, isLoading: methodLoading } =
-        useQuery({
-            queryKey: ["methods"],
-            queryFn: getMethods,
-        });
+    const { data: methods } = useQuery({
+        queryKey: ["methods"],
+        queryFn: getMethods,
+    });
 
-    const { data: azanList, error, isLoading } = useQuery({
+    const { data: azanList } = useQuery({
         queryKey: ["azanList"],
         queryFn: getAzanList,
     });
 
-    // ─── Mutation for city search ─────────────────────────────
     const citiesMutation = useMutation({
-        mutationFn: ({ name, country }: { name: string; country?: string }) =>
-            getCitiesByName(name, country),
+        mutationFn: ({ name }: { name: string }) => getCitiesByName(name),
     });
 
-    // ─── Local state ──────────────────────────────────────────
     const [method, setMethod] = useState<string>(settings.selected_method);
     const [volume, setVolume] = useState<number>(settings.volume);
-    const [audioFile, setAudioFile] = useState<AudioFile | null>(null);
-    const [enableScheduler, setEnableScheduler] = useState(
-        settings.enable_scheduler
-    );
+    const [audioFile, setAudioFile] = useState<AudioFile | null>(settings.audio ?? null);
+    const [enableScheduler, setEnableScheduler] = useState(settings.enable_scheduler);
     const [cityName, setCityName] = useState(settings.city?.name ?? "");
-    const [countryName, setCountryName] = useState(settings.city?.country ?? "");
+    const [selectedCity, setSelectedCity] = useState<City | null>(settings.city ?? null);
 
     useEffect(() => {
-        if (settings?.audio) {
-            setAudioFile(settings.audio);
-        }
-        console.log("Selected settings", settings)
+        if (settings?.audio) setAudioFile(settings.audio);
     }, [settings]);
 
-    // ─── Save settings mutation ───────────────────────────────
     const mutateSettings = useMutation({
         mutationFn: (s: Settings) => saveSetting(s),
-        onSuccess: (data) => {
-            console.log("✅ Settings saved successfully:", data);
-            onClose();
-        },
+        onSuccess: () => onClose(),
     });
 
-    // ─── Handlers ─────────────────────────────────────────────
-    const handleMethodChange = (event: SelectChangeEvent) => {
-        setMethod(event.target.value);
-    };
-
-    const handleAzanChange = (event: SelectChangeEvent<number>) => {
+    const handleMethodChange = (event: { target: { value: string } }) => setMethod(event.target.value);
+    const handleAzanChange = (event: { target: { value: number } }) => {
         const selectedId = event.target.value;
-        const selectedAzan = azanList?.find((a) => a.id === selectedId);
-        setAudioFile(selectedAzan ?? null);
+        const azan = azanList?.find((a) => a.id === selectedId);
+        setAudioFile(azan ?? null);
     };
-
-    const handleVolumeChange = (_: Event, newValue: number | number[]) => {
-        setVolume(newValue as number);
-    };
-
-    const handleSchedulerChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setEnableScheduler(event.target.checked);
-    };
+    const handleVolumeChange = (_: Event, newValue: number | number[]) => setVolume(newValue as number);
+    const handleSchedulerChange = (event: ChangeEvent<HTMLInputElement>) => setEnableScheduler(event.target.checked);
+    const handleSearchCity = (name: string) => citiesMutation.mutate({ name });
 
     const handleSave = () => {
         const updatedSettings: Settings = {
             ...settings,
             selected_method: method,
             volume,
-            device_id: settings.device_id,
             audio_id: audioFile?.id ?? settings.audio_id,
             enable_scheduler: enableScheduler,
-            force_date: null,
+            city_id: selectedCity?.id ?? settings.city_id,
         };
         mutateSettings.mutate(updatedSettings);
     };
 
-    const handleSearchCity = (name: string, country?: string) => {
-        citiesMutation.mutate({ name, country });
-    };
-
-    // ─── Render ───────────────────────────────────────────────
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr-FR">
             <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth>
@@ -135,166 +105,86 @@ export function SettingsDialog({
                         </IconButton>
                     </Grid>
 
-                    <Grid
-                        container
-                        justifyContent="left"
-                        sx={{ p: 2 }}
-                        spacing={2}
-                        direction="column"
-                    >
-                        {/* City Autocomplete */}
+                    <Grid container direction="column" spacing={2} sx={{ p: 2 }}>
                         <Autocomplete
-                            disablePortal
                             freeSolo
-                            value={cityName}
-                            onChange={(_, newValue) => setCityName(newValue ?? "")}
+                            value={selectedCity}
+                            inputValue={cityName}
+                            onChange={(_: SyntheticEvent<Element, Event>, newValue: AutocompleteValue) => {
+                                setSelectedCity(newValue as City | null);
+                                setCityName((newValue as City)?.name ?? "");
+                            }}
                             onInputChange={(_, newInputValue) => {
                                 setCityName(newInputValue);
-                                if (newInputValue.length > 2) handleSearchCity(newInputValue, countryName ?? "");
+                                if (newInputValue.length > 2) handleSearchCity(newInputValue);
                             }}
-                            options={
-                                citiesMutation.data
-                                    ? citiesMutation.data.map((city: City) => city.name)
-                                    : []
-                            }
+                            options={citiesMutation.data ?? []}
+                            getOptionLabel={(city) => `${(city as City).name}, ${(city as City).country}`}
+                            isOptionEqualToValue={(option, value) => (option as City).id === (value as City).id}
+                            renderInput={(params) => <TextField {...params} label="Ville" variant="outlined" />}
                             sx={{ width: 300 }}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Ville" variant="outlined" />
-                            )}
                         />
 
                         <FormControl fullWidth sx={{ m: 1 }} variant="standard">
-                            <InputLabel htmlFor="standard-adornment-coordinates">
-                                Coordonnées
-                            </InputLabel>
+                            <InputLabel>Coordonnées</InputLabel>
                             <Input
-                                id="standard-adornment-coordinates"
                                 startAdornment={
                                     <InputAdornment position="start">
                                         <LocationPinIcon />
                                     </InputAdornment>
                                 }
-                                value={`${settings.city?.lat ?? ""}, ${settings.city?.lon ?? ""}`}
+                                value={`${selectedCity?.lat ?? ""}, ${selectedCity?.lon ?? ""}`}
                                 readOnly
                             />
                         </FormControl>
 
-                        <Autocomplete
-                            disablePortal
-                            freeSolo
-                            value={countryName}
-                            onChange={(_, newValue) => {
-                                handleSearchCity(cityName, newValue ?? "");
-                                setCountryName(newValue ?? "")
-
-                            }}
-                            options={[]} // You could populate this from API if available
-                            sx={{ width: 300 }}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Pays" variant="outlined" />
-                            )}
-                        />
-
-                        {/* Method select */}
-                        {!methodLoading && !methodError && (
+                        {methods && (
                             <FormControl fullWidth>
-                                <InputLabel id="method-select-label">
-                                    Méthode de calcul
-                                </InputLabel>
-                                <Select
-                                    labelId="method-select-label"
-                                    id="method-select"
-                                    value={method}
-                                    label="Méthode de calcul"
-                                    onChange={handleMethodChange}
-
-                                >
-
-                                    {methods?.map((m: { method: string, description: string }) => {
-                                        //console.log(m.method, settings.selected_method)
-                                        return <MenuItem key={m.method} value={m.method} selected={m.method === settings.selected_method}>
+                                <InputLabel>Méthode de calcul</InputLabel>
+                                <Select value={method} onChange={(event) => { handleMethodChange(event); }}>
+                                    {methods.map((m: { method: string; description: string }) => (
+                                        <MenuItem key={m.method} value={m.method}>
                                             {m.description}
                                         </MenuItem>
-                                    }
-
-
-                                    )}
+                                    ))}
                                 </Select>
                             </FormControl>
                         )}
 
-                        <DatePicker
-                            defaultValue={dayjs(settings.force_date)}
-                            label="Date"
-                        />
+                        <DatePicker defaultValue={dayjs(settings.force_date)} label="Date" />
 
-                        {/* Volume control */}
-                        <Stack
-                            spacing={2}
-                            direction="row"
-                            sx={{ alignItems: "center", mb: 1 }}
-                        >
+                        <Stack spacing={2} direction="row" sx={{ alignItems: "center", mb: 1 }}>
                             <VolumeDown />
-                            <Slider
-                                aria-label="Volume"
-                                value={volume}
-                                onChange={handleVolumeChange}
-                                valueLabelDisplay="auto"
-                            />
+                            <Slider value={volume} onChange={handleVolumeChange} valueLabelDisplay="auto" />
                             <VolumeUp />
                         </Stack>
 
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={enableScheduler}
-                                    onChange={handleSchedulerChange}
-                                />
-                            }
+                            control={<Checkbox checked={enableScheduler} onChange={handleSchedulerChange} />}
                             label="Activer l'appel à la prière"
                         />
 
-                        {/* Audio selection */}
-                        {azanList && azanList.length > 0 && (
+                        {azanList && (
                             <FormControl fullWidth>
-                                <InputLabel id="audio-select-label">
-                                    Audio d'appel à la prière
-                                </InputLabel>
-                                <Select
-                                    labelId="audio-select-label"
-                                    id="audio-select"
-                                    value={audioFile?.id ?? ""}
-                                    label="Audio d'appel à la prière"
-                                    onChange={handleAzanChange}
-                                >
-                                    {!isLoading &&
-                                        !error &&
-                                        azanList?.map((azan: AudioFile) => (
-                                            <MenuItem key={azan.id} value={azan.id}>
-                                                {azan.name}
-                                            </MenuItem>
-                                        ))}
+                                <InputLabel>Audio d'appel à la prière</InputLabel>
+                                <Select value={audioFile?.id} onChange={(event) => { handleAzanChange(event); }}>
+                                    {azanList.map((azan: AudioFile) => (
+                                        <MenuItem key={azan.id} value={azan.id}>
+                                            {azan.name}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         )}
 
-                        {/* Audio preview */}
                         {audioFile && (
-                            <audio
-                                src={`data:audio/mpeg;base64,${audioFile?.blob?.toString()}`}
-                                controls
-                            >
+                            <audio src={`data:audio/mpeg;base64,${audioFile.blob?.toString()}`} controls>
                                 <track kind="captions" />
                             </audio>
                         )}
 
                         <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end" }}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleSave}
-                                disabled={mutateSettings.isPending}
-                            >
+                            <Button variant="contained" onClick={handleSave} disabled={mutateSettings.isPending}>
                                 {mutateSettings.isPending ? "Enregistrement..." : "Enregistrer"}
                             </Button>
                         </Box>

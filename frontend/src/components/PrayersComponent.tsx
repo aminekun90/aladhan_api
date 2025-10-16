@@ -5,10 +5,10 @@ import { useEffect } from 'react';
 import { getPrayers } from '../api/apiPrayer';
 import { PrayerCard } from './PrayerCard';
 
-export function PrayersComponent({ updateDate }: Readonly<{ updateDate: (date: string) => void }>) {
+export function PrayersComponent({ updateDate, coord }: Readonly<{ updateDate: (date: string) => void, coord: { lat?: number, lon?: number } }>) {
     const { data, error, isLoading } = useQuery({
         queryKey: ["prayers"],
-        queryFn: getPrayers,
+        queryFn: () => getPrayers(coord),
     });
     useEffect(() => {
         if (data) {

@@ -29,8 +29,8 @@ export async function getMethods(): Promise<{ method: string, description: strin
     return [];
 }
 
-export async function getPrayers(): Promise<{ prayers: Prayer[], date: string, hijri_date: string }> {
-    const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=47.23999925644779&lon=-1.5304936560937061`, {
+export async function getPrayers(coord: { lat?: number, lon?: number }): Promise<{ prayers: Prayer[], date: string, hijri_date: string }> {
+    const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=${coord.lat ?? 47.23999925644779}&lon=${coord.lon ?? -1.5304936560937061}`, {
         headers: {
             'Content-Type': 'application/json'
         }
@@ -81,13 +81,13 @@ export async function saveSetting(settings: Settings) {
     }
 }
 
-export async function allTimings(month?: number, year?: number): Promise<Timing[]> {
+export async function allTimings(month?: number, year?: number, coord?: { lat?: number, lon?: number }): Promise<Timing[]> {
 
     const currentDate = new Date();
     const finalMonth = month ?? (currentDate.getMonth() + 1).toString();
     const finalYear = year ?? currentDate.getFullYear().toString();
 
-    const finalUrl = `${CONFIG.allTimings}?month=${finalMonth}&year=${finalYear}&lat=47.23999925644779&lon=-1.5304936560937061`;
+    const finalUrl = `${CONFIG.allTimings}?month=${finalMonth}&year=${finalYear}&lat=${coord?.lat ?? 47.23999925644779}&lon=${coord?.lon ?? -1.5304936560937061}`;
 
     const response = await api.get<Timing[]>(finalUrl, {
         headers: {

@@ -72,8 +72,10 @@ function App() {
           alignItems: 'center',
           background: `url(${bg}) no-repeat center fixed`,
           overflowX: 'hidden',
-          // height: '100vh',
-          width: '100vw',
+          minHeight: '100vh',
+          height: 'max-content',
+          maxWidth: '100vw',
+          width: '100%',
           padding: 5,
 
         }}
@@ -95,8 +97,11 @@ function App() {
             <DateClock variation="h2" />
             <Typography dir="rtl" variant="h4" sx={{ textAlign: 'center', margin: '1em 0', }}>{currentHijirDate}</Typography>
             {settingsLoading && <CircularProgress />}
-            {!!currentSetting && <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{currentSetting.city?.name + " | " + currentSetting.city?.country}</Typography>}
-            <PrayersComponent updateDate={(date: string) => { setCurrentHijirDate(date) }} />
+            {!!currentSetting && <>
+              <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{currentSetting.city?.name + " | " + currentSetting.city?.country}</Typography>
+              <PrayersComponent coord={{ lat: currentSetting?.city?.lat ?? 47.23999925644779, lon: currentSetting?.city?.lon ?? -1.5304936560937061 }} updateDate={(date: string) => { setCurrentHijirDate(date) }} />
+
+            </>}
             {deviceError && <Typography>Error fetching devices</Typography>
             }
             {deviceLoading && <CircularProgress />}
@@ -116,7 +121,9 @@ function App() {
 
                 console.log("Current setting", foundDeviceSettings, device);
               }} />}
-            <DateCalendarComponent />
+
+            {!!currentSetting && <DateCalendarComponent coord={{ lat: currentSetting?.city?.lat ?? 47.23999925644779, lon: currentSetting?.city?.lon ?? -1.5304936560937061 }} />}
+
           </Grid>
         </Box>
         <Typography sx={{ color: 'white', fontSize: 12 }}>Version beta {packageJson.version}</Typography>

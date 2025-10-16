@@ -28,8 +28,26 @@ class SQLiteAudioRepository(SQLRepositoryBase, AudioRepository):
         return None
 
     def add_audio(self, audio: Audio) -> None:
-        """Add a new audio file to the database."""
+        """
+            Add a new audio file to the database if the name exists already update it.
+            
+            This method checks if the name is unique
+            
+            Args:
+                audio (Audio): The audio file to add to the database.
+        """
         with self.session_maker() as session:
+            # find the audio by name and update it if it already exists
+            existing_audio = (
+                session.query(AudioTable)
+                .filter(AudioTable.name == audio.name)
+                .first()
+            )
+            if existing_audio:
+                for field, value in audio.get_dict().items():
+                    setattr(existing_audio, field, value)
+                session.commit()
+                return
             session.add(AudioTable(**audio.get_dict()))
             session.commit()
 

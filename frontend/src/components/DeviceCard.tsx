@@ -13,19 +13,21 @@ import {
     useTheme,
 } from "@mui/material";
 
-export default function DeviceCard({ device, available }: Readonly<{ device: Device, available?: boolean }>) {
+export default function DeviceCard({ device, available, onClick, key }: Readonly<{ device: Device, available?: boolean, onClick?: () => void, key?: string }>) {
     const theme = useTheme();
 
     return (
         <Card
-            key={device.getIp()}
+            key={key}
+            onClick={onClick}
             sx={{
                 display: "flex",
                 flexDirection: { xs: "column", sm: "column" }, // image moves to top on small screens
                 justifyContent: "space-between",
                 alignItems: "center",
                 maxWidth: 200,
-                mx: "auto",
+                width: "max-content",
+                mx: "0",
                 cursor: 'pointer',
                 opacity: available ? 1 : 0.5,
                 bgcolor: available ? theme.palette.background.paper : theme.palette.grey[800],

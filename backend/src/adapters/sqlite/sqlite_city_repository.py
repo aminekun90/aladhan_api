@@ -12,14 +12,24 @@ class SQLiteCityRepository(SQLRepositoryBase, CityRepository):
         super().__init__(db_path)
 
     def search_cities(self, name: str, country: Optional[str] = None) -> List[City]:
-        """Search cities by name (case-insensitive) and optional country filter."""
+        """Fast prefix search for autocomplete."""
         with self.session_maker() as session:
-            query = session.query(CityTable).filter(CityTable.name.ilike(f"%{name}%"))
+            # Normalize input
+            name = name.strip().upper()
+
+            # Query only necessary columns
+            query = session.query(
+                CityTable.id, CityTable.name, CityTable.lat, CityTable.lon, CityTable.country
+            ).filter(CityTable.name.ilike(f"{name}%"))
+
             if country:
                 query = query.filter(CityTable.country == country.upper())
 
-            results = query.all()
-            return [City(**r.get_dict()) for r in results]
+            # Limit results to 50 for autocomplete
+            results = query.limit(50).all()
+
+            # Build City objects
+            return [City(id=r.id, name=r.name, lat=r.lat, lon=r.lon, country=r.country) for r in results]
 
     def get_city(self, name: str) -> Optional[City]:
         """Retrieve a city by exact name."""

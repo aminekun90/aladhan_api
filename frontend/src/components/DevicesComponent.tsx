@@ -15,15 +15,11 @@ export function DevicesComponent({ devices, onClick, soCoDevices }: Readonly<{ d
                         return d.getIp() === device.getIp()
                     }) : false;
                     console.log(`Device ${device.getName()} (${device.getIp()}) is ${available ? 'available' : 'not available'}`);
-                    return <Grid
+                    return <DeviceCard device={device} available={available} onClick={() => {
+                        onClick?.(device);
+                    }} />
 
-                        size={{ xs: 6, md: 6 }}
-                        key={device.getIp()}
-                        onClick={() => {
-                            onClick?.(device);
-                        }}>
-                        <DeviceCard device={device} available={available} />
-                    </Grid>
+
                 })}
             </Grid>
         </Stack>

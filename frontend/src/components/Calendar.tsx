@@ -13,14 +13,14 @@ import { useEffect, useState } from "react";
 type TimingKey = "Imsak" | "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 
 
-export function DateCalendarComponent() {
+export function DateCalendarComponent({ coord }: Readonly<{ coord: { lat?: number, lon?: number } }>) {
     const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
     const [eventsForSelectedDay, setEventsForSelectedDay] = useState<Timing[]>([]);
     const [openPdfModal, setOpenPdfModal] = useState<boolean>(false);
     // Fetch events for the current month
     const { data: events, isLoading, isError } = useQuery({
-        queryKey: ["events", selectedDate.month() + 1, selectedDate.year()],
-        queryFn: () => allTimings(selectedDate.month() + 1, selectedDate.year()),
+        queryKey: ["events", selectedDate.month() + 1, selectedDate.year(), coord],
+        queryFn: () => allTimings(selectedDate.month() + 1, selectedDate.year(), coord),
     });
 
     // Filter events whenever selectedDate or events change
