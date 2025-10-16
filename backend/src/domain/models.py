@@ -33,7 +33,7 @@ class Audio:
     blob: Optional[bytes] = None  # can be None if not loaded
 
     def get_dict(self) -> dict:
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name, "blob": self.blob}
 
 
 @dataclass

@@ -1,7 +1,8 @@
+import base64
+from datetime import date
 from sqlalchemy import Integer, Float, String, LargeBinary, ForeignKey, Date, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.adapters.base.sql_repository_base import Base
-from datetime import date
 
 
 class CityTable(Base):
@@ -72,6 +73,8 @@ class AudioTable(Base):
         data = {
             "id": self.id,
             "name": self.name,
+            # encode blob to base64 string for JSON safety
+            "blob": base64.b64encode(self.blob).decode("utf-8"),
         }
         if include_settings:
             data["settings"] = [s.id for s in self.settings]

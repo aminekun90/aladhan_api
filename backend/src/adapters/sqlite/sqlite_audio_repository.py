@@ -44,8 +44,8 @@ class SQLiteAudioRepository(SQLRepositoryBase, AudioRepository):
                 .first()
             )
             if existing_audio:
-                for field, value in audio.get_dict().items():
-                    setattr(existing_audio, field, value)
+                existing_audio.blob = audio.blob if audio.blob is not None else existing_audio.blob
+                
                 session.commit()
                 return
             session.add(AudioTable(**audio.get_dict()))

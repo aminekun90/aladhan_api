@@ -2,12 +2,13 @@ from fastapi import APIRouter, Query
 from src.core.repository_factory import RepositoryContainer
 from src.domain import AudioRepository
 from .models import AudioResponse, MessageResponse
+from src.services.audio_service import AudioService
 
 router = APIRouter()
 
 repos = RepositoryContainer()
-audio_repo: AudioRepository = repos.audio_repo
 
+audio_service = AudioService(repos.audio_repo)
 
 
 @router.get("/audio")
@@ -17,7 +18,7 @@ def get_audio(
     """
     Search audio by name and return the first match.
     """
-    audio = audio_repo.get_audio_by_name(name)
+    audio = audio_service.get_audio_by_name(name)
     if audio:
         return AudioResponse(**audio.get_dict())
     return MessageResponse(message="Audio not found")
@@ -28,5 +29,27 @@ def get_audio_list() -> list[AudioResponse]:
     """
     List all available audio files.
     """
-    audios = audio_repo.list_audios()
-    return [AudioResponse(**audio.get_dict()) for audio in audios]
+    audios = audio_service.list_audios()
+    if audios is None:
+        return []
+    
+    return [AudioResponse(id=audio.id, name=audio.name, blob=audio.blob) for audio in audios if audio is not None and audio.blob is not None and audio.name is not None and audio.id is not None]
+
+
+@router.get("/audio_by_id/{audio_id}")
+def get_audio_by_id(audio_id: int) -> AudioResponse | MessageResponse:
+    """
+    Get an audio file by its ID.
+    """
+    audio = audio_service.get_audio_by_id(audio_id)
+    if audio:
+        return AudioResponse(**audio.get_dict())
+    return MessageResponse(message="Audio not found")
+
+@router.get("/load_audios_from_data_folder")
+def load_audios_from_data_folder() -> MessageResponse:
+    """
+    Load audio files from data/audio folder and add them to the database.
+    """
+    audio_service.load_audios_files_from_data_folder()
+    return MessageResponse(message="Audios loaded successfully")
