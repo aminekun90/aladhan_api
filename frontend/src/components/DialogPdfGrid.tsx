@@ -1,7 +1,8 @@
 import PrayersDataGrid from "@/components/prayersDataGrid";
 import { PrayerRow } from "@/models/prayer";
 import { Timing } from "@/models/Timing";
-import { Dialog } from "@mui/material";
+import { Dialog, IconButton, Toolbar } from "@mui/material";
+import { GridCloseIcon } from "@mui/x-data-grid";
 import { useEffect } from "react";
 
 export function DialogPdfGrid({ openDialog, onClose, events, title }: Readonly<{ openDialog: boolean, onClose: () => void, events: Timing[], title: string }>) {
@@ -45,7 +46,17 @@ export function DialogPdfGrid({ openDialog, onClose, events, title }: Readonly<{
 
     }, [openDialog, title]);
     return (
-        <Dialog open={openDialog} onClose={onClose} maxWidth="xl" fullWidth>
+        <Dialog open={openDialog} onClose={onClose} fullScreen>
+            <Toolbar>
+                <IconButton
+                    edge="start"
+                    color="inherit"
+                    onClick={onClose}
+                    aria-label="close"
+                >
+                    <GridCloseIcon />
+                </IconButton>
+            </Toolbar>
             <PrayersDataGrid data={data} loading={loading} />
         </Dialog>
     )
