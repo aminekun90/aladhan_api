@@ -14,6 +14,7 @@ from src.api.v1 import (
 )
 from src.core.repository_factory import RepositoryContainer
 from src.services.device_service import DeviceService
+from src.services.env_service import EnvService
 
 # === Helper to get local IP ===
 
@@ -27,7 +28,7 @@ device_service = DeviceService(repos.device_repo, repos.setting_repo)
 async def lifespan(app: FastAPI):
     # **Startup logic**
     host_ip = device_service.get_local_ip()
-    api_port = int(os.getenv("APP_PORT", "8000"))
+    api_port = int(EnvService.get("API_PORT", "8000"))
 
     device_service.host_ip = host_ip
     device_service.api_port = api_port

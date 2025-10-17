@@ -14,7 +14,13 @@ from src.services.soco_service import SoCoService
 
 
 class DeviceService:
-    def __init__(self, device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = True):
+    _instance = None
+    def __new__(cls,device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = True):
+        cls._instance = super().__new__(cls)
+        cls._instance._init_props(device_repository, settings_repository,debug)
+        return cls._instance
+    def _init_props(self, device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = True):
+        """ Initialize class properties."""
         self.device_repository = device_repository
         self.settings_repository = settings_repository
         self.scheduler = BackgroundScheduler(timezone="Europe/Paris")
@@ -35,6 +41,7 @@ class DeviceService:
         return self.device_repository.list_devices()
 
     def upsert_devices_bulk(self, devices: list[Device]) -> None:
+        """ Add multiple devices to the database."""
         return self.device_repository.upsert_devices_bulk(devices=devices)
     def get_local_ip(self) -> str:
         """Get the LAN IP address of the current machine (reachable by Sonos)."""
@@ -114,7 +121,7 @@ class DeviceService:
     # ------------------------------
     # 🧹 Job Management
     # ------------------------------
-    def _clear_device_jobs(self, device_id: int):
+    def clear_device_jobs(self, device_id: int):
         """Remove all jobs associated with a device."""
         for job in self.scheduler.get_jobs():
             if str(device_id) in job.id:
@@ -194,13 +201,18 @@ class DeviceService:
         if not device.id:
             return {"status": "error", "message": "Missing device ID"}
         settings: Optional[Settings] = self.settings_repository.get_setting_by_device_id(device_id=device.id)
+        if settings and not settings.enable_scheduler:
+            print("🚫 Scheduler is disabled")
+            self.clear_device_jobs(device.id)
+            return {"status": "error", "message": "Scheduler is disabled"}
         if not (settings and settings.city and settings.selected_method):
             return {"status": "error", "message": "Missing settings for device"}
 
         # 🌍 Extract coordinates
         lat = settings.city.get("lat") if isinstance(settings.city, dict) else settings.city.lat
         lon = settings.city.get("lon") if isinstance(settings.city, dict) else settings.city.lon
-
+        if not lat or not lon :
+            return {"status": "error", "message": "Missing coordinates for device"}
         # 📅 Get prayer times
         prayer_times = get_prayer_times(
             lat=lat or 0,
@@ -216,7 +228,7 @@ class DeviceService:
         ordered_timings = {k: prayer_times["times"][k] for k in SCHEDULABLE_KEYS}
 
         # 🧹 Remove previous jobs to avoid duplicates
-        self._clear_device_jobs(device.id)
+        self.clear_device_jobs(device.id)
 
         # 🕌 Schedule prayer times
         self._schedule_prayer_jobs(device, ordered_timings, force_refresh, settings)
