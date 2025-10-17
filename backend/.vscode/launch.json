@@ -14,8 +14,8 @@
                 "--port",
                 "8000"
             ],
-            "cwd": "${workspaceFolder}/backend",
-            "envFile": "${workspaceFolder}/backend/.env",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -23,9 +23,9 @@
             "type": "debugpy",
             "request": "launch",
             "name": "Launch backend/main.py",
-            "program": "${workspaceFolder}/backend/src/main.py",
-            "cwd": "${workspaceFolder}/backend",
-            "envFile": "${workspaceFolder}/backend/.env",
+            "program": "${workspaceFolder}/src/main.py",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
             "justMyCode": true
         }

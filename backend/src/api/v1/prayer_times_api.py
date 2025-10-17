@@ -8,10 +8,17 @@ from src.services.adhan_service import (
     get_year_prayer_times,
     get_available_methods,
 )
+from src.services.device_service import DeviceService
+from src.core.repository_factory import RepositoryContainer
+
 from src.schemas.prayer_times import PrayerTimesResponse
-TZ = "Europe/Paris"
+
+
 METHOD="France"
 MADHAB="Shafi"
+repository = RepositoryContainer()
+device_service = DeviceService(repository.device_repo, repository.setting_repo)
+TZ = device_service.get_tz()
 router = APIRouter()
 
 def parse_date(s: Optional[str]) -> date:
@@ -33,7 +40,7 @@ def prayer_times(
     tz: Optional[str] = Query(TZ)
 ):
     d = parse_date(day)
-    return get_prayer_times(d, lat, lon, method, madhab, tz)
+    return get_prayer_times(d, lat, lon, method, madhab,tz if tz else device_service.get_tz())
 
 
 @router.get("/prayer-times/month", response_model=List[PrayerTimesResponse])

@@ -20,6 +20,7 @@ class AudioService:
                 with open(f"{self.data_path}/{filename}", "rb") as f:
                     audio_bytes = f.read()
                 if audio_bytes is None:
+                    
                     continue
                 else:
                     audio = Audio(name=filename,blob=audio_bytes)

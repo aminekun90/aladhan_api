@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query,Response
 from src.core.repository_factory import RepositoryContainer
 from src.domain import AudioRepository
 from .models import AudioResponse, MessageResponse
@@ -53,3 +53,15 @@ def load_audios_from_data_folder() -> MessageResponse:
     """
     audio_service.load_audios_files_from_data_folder()
     return MessageResponse(message="Audios loaded successfully")
+
+
+@router.get("/audio/{audio_name}")
+def get_audio_blob(audio_name: str):
+    audio = audio_service.get_audio_by_name(audio_name)
+    if not audio:
+        return Response(status_code=404)
+    return Response(
+        content=audio.blob,
+        media_type="audio/mp3",  # or "audio/mpeg" or "audio/wav" depending on your data
+        headers={"Content-Disposition": f'inline; filename="{audio.name}"'},
+    )

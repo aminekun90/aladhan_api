@@ -126,3 +126,22 @@ class SQLiteSettingsRepository(SQLRepositoryBase, SettingsRepository):
             return Settings(
                 **settings.get_dict(),
             )
+    def get_setting_by_device_id(self, device_id: int) -> Optional[Settings]:
+        """Retrieve a setting by device_id."""
+        with self.session_maker() as session:
+            setting = (
+                session.query(SettingsTable)
+                .options(
+                    joinedload(SettingsTable.device),
+                    joinedload(SettingsTable.city),
+                    joinedload(SettingsTable.audio),
+                )
+                .filter(SettingsTable.device_id == device_id)
+                
+                .first()
+            )
+            if setting:
+                return Settings(
+                    **setting.get_dict(),
+                )
+        return None

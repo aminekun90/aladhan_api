@@ -44,7 +44,11 @@ class SQLiteAudioRepository(SQLRepositoryBase, AudioRepository):
                 .first()
             )
             if existing_audio:
-                existing_audio.blob = audio.blob if audio.blob is not None else existing_audio.blob
+                if audio.blob is not None and existing_audio.blob is not None and audio.blob != existing_audio.blob:
+                    existing_audio.blob = audio.blob
+                    print(f"Updating audio {audio.name}")
+                else:
+                    print(f"Audio {audio.name} already exists in the database, skipping")
                 
                 session.commit()
                 return

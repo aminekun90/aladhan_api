@@ -13,7 +13,11 @@ except ImportError:
 # Prayer methods configuration
 # -----------------------------
 from .moonsight import Fajr as MSFajr, Isha as MSIsha
-
+ORDERED_KEYS= [
+            "Imsak","Fajr","Sunrise","Dhuhr","Asr",
+            "Sunset","Maghrib","Isha","Midnight","Firstthird","Lastthird"
+        ]
+SCHEDULABLE_KEYS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]
 PRAYER_METHODS: dict = {
     "MWL": {"fajr": 18.0, "isha": 17.0,"description":"Muslim World League"},
     "ISNA": {"fajr": 15.0, "isha": 15.0 ,"description":"Islamic Society of North America"},
@@ -324,11 +328,8 @@ class PrayerTimes:
             _type_: _description_
         """
         times_formatted = {k: self._format(v) for k, v in times_dt.items()}
-        ordered_keys = [
-            "Imsak","Fajr","Sunrise","Dhuhr","Asr",
-            "Sunset","Maghrib","Isha","Midnight","Firstthird","Lastthird"
-        ]
-        return {k: times_formatted[k] for k in ordered_keys if k in times_formatted}
+        
+        return {k: times_formatted[k] for k in ORDERED_KEYS if k in times_formatted}
 
     # -----------------------------
     # Compute prayer times

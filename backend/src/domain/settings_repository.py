@@ -28,3 +28,7 @@ class SettingsRepository(ABC):
     @abstractmethod
     def create_setting_of_device(self, device_id: int) -> Settings:
         ...
+    
+    @abstractmethod
+    def get_setting_by_device_id(self, device_id: int) -> Optional[Settings]:
+        ...

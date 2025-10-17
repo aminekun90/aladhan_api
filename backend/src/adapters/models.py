@@ -4,7 +4,7 @@ from sqlalchemy import Integer, Float, String, LargeBinary, ForeignKey, Date, Bo
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.adapters.base.sql_repository_base import Base
 
-
+DELETE_STRATEGY = "all, delete-orphan"
 class CityTable(Base):
     __tablename__ = "cities"
 
@@ -15,7 +15,7 @@ class CityTable(Base):
     country: Mapped[str] = mapped_column(String, nullable=False)
 
     # Relationship back to settings
-    settings = relationship("SettingsTable", back_populates="city", cascade="all, delete-orphan")
+    settings = relationship("SettingsTable", back_populates="city", cascade=DELETE_STRATEGY)
 
     def get_dict(self, include_settings: bool = False):
         data = {
@@ -42,7 +42,7 @@ class DeviceTable(Base):
     raw_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Relationship back to settings
-    settings = relationship("SettingsTable", back_populates="device", cascade="all, delete-orphan")
+    settings = relationship("SettingsTable", back_populates="device", cascade=DELETE_STRATEGY)
 
     def get_dict(self, include_settings: bool = False):
         data = {
@@ -67,7 +67,7 @@ class AudioTable(Base):
     blob: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
 
     # Relationship back to settings
-    settings = relationship("SettingsTable", back_populates="audio", cascade="all, delete-orphan")
+    settings = relationship("SettingsTable", back_populates="audio", cascade=DELETE_STRATEGY)
 
     def get_dict(self, include_settings: bool = False):
         data = {
