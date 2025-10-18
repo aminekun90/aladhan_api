@@ -74,14 +74,15 @@ class DeviceService:
             audio_name = getattr(settings.audio, "name", None)
 
         if not audio_name:
-            print(f"⚠️ Missing audio name for {device.id}, skipping {prayer_name}.")
+            print(f"⚠️ Missing audio name for {device.id}, skipping {prayer_name} call.")
             return
 
         # Build the playable URL
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
         url = f"http://{self.host_ip}{port_part}/audio/{audio_name}"
-
-        print(f"🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
+        # time now 
+        now = datetime.now( tz= ZoneInfo(self.get_tz()))
+        print(f"{now} 🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
 
         # Trigger playback
         try:
