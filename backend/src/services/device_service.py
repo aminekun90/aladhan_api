@@ -81,10 +81,9 @@ class DeviceService:
 
         # Build the playable URL
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
-        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
-        # time now 
-        now = datetime.now( tz= ZoneInfo(self.get_tz()))
-        logger.info(f"{now} 🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
+        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}" 
+        
+        logger.info(f"🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
 
         # Trigger playback
         try:
@@ -97,14 +96,14 @@ class DeviceService:
     # 🧠 Debug Helpers
     # ------------------------------
     def debug_jobs(self):
-        logger.info("\n📅 === Current Scheduled Jobs ===")
+        logger.debug("\n📅 === Current Scheduled Jobs ===")
         jobs = self.scheduler.get_jobs()
         if not jobs:
-            logger.info("No jobs scheduled.")
+            logger.debug("No jobs scheduled.")
             return
         for job in jobs:
-            logger.info(f" - {job.id}: runs at {job.next_run_time}")
-        logger.info("=================================\n")
+            logger.debug(f" - {job.id}: runs at {job.next_run_time}")
+        logger.debug("=================================\n")
 
     # ------------------------------
     # 🕒 Date/Time Helpers
@@ -209,6 +208,7 @@ class DeviceService:
             self.clear_device_jobs(device.id)
             return {"status": "error", "message": "Scheduler is disabled"}
         if not (settings and settings.city and settings.selected_method):
+            logger.info(f"🚫 Missing settings for device {device.id} {device.ip} : {settings}")
             return {"status": "error", "message": "Missing settings for device"}
 
         # 🌍 Extract coordinates
@@ -217,6 +217,7 @@ class DeviceService:
         if not lat or not lon :
             return {"status": "error", "message": "Missing coordinates for device"}
         # 📅 Get prayer times
+        logger.info(f"📅 Getting prayer times for device {device.id}")
         prayer_times = get_prayer_times(
             lat=lat or 0,
             lon=lon or 0,

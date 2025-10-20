@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
     logger.info(f"🌐 Starting app on {host_ip}:{api_port} — scheduling prayers for all devices")
     response = device_service.schedule_prayers_for_all_devices()
-    logger.info(response)
+    logger.info(f"📅 Scheduled prayers for all devices: {response}")
     # Yield control to FastAPI to run the app
     yield
 
