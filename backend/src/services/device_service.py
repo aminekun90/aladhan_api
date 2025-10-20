@@ -79,7 +79,7 @@ class DeviceService:
 
         # Build the playable URL
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
-        url = f"http://{self.host_ip}{port_part}/audio/{audio_name}"
+        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
         # time now 
         now = datetime.now( tz= ZoneInfo(self.get_tz()))
         print(f"{now} 🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")

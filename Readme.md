@@ -1,5 +1,15 @@
 # Aladhan Api and Frontend Beta version 0.1.0
 
+Adhan API is a Python FastAPI-based application designed to calculate daily Islamic prayer times and stream corresponding audio (adhan) to connected devices such as Sonos speakers. The project combines accurate prayer time calculations with flexible audio playback capabilities, making it easy to integrate into home automation or personal setups.
+
+The front includes a year calendar to generate a Printable calendar.
+
+The Api can also be used for other apps (a feature to disable front will be added in the future)
+
+## Key features
+
+TBD (check api docs)
+
 ## Install the app
 
 Make sure you have [uv](https://docs.astral.sh/uv/guides/install-python/)
@@ -64,3 +74,12 @@ Make sure you have a folder data with cities.db in it and some adhan.mp3 files m
 ```shell
 docker run -d   --name adhan-api   --network host   -v /etc/localtime:/etc/localtime:ro   -v /etc/timezone:/etc/timezone:ro   -v /home/pi/data:/app/src/data  aminekun90/adhan-api
 ```
+
+## Api doc
+
+Check swagger at localhost:8000/docs#/
+
+## credits
+
+- List of cities built from <https://www.geonames.org>
+- Inspired by the popular PHP Aladhan api <https://aladhan.com>
