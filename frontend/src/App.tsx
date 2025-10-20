@@ -71,10 +71,13 @@ function App() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          background: `url(${bg}) no-repeat center fixed`,
+          backgroundColor: alpha(grey[900], 0.5),
+          backgroundImage: `url(${bg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
           overflowX: 'hidden',
           minHeight: '100vh',
-          height: 'max-content',
           maxWidth: '100vw',
           width: '100%',
           padding: 5,
@@ -82,10 +85,13 @@ function App() {
         }}
       >
         <Box sx={{
-          backgroundColor: alpha(grey[900], 0.5),
           borderRadius: 8,
           paddingTop: 0,
-          background: `url(${bgIslamic}) no-repeat top fixed`,
+          backgroundColor: alpha(grey[900], 0.5),
+          backgroundImage: `url(${bgIslamic})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
 
         }}>
           {!!currentSetting && <Grid container justifyContent="flex-end" sx={{ display: 'flex', alignItems: 'center', justifyItems: 'center', height: 60 }}>
