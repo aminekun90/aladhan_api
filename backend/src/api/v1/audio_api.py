@@ -1,9 +1,11 @@
+import base64
 from fastapi import APIRouter, Query,Response
 from src.core.repository_factory import RepositoryContainer
 from src.domain import AudioRepository
 from .models import AudioResponse, MessageResponse
 from src.services.audio_service import AudioService
-
+from fastapi.responses import StreamingResponse
+from io import BytesIO
 router = APIRouter()
 
 repos = RepositoryContainer()
@@ -54,14 +56,25 @@ def load_audios_from_data_folder() -> MessageResponse:
     audio_service.load_audios_files_from_data_folder()
     return MessageResponse(message="Audios loaded successfully")
 
-
 @router.get("/audio/{audio_name}")
 def get_audio_blob(audio_name: str):
     audio = audio_service.get_audio_by_name(audio_name)
-    if not audio:
+    if not audio or not audio.blob:
         return Response(status_code=404)
-    return Response(
-        content=audio.blob,
-        media_type="audio/mp3",  # or "audio/mpeg" or "audio/wav" depending on your data
-        headers={"Content-Disposition": f'inline; filename="{audio.name}"'},
+
+    blob_data = audio.blob
+
+    # If blob_data is a string (likely Base64-encoded), decode it
+    if isinstance(blob_data, str):
+        try:
+            blob_data = base64.b64decode(blob_data)
+        except Exception:
+            return Response(status_code=500, content="Invalid audio data")
+
+    audio_stream = BytesIO(blob_data)
+
+    return StreamingResponse(
+        audio_stream,
+        media_type="audio/mpeg",  # standard for mp3
+        headers={"Content-Disposition": f'inline; filename="{audio.name}"'}
     )
