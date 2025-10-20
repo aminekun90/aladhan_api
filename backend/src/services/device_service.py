@@ -11,7 +11,9 @@ from src.domain import DeviceRepository, SettingsRepository
 from src.services.adhan_service import get_prayer_times
 from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.services.soco_service import SoCoService
+from src.schemas.log_config import LogConfig
 
+logger = LogConfig.get_logger()
 
 class DeviceService:
     _instance = None
@@ -29,7 +31,7 @@ class DeviceService:
         self.soco_service = SoCoService()
         self.host_ip = self.get_local_ip()
         self.api_port = 8000
-        print(f"🌐 Host IP: {self.host_ip}:{self.api_port}")
+        logger.info(f"🌐 Host IP: {self.host_ip}:{self.api_port}")
 
     # ------------------------------
     # 🧩 Utilities
@@ -61,10 +63,10 @@ class DeviceService:
     def _prayer_job(self, device: Device, prayer_name: str, settings: Settings):
         # Validate input
         if not device or not device.id:
-            print("❌ Missing device information, skipping job.")
+            logger.info("❌ Missing device information, skipping job.")
             return
         if not settings or not settings.audio:
-            print(f"⚠️ No audio configured for {device.id}, skipping {prayer_name}.")
+            logger.info(f"⚠️ No audio configured for {device.id}, skipping {prayer_name}.")
             return
 
         # Get audio name whether dict or ORM object
@@ -74,7 +76,7 @@ class DeviceService:
             audio_name = getattr(settings.audio, "name", None)
 
         if not audio_name:
-            print(f"⚠️ Missing audio name for {device.id}, skipping {prayer_name} call.")
+            logger.info(f"⚠️ Missing audio name for {device.id}, skipping {prayer_name} call.")
             return
 
         # Build the playable URL
@@ -82,27 +84,27 @@ class DeviceService:
         url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
         # time now 
         now = datetime.now( tz= ZoneInfo(self.get_tz()))
-        print(f"{now} 🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
+        logger.info(f"{now} 🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
 
         # Trigger playback
         try:
             self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
         except Exception as e:
-            print(f"❌ Failed to play audio for {device.id}: {e}")
+            logger.info(f"❌ Failed to play audio for {device.id}: {e}")
 
 
     # ------------------------------
     # 🧠 Debug Helpers
     # ------------------------------
     def debug_jobs(self):
-        print("\n📅 === Current Scheduled Jobs ===")
+        logger.info("\n📅 === Current Scheduled Jobs ===")
         jobs = self.scheduler.get_jobs()
         if not jobs:
-            print("No jobs scheduled.")
+            logger.info("No jobs scheduled.")
             return
         for job in jobs:
-            print(f" - {job.id}: runs at {job.next_run_time}")
-        print("=================================\n")
+            logger.info(f" - {job.id}: runs at {job.next_run_time}")
+        logger.info("=================================\n")
 
     # ------------------------------
     # 🕒 Date/Time Helpers
@@ -128,7 +130,7 @@ class DeviceService:
             if str(device_id) in job.id:
                 self.scheduler.remove_job(job.id)
                 if self.debug:
-                    print(f"🗑️ Removed job {job.id}")
+                    logger.info(f"🗑️ Removed job {job.id}")
 
     def _schedule_prayer_jobs(self, device: Device, ordered_timings: dict, force_refresh: bool,settings: Settings):
         """Add prayer jobs to the scheduler for this device."""
@@ -144,7 +146,7 @@ class DeviceService:
                     id=job_id,
                     args=[device, prayer_name, settings],
                 )
-                print(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id})")
+                logger.info(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id})")
 
     def _schedule_refresh_job(self, device_id: int, refresh_interval_minutes: Optional[int]):
         """Schedule next refresh (default: at 1 AM next day)."""
@@ -156,14 +158,14 @@ class DeviceService:
             id=f"refresh_device_{device_id}",
             args=[device_id],
         )
-        print(f"🔁 Next prayer schedule refresh at {next_refresh} (Device {device_id})")
+        logger.info(f"🔁 Next prayer schedule refresh at {next_refresh} (Device {device_id})")
         return next_refresh
 
     def get_tz(self):
         try:
             import tzlocal
             tz_string = tzlocal.get_localzone()
-            print(tz_string.key)  # example Europe/Paris
+            logger.info(tz_string.key)  # example Europe/Paris
         except Exception:   
                 tz_string = ZoneInfo("UTC")
         return tz_string.key
@@ -174,7 +176,7 @@ class DeviceService:
     def schedule_prayers_for_all_devices(self, refresh_interval_minutes: Optional[int] = None, force_refresh: bool = False)->list[dict]:
         """Schedules all prayer times for today for all devices."""
         schedule_devices = []
-        print("\n📅 Scheduling prayer times for all devices...")
+        logger.info("\n📅 Scheduling prayer times for all devices...")
 
         # If you need the IANA name (this part is system dependent)
         tz_string = self.get_tz()
@@ -203,7 +205,7 @@ class DeviceService:
             return {"status": "error", "message": "Missing device ID"}
         settings: Optional[Settings] = self.settings_repository.get_setting_by_device_id(device_id=device.id)
         if settings and not settings.enable_scheduler:
-            print("🚫 Scheduler is disabled")
+            logger.info("🚫 Scheduler is disabled")
             self.clear_device_jobs(device.id)
             return {"status": "error", "message": "Scheduler is disabled"}
         if not (settings and settings.city and settings.selected_method):

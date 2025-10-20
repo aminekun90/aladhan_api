@@ -11,3 +11,6 @@ class SQLRepositoryBase:
         from src.adapters.models import CityTable, DeviceTable, SettingsTable
         Base.metadata.create_all(bind=self.engine)
         
+        
+    def get_health(self):
+        return {"status": "ok"}

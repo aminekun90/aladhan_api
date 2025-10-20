@@ -3,7 +3,9 @@ from src.adapters.base import SQLRepositoryBase
 from src.domain import AudioRepository
 from src.domain.models import Audio
 from src.adapters.models import AudioTable
+from src.schemas.log_config import LogConfig
 
+logger = LogConfig.get_logger()
 
 class SQLiteAudioRepository(SQLRepositoryBase, AudioRepository):
     """SQLite implementation of AudioRepository."""
@@ -46,9 +48,9 @@ class SQLiteAudioRepository(SQLRepositoryBase, AudioRepository):
             if existing_audio:
                 if audio.blob is not None and existing_audio.blob is not None and audio.blob != existing_audio.blob:
                     existing_audio.blob = audio.blob
-                    print(f"Updating audio {audio.name}")
+                    logger.info(f"Updating audio {audio.name}")
                 else:
-                    print(f"Audio {audio.name} already exists in the database, skipping")
+                    logger.info(f"Audio {audio.name} already exists in the database, skipping")
                 
                 session.commit()
                 return

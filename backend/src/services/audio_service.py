@@ -2,7 +2,9 @@ import os
 from src.domain.models import Audio
 from src.domain import AudioRepository
 from typing import Optional
+from src.schemas.log_config import LogConfig
 
+logger = LogConfig.get_logger()
 class AudioService:
     def __init__(self, audio_repo:AudioRepository,data_path="src/data/audio"):
         """Initialize the AudioService with the audio repository and data folder path."""
@@ -15,7 +17,7 @@ class AudioService:
         # Open the audio files in data/audio folder and add them to the database as Audio objects
         for filename in os.listdir(self.data_path):
             if filename.endswith(".mp3"):
-                print(f"Loading audio file: {filename}")
+                logger.info(f"Loading audio file: {filename}")
                 # open file and read as bytes
                 with open(f"{self.data_path}/{filename}", "rb") as f:
                     audio_bytes = f.read()

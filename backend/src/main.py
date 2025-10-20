@@ -1,9 +1,12 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from logging.config import dictConfig
 
 from src.api.v1 import (
     cities_router,
@@ -11,17 +14,18 @@ from src.api.v1 import (
     soco_devices_router,
     settings_router,
     audio_router,
+    health_router
 )
 from src.core.repository_factory import RepositoryContainer
 from src.services.device_service import DeviceService
 from src.services.env_service import EnvService
-
-# === Helper to get local IP ===
-
+from src.schemas.log_config import LogConfig
 
 # === Repositories & Services ===
 repos = RepositoryContainer()
 device_service = DeviceService(repos.device_repo, repos.setting_repo)
+dictConfig(LogConfig().model_dump())
+logger = LogConfig.get_logger()
 
 # === Lifespan context manager ===
 @asynccontextmanager
@@ -33,14 +37,14 @@ async def lifespan(app: FastAPI):
     device_service.host_ip = host_ip
     device_service.api_port = api_port
 
-    print(f"🌐 Starting app on {host_ip}:{api_port} — scheduling prayers for all devices")
+    logger.info(f"🌐 Starting app on {host_ip}:{api_port} — scheduling prayers for all devices")
     response = device_service.schedule_prayers_for_all_devices()
-    print(response)
+    logger.info(response)
     # Yield control to FastAPI to run the app
     yield
 
     # **Shutdown logic** (if needed)
-    print("🛑 Shutting down — stopping scheduler")
+    logger.info("🛑 Shutting down — stopping scheduler")
     device_service.scheduler.shutdown(wait=False)
 
 # === Create FastAPI app with lifespan ===
@@ -49,7 +53,10 @@ app = FastAPI(
     version="1.0.0",
     description="Prayer times calculation API (Python FastAPI implementation)",
     lifespan=lifespan,
+    logger=logger,
+    logger_config=LogConfig().model_dump(),
 )
+
 
 # === CORS ===
 app.add_middleware(
@@ -67,6 +74,7 @@ app.include_router(soco_devices_router, prefix=PREFIX, tags=["Sonos Devices"])
 app.include_router(cities_router, prefix=PREFIX, tags=["Cities"])
 app.include_router(settings_router, prefix=PREFIX, tags=["Settings"])
 app.include_router(audio_router, prefix=PREFIX, tags=["Audio"])
+app.include_router(health_router, prefix=PREFIX, tags=["Health"])
 
 # === Frontend static serving ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

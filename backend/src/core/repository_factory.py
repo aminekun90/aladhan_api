@@ -40,3 +40,12 @@ class RepositoryContainer:
     
     def get_db_engine(self):
         return self.city_repo.engine  # Assuming all repos share the same engine
+
+    def get_repos_health(self):
+        return {
+            "status": "ok",
+            "city_repo": self.city_repo.get_health(),
+            "device_repo": self.device_repo.get_health(),
+            "setting_repo": self.setting_repo.get_health(),
+            "audio_repo": self.audio_repo.get_health(),
+        }
