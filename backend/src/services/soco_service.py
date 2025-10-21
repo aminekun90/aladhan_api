@@ -4,7 +4,8 @@ from typing import List, Dict, Any
 from fastapi.encoders import jsonable_encoder
 
 from src.domain.models import Device
-
+from src.schemas.log_config import LogConfig
+logger = LogConfig.get_logger()
 
 class SoCoService:
     def _serialize_device(self, device: SoCo) -> Dict[str, Any]:
@@ -77,5 +78,8 @@ class SoCoService:
 
     def play_audio(self, device: Device, url: str,volume: int) -> None:
         soco_device = SoCo(device.ip)
+        if not soco_device:
+            logger.info(f"🔇 Device with ip {device.ip} not available in network")
+            return
         soco_device.volume = volume
         soco_device.play_uri(url)

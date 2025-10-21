@@ -71,6 +71,8 @@ uv run python main.py
 
 Make sure you have a folder data with cities.db in it and some adhan.mp3 files maybe here : [call to prayer files](https://www.assabile.com/adhan-call-prayer)
 
+`-v /home/pi/data:/app/src/data`
+
 ```shell
 docker run -d   --name adhan-api   --network host   -v /etc/localtime:/etc/localtime:ro   -v /etc/timezone:/etc/timezone:ro   -v /home/pi/data:/app/src/data  aminekun90/adhan-api
 ```
