@@ -101,7 +101,7 @@ export async function allTimings(month?: number, year?: number, coord?: { lat?: 
 
 export async function getCitiesByName(name: string, country?: string): Promise<City[]> {
 
-    const response = await api.get<City[]>(`${CONFIG.getCitiesByName}?name=${name}${country ? 'country=' + country : ''}`, {
+    const response = await api.get<City[]>(`${CONFIG.getCitiesByName}?name=${name}${country ? '&country=' + country : ''}`, {
         headers: {
             'Content-Type': 'application/json'
         }

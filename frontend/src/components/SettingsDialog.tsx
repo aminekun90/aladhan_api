@@ -53,7 +53,7 @@ export function SettingsDialog({
     });
 
     const citiesMutation = useMutation({
-        mutationFn: ({ name }: { name: string }) => getCitiesByName(name),
+        mutationFn: ({ name, coutry }: { name: string; coutry?: string }) => getCitiesByName(name, coutry),
     });
 
     const [method, setMethod] = useState<string>(settings.selected_method);
@@ -80,7 +80,7 @@ export function SettingsDialog({
     };
     const handleVolumeChange = (_: Event, newValue: number | number[]) => setVolume(newValue as number);
     const handleSchedulerChange = (event: ChangeEvent<HTMLInputElement>) => setEnableScheduler(event.target.checked);
-    const handleSearchCity = (name: string) => citiesMutation.mutate({ name });
+    const handleSearchCity = (name: string, coutry?: string) => citiesMutation.mutate({ name, coutry });
 
     const handleSave = () => {
         const updatedSettings: Settings = {
@@ -109,6 +109,7 @@ export function SettingsDialog({
                         <Autocomplete
                             freeSolo
                             value={selectedCity}
+                            disablePortal
                             inputValue={cityName}
                             onChange={(_: SyntheticEvent<Element, Event>, newValue: AutocompleteValue) => {
                                 setSelectedCity(newValue as City | null);
@@ -116,7 +117,13 @@ export function SettingsDialog({
                             }}
                             onInputChange={(_, newInputValue) => {
                                 setCityName(newInputValue);
-                                if (newInputValue.length > 2) handleSearchCity(newInputValue);
+                                if (newInputValue.length > 2) {
+                                    const name = newInputValue.split(",").shift()?.trim();
+                                    const country = newInputValue.split(",").pop()?.trim();
+                                    if (name) {
+                                        handleSearchCity(name, country);
+                                    }
+                                }
                             }}
                             options={citiesMutation.data ?? []}
                             getOptionLabel={(city) => `${(city as City).name}, ${(city as City).country}`}

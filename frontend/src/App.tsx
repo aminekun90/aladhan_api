@@ -81,6 +81,7 @@ function App() {
           maxWidth: '100vw',
           width: '100%',
           padding: 5,
+          borderRadius: '1rem',
 
         }}
       >
