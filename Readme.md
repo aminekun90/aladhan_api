@@ -85,3 +85,9 @@ Check swagger at localhost:8000/docs#/
 
 - List of cities built from <https://www.geonames.org>
 - Inspired by the popular PHP Aladhan api <https://aladhan.com>
+
+## Keep the project alive
+
+To keep the project alive and maintainable
+
+[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/aminebouzahar)
