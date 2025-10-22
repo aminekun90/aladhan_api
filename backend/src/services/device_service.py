@@ -147,17 +147,17 @@ class DeviceService:
                 )
                 logger.info(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id})")
 
-    def _schedule_refresh_job(self, device_id: int, refresh_interval_minutes: Optional[int]):
+    def _schedule_refresh_job(self, device: Device, refresh_interval_minutes: Optional[int]):
         """Schedule next refresh (default: at 1 AM next day)."""
         next_refresh = self._get_next_refresh_datetime(refresh_interval_minutes)
         self.scheduler.add_job(
             self.schedule_prayers_for_device,
             "date",
             run_date=next_refresh,
-            id=f"refresh_device_{device_id}",
-            args=[device_id],
+            id=f"refresh_device_{device.id}",
+            args=[device],
         )
-        logger.info(f"🔁 Next prayer schedule refresh at {next_refresh} (Device {device_id})")
+        logger.info(f"🔁 Next prayer schedule refresh at {next_refresh} (Device {device.id})")
         return next_refresh
 
     def get_tz(self):
@@ -200,7 +200,7 @@ class DeviceService:
         tz: Optional[str] = "Europe/Paris",
     ) -> dict:
         """Schedules all prayer times for today for this device."""
-        if not device.id:
+        if not device or not device.id:
             return {"status": "error", "message": "Missing device ID"}
         settings: Optional[Settings] = self.settings_repository.get_setting_by_device_id(device_id=device.id)
         if settings and not settings.enable_scheduler:
@@ -218,12 +218,13 @@ class DeviceService:
             return {"status": "error", "message": "Missing coordinates for device"}
         # 📅 Get prayer times
         logger.info(f"📅 Getting prayer times for device {device.id}")
+        
         prayer_times = get_prayer_times(
             lat=lat or 0,
             lon=lon or 0,
             method=settings.selected_method,
             base_date=date.today(),
-            tz=tz,
+            tz=self.get_tz(),
             madhab="Shafi",
         )
         if not prayer_times:
@@ -238,7 +239,7 @@ class DeviceService:
         self._schedule_prayer_jobs(device, ordered_timings, force_refresh, settings)
 
         # 🔁 Schedule refresh
-        next_refresh = self._schedule_refresh_job(device.id, refresh_interval_minutes)
+        next_refresh = self._schedule_refresh_job(device, refresh_interval_minutes)
 
         if self.debug:
             self.debug_jobs()
