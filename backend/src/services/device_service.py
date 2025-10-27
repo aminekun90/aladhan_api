@@ -14,18 +14,18 @@ from src.services.soco_service import SoCoService
 from src.schemas.log_config import LogConfig
 
 logger = LogConfig.get_logger()
-
+DEFAULT_TZ = "Europe/Paris"
 class DeviceService:
     _instance = None
-    def __new__(cls,device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = True):
+    def __new__(cls,device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = False):
         cls._instance = super().__new__(cls)
         cls._instance._init_props(device_repository, settings_repository,debug)
         return cls._instance
-    def _init_props(self, device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = True):
+    def _init_props(self, device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = False):
         """ Initialize class properties."""
         self.device_repository = device_repository
         self.settings_repository = settings_repository
-        self.scheduler = BackgroundScheduler(timezone="Europe/Paris")
+        self.scheduler = BackgroundScheduler(timezone=DEFAULT_TZ)
         self.scheduler.start()
         self.debug = debug
         self.soco_service = SoCoService()
@@ -57,6 +57,7 @@ class DeviceService:
         finally:
             s.close()
         return ip
+    
     # ------------------------------
     # 🕌 Prayer Job
     # ------------------------------
@@ -148,8 +149,11 @@ class DeviceService:
                 logger.info(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id})")
 
     def _schedule_refresh_job(self, device: Device, refresh_interval_minutes: Optional[int]):
-        """Schedule next refresh (default: at 1 AM next day)."""
+        """Schedule next refresh (default: at 1 AM next day, plus DST if applicable)."""
         next_refresh = self._get_next_refresh_datetime(refresh_interval_minutes)
+        tz_name = self.get_tz()
+        
+        # Normal daily refresh
         self.scheduler.add_job(
             self.schedule_prayers_for_device,
             "date",
@@ -157,16 +161,75 @@ class DeviceService:
             id=f"refresh_device_{device.id}",
             args=[device],
         )
-        logger.info(f"🔁 Next prayer schedule refresh at {next_refresh} (Device {device.id})")
+        logger.info(f"🔁 Next normal refresh at {next_refresh} (Device {device.id})")
+
+        # Extra DST refresh if applicable
+        dst_change_time = self._is_it_change_time(tz_name)
+        if dst_change_time:
+            self.scheduler.add_job(
+                self.schedule_prayers_for_device,
+                "date",
+                run_date=dst_change_time,
+                id=f"dst_refresh_device_{device.id}",
+                args=[device],
+            )
+            logger.info(f"🕐 Extra DST refresh scheduled at {dst_change_time} (Device {device.id})")
+
         return next_refresh
+
+    def _is_it_change_time(self, tz_name: Optional[str] = None) -> Optional[datetime]:
+        """
+        Detects if tonight involves a daylight saving time (DST) change
+        for the given timezone (defaults to system or DEFAULT_TZ).
+
+        Returns a datetime just before the change (02:59 local time if DST changes),
+        or None if no DST transition occurs tonight.
+        """
+        try:
+            tz_name = tz_name or self.get_tz() or DEFAULT_TZ
+            tz = ZoneInfo(tz_name)
+
+            now = datetime.now(tz)
+            today = now.date()
+            tomorrow = today + timedelta(days=1)
+
+            # Midnight today and tomorrow
+            start = datetime.combine(today, datetime.min.time(), tz)
+            end = datetime.combine(tomorrow, datetime.min.time(), tz)
+
+            # Compare UTC offsets
+            offset_today = start.utcoffset()
+            offset_tomorrow = end.utcoffset()
+
+            if offset_today != offset_tomorrow:
+                # Find approximate DST transition moment (binary search)
+                low, high = start, end
+                while (high - low) > timedelta(minutes=5):  # precision ±5min
+                    mid = low + (high - low) / 2
+                    if mid.utcoffset() == offset_today:
+                        low = mid
+                    else:
+                        high = mid
+
+                # We'll trigger the refresh a minute before the actual change
+                change_time = high - timedelta(minutes=1)
+                logger.info(f"⏰ DST change detected in {tz_name} around {high}. Refresh set for {change_time}.")
+                return change_time
+            logger.info(f"🌞 No DST change detected in {tz_name}.")
+            return None
+
+        except Exception as e:
+            logger.warning(f"⚠️ DST check failed for tz={tz_name}: {e}")
+            return None
 
     def get_tz(self):
         try:
             import tzlocal
             tz_string = tzlocal.get_localzone()
             logger.info(tz_string.key)  # example Europe/Paris
-        except Exception:   
-                tz_string = ZoneInfo("UTC")
+        except Exception:
+                logger.info(f"tzlocal not found, using {DEFAULT_TZ}")
+                tz_string = ZoneInfo(DEFAULT_TZ)
         return tz_string.key
     #-------------------------------
     # 📅 Schedule Prayer Times for all devices
@@ -189,15 +252,15 @@ class DeviceService:
                 tz=tz_string
             ))
         return schedule_devices
-    # ------------------------------
+    # ----------------------------------
     # 📅 schedule prayers for one device
-    # ------------------------------
+    # ----------------------------------
     def schedule_prayers_for_device(
         self,
         device: Device,
         refresh_interval_minutes: Optional[int] = None,
         force_refresh: bool = False,
-        tz: Optional[str] = "Europe/Paris",
+        tz: Optional[str] = DEFAULT_TZ,
     ) -> dict:
         """Schedules all prayer times for today for this device."""
         if not device or not device.id:
