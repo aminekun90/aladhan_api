@@ -74,7 +74,26 @@ Make sure you have a folder data with cities.db in it and some adhan.mp3 files m
 `-v /home/pi/data:/app/src/data`
 
 ```shell
-docker run -d   --name adhan-api   --network host   -v /etc/localtime:/etc/localtime:ro   -v /etc/timezone:/etc/timezone:ro   -v /home/pi/data:/app/src/data  aminekun90/adhan-api
+docker run -d \ 
+--name adhan-api \ 
+--network host \ 
+-v /etc/localtime:/etc/localtime:ro \ 
+-v /etc/timezone:/etc/timezone:ro \ 
+-v /home/pi/data:/app/src/data \ 
+aminekun90/adhan-api
+```
+
+To restart unless stopped add `\ --restart unless-stopped`
+
+```shell
+docker run -d \ 
+--name adhan-api \ 
+--network host \ 
+--restart unless-stopped \ 
+-v /etc/localtime:/etc/localtime:ro \ 
+-v /etc/timezone:/etc/timezone:ro \ 
+-v /home/pi/data:/app/src/data \ 
+aminekun90/adhan-api
 ```
 
 ## Api doc
