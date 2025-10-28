@@ -1,7 +1,7 @@
 import PrayersDataGrid from "@/components/prayersDataGrid";
 import { PrayerRow } from "@/models/prayer";
 import { Timing } from "@/models/Timing";
-import { Dialog, IconButton, Toolbar } from "@mui/material";
+import { capitalize, Dialog, IconButton, Toolbar } from "@mui/material";
 import { GridCloseIcon } from "@mui/x-data-grid";
 import { useEffect } from "react";
 
@@ -10,12 +10,12 @@ export function DialogPdfGrid({ openDialog, onClose, events, title }: Readonly<{
 
         return {
             id: index + 1,
-            date: Intl.DateTimeFormat('fr-FR', {
+            date: capitalize(Intl.DateTimeFormat('fr-FR', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
-            }).format(new Date(event.date).getTime()),
+            }).format(new Date(event.date).getTime())),
             hijri: event.hijri_date,
             imsak: event.times.Imsak,
             fajr: event.times.Fajr,
@@ -28,7 +28,7 @@ export function DialogPdfGrid({ openDialog, onClose, events, title }: Readonly<{
     const data = {
         rows,
         columns: [
-            { field: 'date', headerName: 'Gregorian Date', flex: 1, },
+            { field: 'date', headerName: 'Gregorian Date', flex: 1 },
             { field: 'hijri', headerName: 'Hijri Date', flex: 1 },
             { field: 'imsak', headerName: 'Imsak', flex: 1 },
             { field: 'fajr', headerName: 'Fajr', flex: 1 },
