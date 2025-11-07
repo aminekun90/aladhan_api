@@ -80,7 +80,7 @@ export function PrayerCard(props: {
               {Intl.DateTimeFormat("fr-FR", {
                 hour: "numeric",
                 minute: "numeric",
-                timeZone: props.timezone,
+                // timeZone: props.timezone,
               }).format(props.date)}
             </Typography>
           </CardContent>
