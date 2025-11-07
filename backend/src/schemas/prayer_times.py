@@ -9,3 +9,5 @@ class PrayerTimesResponse(BaseModel):
     method: str
     madhab: str
     times: Dict[str, Optional[str]]
+    tz: Optional[str]
+    device_current_time: Optional[str]

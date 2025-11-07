@@ -1,9 +1,9 @@
-from datetime import date, timedelta
+from datetime import date, datetime
 from typing import Optional, List, Dict
 from calendar import monthrange
 from src.calculations.calendar import Gregorian
 from src.calculations.adhan_calc import PrayerTimes
-
+from src.utils.date_utils import get_tz
 
 def get_prayer_times(
     base_date: date,
@@ -13,7 +13,7 @@ def get_prayer_times(
     madhab: str,
     tz: Optional[str]
 ) -> Dict:
-    pt = PrayerTimes(method=method, madhab=madhab, tz=tz if tz else "UTC")
+    pt = PrayerTimes(method=method, madhab=madhab, tz=tz or get_tz())
     times = pt.compute(base_date, lat, lon)
     hijri_date = Gregorian.fromdate(base_date).to_hijri()
     return {
@@ -24,6 +24,8 @@ def get_prayer_times(
         "method": method,
         "madhab": madhab,
         "times": {k: (v if v else None) for k, v in times.items()},
+        "tz": tz,
+        "device_current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
 

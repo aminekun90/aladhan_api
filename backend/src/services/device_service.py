@@ -1,5 +1,4 @@
 import socket
-import time
 
 from datetime import datetime, date, timedelta,timezone
 from typing import Optional
@@ -12,7 +11,7 @@ from src.services.adhan_service import get_prayer_times
 from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.services.soco_service import SoCoService
 from src.schemas.log_config import LogConfig
-
+from src.utils.date_utils import get_tz
 logger = LogConfig.get_logger()
 DEFAULT_TZ = "Europe/Paris"
 class DeviceService:
@@ -151,7 +150,7 @@ class DeviceService:
     def _schedule_refresh_job(self, device: Device, refresh_interval_minutes: Optional[int]):
         """Schedule next refresh (default: at 1 AM next day, plus DST if applicable)."""
         next_refresh = self._get_next_refresh_datetime(refresh_interval_minutes)
-        tz_name = self.get_tz()
+        tz_name = get_tz()
         
         # Normal daily refresh
         self.scheduler.add_job(
@@ -186,7 +185,7 @@ class DeviceService:
         or None if no DST transition occurs tonight.
         """
         try:
-            tz_name = tz_name or self.get_tz() or DEFAULT_TZ
+            tz_name = tz_name or get_tz() or DEFAULT_TZ
             tz = ZoneInfo(tz_name)
 
             now = datetime.now(tz)
@@ -222,15 +221,7 @@ class DeviceService:
             logger.warning(f"⚠️ DST check failed for tz={tz_name}: {e}")
             return None
 
-    def get_tz(self):
-        try:
-            import tzlocal
-            tz_string = tzlocal.get_localzone()
-            logger.info(tz_string.key)  # example Europe/Paris
-        except Exception:
-                logger.info(f"tzlocal not found, using {DEFAULT_TZ}")
-                tz_string = ZoneInfo(DEFAULT_TZ)
-        return tz_string.key
+    
     #-------------------------------
     # 📅 Schedule Prayer Times for all devices
     # ------------------------------
@@ -241,7 +232,7 @@ class DeviceService:
         logger.info("\n📅 Scheduling prayer times for all devices...")
 
         # If you need the IANA name (this part is system dependent)
-        tz_string = self.get_tz()
+        tz_string = get_tz()
         for device in self.list_devices():
             if not device.id:
                 continue
@@ -287,7 +278,7 @@ class DeviceService:
             lon=lon or 0,
             method=settings.selected_method,
             base_date=date.today(),
-            tz=self.get_tz(),
+            tz=get_tz(),
             madhab="Shafi",
         )
         if not prayer_times:
