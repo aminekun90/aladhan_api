@@ -1,16 +1,22 @@
 export class Prayer {
   private prayerName: string = "";
   private time: Date = new Date();
+  private timeZone: string = "";
   getTime() {
     return this.time;
+  }
+  getTimeZone() {
+    return this.timeZone;
   }
   getName() {
     return this.prayerName;
   }
-  static fromJson(jsonObj: { prayerName: string; time: string; }): Prayer {
+  static fromJson(jsonObj: { prayerName: string; time: string; timeZone: string; }): Prayer {
     const prayer = new Prayer();
     prayer.prayerName = jsonObj.prayerName;
     prayer.time = parseTime(jsonObj.time);
+    prayer.timeZone = jsonObj.timeZone;
+
     return prayer;
   }
 }

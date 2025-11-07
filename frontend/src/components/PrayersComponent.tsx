@@ -21,7 +21,7 @@ export function PrayersComponent({ updateDate, coord }: Readonly<{ updateDate: (
             {error && <Typography>Error fetching prayers</Typography>}
             {!!data && data.prayers.map((prayer, id) => (
                 <Grid size={{ xs: 6, md: 2 }} key={prayer.getName()}>
-                    <PrayerCard id={id?.toString()} title={prayer?.getName()} date={prayer?.getTime()} setSelectedCard={() => { }} isNext={data.prayers.find((inner) => inner.getTime().getTime() >= new Date().getTime()) === prayer} />
+                    <PrayerCard timezone={prayer.getTimeZone()} id={id?.toString()} title={prayer?.getName()} date={prayer?.getTime()} setSelectedCard={() => { }} isNext={data.prayers.find((inner) => inner.getTime().getTime() >= new Date().getTime()) === prayer} />
                 </Grid>
             ))}
         </Grid>

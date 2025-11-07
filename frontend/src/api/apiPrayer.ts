@@ -39,7 +39,7 @@ export async function getPrayers(coord: { lat?: number, lon?: number }): Promise
     const prayerOrder = ["Imsak", "Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
     const date = prayers.date;
     const hijri_date = prayers.hijri_date;
-    return { date, hijri_date, prayers: prayerOrder.map((key: string) => Prayer.fromJson({ prayerName: key, time: prayers.times[key] })) };
+    return { date, hijri_date, prayers: prayerOrder.map((key: string) => Prayer.fromJson({ prayerName: key, time: prayers.times[key], timeZone: prayers.tz })) };
 }
 
 
