@@ -145,7 +145,9 @@ class DeviceService:
                     id=job_id,
                     args=[device, prayer_name, settings],
                 )
-                logger.info(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id})")
+                logger.info(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id}) - job id: {job_id}")
+        # display all scheduled jobs
+        logger.info(f"📅 Scheduled prayers {self.scheduler.get_jobs()}")
 
     def _schedule_refresh_job(self, device: Device, refresh_interval_minutes: Optional[int]):
         """Schedule next refresh (default: at 1 AM next day, plus DST if applicable)."""

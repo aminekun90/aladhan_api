@@ -4,7 +4,7 @@ import axios, { AxiosRequestConfig } from "axios";
 
 export async function get<T>(url: string, axiosOption: AxiosRequestConfig): Promise<T> {
     try {
-        const { protocol, hostname, port } = window.location;
+        const { protocol, hostname, port } = globalThis.location;
 
         CONFIG.apiURL = `${protocol}//${hostname}${port ? ':' + port : ''}` + '/api/v1/';
         const response = await axios.get<T>(CONFIG.apiURL + url, axiosOption);
@@ -21,7 +21,7 @@ export async function get<T>(url: string, axiosOption: AxiosRequestConfig): Prom
 
 export async function post<T>(url: string, data: object, axiosOption: AxiosRequestConfig): Promise<T> {
     try {
-        const { protocol, hostname, port } = window.location;
+        const { protocol, hostname, port } = globalThis.location;
 
         CONFIG.apiURL = `${protocol}//${hostname}${port ? ':' + port : ''}` + '/api/v1/';
 
@@ -40,7 +40,7 @@ export async function post<T>(url: string, data: object, axiosOption: AxiosReque
 
 export async function put<T>(url: string, data: object, axiosOption: AxiosRequestConfig): Promise<T> {
     try {
-        const { protocol, hostname, port } = window.location;
+        const { protocol, hostname, port } = globalThis.location;
 
         CONFIG.apiURL = `${protocol}//${hostname}${port ? ':' + port : ''}` + '/api/v1/';
 

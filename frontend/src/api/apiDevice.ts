@@ -35,3 +35,11 @@ export async function createDeviceSettings(deviceId?: number): Promise<Settings 
     });
     return result;
 }
+
+export async function scheduleAllDevices(): Promise<void> {
+    await api.get<void>(CONFIG.scheduleAllDevices, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}

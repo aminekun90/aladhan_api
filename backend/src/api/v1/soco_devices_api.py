@@ -28,7 +28,7 @@ def list_devices_db():
     device_service.upsert_devices_bulk(soco_service.from_list(devices))
     return device_service.list_devices()
 
-@router.get("/device/{device_id}", description="Schedule prayers for a specific device id")
+@router.get("/device/schedule/{device_id}", description="Schedule prayers for a specific device id")
 def schedule_prayers(device_id: int)-> dict:
     device =device_service.get_device_by_id(device_id)
     if not device:

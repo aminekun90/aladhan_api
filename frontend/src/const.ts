@@ -13,5 +13,6 @@ export const CONFIG = {
   allTimings: "prayer-times/month",
   methods: "available-methods",
   getCitiesByName: "cities",
-  createDeviceSettings: "settings/create_settings_of_device"
+  createDeviceSettings: "settings/create_settings_of_device",
+  scheduleAllDevices: "devices/schedule",
 }

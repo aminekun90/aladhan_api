@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
 from datetime import date, datetime
 from typing import Optional, List
-
+from src.calculations.calendar import Gregorian
 from src.services.adhan_service import (
     get_prayer_times,
     get_month_prayer_times,
@@ -75,7 +75,7 @@ def available_methods():
 def to_hijri_date(
     day: Optional[str] = Query(date.today().isoformat(), description="Date in YYYY-MM-DD format. Defaults to today if not provided."),
 ):
-    from src.calculations.calendar import Gregorian
+    
     d = parse_date(day)
     hijri_date = Gregorian.fromdate(d).to_hijri()
     return {

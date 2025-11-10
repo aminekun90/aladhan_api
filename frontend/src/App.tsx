@@ -7,13 +7,14 @@ import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { alpha, Box, CircularProgress, createTheme, CssBaseline, IconButton, Stack, ThemeProvider, Typography } from "@mui/material";
+import SyncIcon from '@mui/icons-material/Sync';
+import { alpha, Box, CircularProgress, createTheme, CssBaseline, IconButton, Stack, ThemeProvider, Tooltip, Typography } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { Grid } from '@mui/system';
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import packageJson from '../package.json';
-import { createDeviceSettings, getDevices, getSoCoDevices } from "./api/apiDevice";
+import { createDeviceSettings, getDevices, getSoCoDevices, scheduleAllDevices } from "./api/apiDevice";
 import { Settings } from "./models/Settings";
 import { Device } from "./models/device";
 
@@ -45,7 +46,17 @@ function App() {
     queryFn: getSettings,
 
   });
+  const scheduleAllDevicesMutation = useMutation({
+    mutationFn: () => scheduleAllDevices(),
+    onSuccess: () => {
+      console.log("✅ All devices scheduled successfully");
+    }
+  })
+  const syncPrayers = () => {
+    console.log("Syncing prayers...");
+    scheduleAllDevicesMutation.mutate();
 
+  }
   // mutation create device settings with device ID
 
   const createSettingMutation = useMutation({
@@ -95,11 +106,20 @@ function App() {
           backgroundAttachment: 'fixed',
 
         }}>
-          {!!currentSetting && <Grid container justifyContent="flex-end" sx={{ display: 'flex', alignItems: 'center', justifyItems: 'center', height: 60 }}>
-            <IconButton onClick={() => { setIsSettingOpen(true) }} sx={{ color: 'white', height: 60, width: 60 }}>
-              <SettingsIcon />
-            </IconButton>
-          </Grid>}
+          <Grid container justifyContent="flex-end" sx={{ display: 'flex', alignItems: 'center', justifyItems: 'center', height: 60 }}>
+            {!deviceLoading && devices?.length && <Tooltip title="Sync prayers">
+              <IconButton onClick={() => { syncPrayers() }} sx={{ color: 'white', height: 60, width: 60 }}>
+                <SyncIcon />
+              </IconButton>
+            </Tooltip>}
+            {!!currentSetting &&
+              <Tooltip title="Settings">
+                <IconButton onClick={() => { setIsSettingOpen(true) }} sx={{ color: 'white', height: 60, width: 60 }}>
+                  <SettingsIcon />
+                </IconButton>
+              </Tooltip>
+            }
+          </Grid>
 
           <Grid sx={{ padding: 10, textAlign: 'center' }}>
             <DateClock variation="h2" />
