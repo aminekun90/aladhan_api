@@ -212,4 +212,6 @@ src/data/**/**.db
 src/data/**/**.mp3
 src/data/**/**.m4a
 src/data/**/**.wave
+src/data/**/**.txt
+src/data/**/**.zip
 .DS_Store

@@ -25,7 +25,7 @@ def _hijri_date(request):
 
 @pytest.mark.usefixtures("_hijri_date")
 class TestHijri:
-    hijri_date = None
+    hijri_date = Hijri(1410, 8, 13)
 
     def test_representation(self):
         assert self.hijri_date.__repr__() == "Hijri(1410, 8, 13)"
@@ -104,7 +104,10 @@ class TestHijri:
     def test_notation(self):
         assert self.hijri_date.notation() == "AH"
         assert self.hijri_date.notation("en") == "AH"
+        # Hijri notation is not affected by locale
         assert self.hijri_date.notation("en-US") == "AH"
+        
+        assert self.hijri_date.notation("en-UK") == "AH"
         assert self.hijri_date.notation("tr") == "Hicri"
 
     def test_to_julian(self):
@@ -165,7 +168,7 @@ def _gregorian_date(request):
 
 @pytest.mark.usefixtures("_gregorian_date")
 class TestGregorian:
-    gregorian_date = None
+    gregorian_date = Gregorian(1990, 3, 10)
 
     def test_fromdate(self):
         test_date = date(2014, 12, 28)
@@ -194,6 +197,7 @@ class TestGregorian:
     def test_notation(self):
         assert self.gregorian_date.notation() == "CE"
         assert self.gregorian_date.notation("en") == "CE"
+        # Gregorian notation is not affected by locale
         assert self.gregorian_date.notation("en-US") == "CE"
         assert self.gregorian_date.notation("tr") == "Miladi"
 

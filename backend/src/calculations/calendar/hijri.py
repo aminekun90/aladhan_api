@@ -139,7 +139,7 @@ class Hijri:
         index = self._month_index()
         return month_starts[index + 1] - month_starts[index]
 
-    def month_name(self, language: locales.Language = "en") -> str:
+    def month_name(self, language: locales.Language | str = "en") -> str:
         """Return month name.
 
         Args:
@@ -157,7 +157,7 @@ class Hijri:
         jdn = self.to_julian()
         return int(jdn % 7) + 1
 
-    def day_name(self, language: locales.Language = "en") -> str:
+    def day_name(self, language: locales.Language | str = "en") -> str:
         """Return day name.
 
         Args:
@@ -166,7 +166,7 @@ class Hijri:
         return locales.get_locale(language).day_name(self.isoweekday())
 
     @staticmethod
-    def notation(language: locales.Language = "en") -> str:
+    def notation(language: locales.Language | str = "en") -> str:
         """Return calendar era notation.
 
         Args:
@@ -255,7 +255,7 @@ class Gregorian(datetime.date):
         month = f"{self.month:02}" if padding else self.month
         return f"{day}{separator}{month}{separator}{self.year}"
 
-    def month_name(self, language: locales.Language = "en") -> str:
+    def month_name(self, language: locales.Language | str = "en") -> str:
         """Return month name.
 
         Args:
@@ -263,7 +263,7 @@ class Gregorian(datetime.date):
         """
         return locales.get_locale(language).gregorian_month_name(self.month)
 
-    def day_name(self, language: locales.Language = "en") -> str:
+    def day_name(self, language: locales.Language | str = "en") -> str:
         """Return day name.
 
         Args:
@@ -272,7 +272,7 @@ class Gregorian(datetime.date):
         return locales.get_locale(language).day_name(self.isoweekday())
 
     @staticmethod
-    def notation(language: locales.Language = "en") -> str:
+    def notation(language: locales.Language | str = "en") -> str:
         """Return calendar era notation.
 
         Args:
