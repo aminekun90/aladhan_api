@@ -43,7 +43,7 @@ adhan-api/
 
 ## Installation
 
-> Requires Python 3.12+
+> Requires Python 3.12+ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/)
 > Check .python-version file
 
 1. Clone the repository:
