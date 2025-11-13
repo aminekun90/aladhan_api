@@ -83,6 +83,11 @@ app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets"))
 
 @app.get("/{full_path:path}", name="serve_frontend_app", tags=["Frontend"])
 async def serve_react_app(full_path: str):
+    '''
+    Serve the React app
+    '''
+    # find usage for full_path
+    # Serve the React app
     index_file = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
