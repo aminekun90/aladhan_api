@@ -89,7 +89,11 @@ class DeviceService:
 
         # Trigger playback
         try:
-            self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
+            if device.type == "freebox_player":
+                self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=settings.volume)
+            elif device.type == "sonos_player":
+                self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
+            
         except Exception as e:
             logger.info(f"❌ Failed to play audio for {device.id}: {e}")
 
