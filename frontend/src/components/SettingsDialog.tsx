@@ -158,7 +158,7 @@ export function SettingsDialog({
                             </FormControl>
                         )}
 
-                        <DatePicker defaultValue={dayjs(settings.force_date)} label="Date" />
+                        <DatePicker defaultValue={dayjs(settings.force_date)} label="Date" onChange={(newValue) => { settings.force_date = newValue?.toDate(); }} />
 
                         <Stack spacing={2} direction="row" sx={{ alignItems: "center", mb: 1 }}>
                             <VolumeDown />

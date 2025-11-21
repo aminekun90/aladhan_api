@@ -3,23 +3,45 @@ from typing import List
 from src.schemas.soco_device import SoCoDevice
 
 from src.services.soco_service import SoCoService
+from src.services.freebox_service import FreeboxService
 from src.core.repository_factory import RepositoryContainer
 from src.services.device_service import DeviceService
 from src.domain.models import Device
 
+from typing import Any, Dict
+
+
 repos = RepositoryContainer()
 soco_service = SoCoService()
+freebox_service = FreeboxService()
 device_service = DeviceService(repos.device_repo, repos.setting_repo)
 
 
 
 router = APIRouter()
-@router.get("/soco/devices", response_model=List[SoCoDevice], description="List all Sonos devices on the local network upserting them into the database")
+@router.get("/soco/devices", response_model=List[Dict[str, Any]], description="List all Sonos devices on the local network upserting them into the database")
 def list_soco_devices():
     devices = soco_service.get_soco()
+    freebox_devices = []
+    try:
+        freebox_service.login()
+        freebox_devices = freebox_service.get_players()
+        
+    
+        device_service.upsert_devices_bulk(freebox_service.from_list(freebox_devices))
+    except Exception as e:
+        print(f"Error fetching Freebox devices: {e}")
+    
     device_service.upsert_devices_bulk(soco_service.from_list(devices))
-    if not devices:
+    
+    if not devices and not freebox_devices:
         return []
+    
+    if devices and freebox_devices:
+        return devices + freebox_devices
+    elif freebox_devices:
+        return freebox_devices
+    
     return devices
 
 @router.get("/devices", response_model=List[Device], description="List all devices from the database")

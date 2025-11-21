@@ -40,6 +40,7 @@ class DeviceTable(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     ip: Mapped[str] = mapped_column(String, nullable=False)
     raw_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    type: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Relationship back to settings
     settings = relationship("SettingsTable", back_populates="device", cascade=DELETE_STRATEGY)
@@ -50,6 +51,7 @@ class DeviceTable(Base):
             "name": self.name,
             "ip": self.ip,
             "raw_data": self.raw_data,
+            "type": self.type,
         }
         if include_settings:
             data["settings"] = [s.id for s in self.settings]

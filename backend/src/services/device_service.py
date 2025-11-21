@@ -1,6 +1,6 @@
 import socket
 
-from datetime import datetime, date, timedelta,timezone
+from datetime import datetime, date, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -10,6 +10,7 @@ from src.domain import DeviceRepository, SettingsRepository
 from src.services.adhan_service import get_prayer_times
 from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.services.soco_service import SoCoService
+from src.services.freebox_service import FreeboxService
 from src.schemas.log_config import LogConfig
 from src.utils.date_utils import get_tz
 logger = LogConfig.get_logger()
@@ -28,6 +29,7 @@ class DeviceService:
         self.scheduler.start()
         self.debug = debug
         self.soco_service = SoCoService()
+        self.freebox_service = FreeboxService()
         self.host_ip = self.get_local_ip()
         self.api_port = 8000
         logger.info(f"🌐 Host IP: {self.host_ip}:{self.api_port}")

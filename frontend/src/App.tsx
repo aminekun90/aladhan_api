@@ -29,7 +29,7 @@ function App() {
   const [currentHijirDate, setCurrentHijirDate] = useState<string>("");
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
-  const [currentDeviceIp, setCurrentDeviceIp] = useState<string | null | undefined>();
+  const [currentDeviceIp, setCurrentDeviceIp] = useState<string | number | null | undefined>();
   const [currentSetting, setCurrentSetting] = useState<Settings | null>(null);
   const [deviceClicked, setDeviceClicked] = useState<boolean>(true);
 

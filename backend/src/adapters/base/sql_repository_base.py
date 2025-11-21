@@ -8,7 +8,6 @@ class SQLRepositoryBase:
         
         self.engine = create_engine(connection_string, echo=False, future=True)
         self.session_maker = sessionmaker(bind=self.engine, future=True)
-        from src.adapters.models import CityTable, DeviceTable, SettingsTable
         Base.metadata.create_all(bind=self.engine)
         
         

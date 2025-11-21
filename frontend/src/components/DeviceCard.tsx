@@ -1,8 +1,10 @@
+import freebox from "@/assets/freebox-devialet.png";
 import symfonisk from "@/assets/symfonisk.jpg";
 import { Device } from "@/models/device";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
+
 import {
     Box,
     Card,
@@ -33,7 +35,15 @@ export default function DeviceCard({
         setClicked(!clicked);
         onClick?.();
     };
+    const isSonosPlayer = device.type === "sonos_player";
+    const isFreeboxPlayer = device.type === "freebox_player";
 
+    let deviceImage = symfonisk; // use generic image by default
+    if (isFreeboxPlayer || device.getRawAttributes().device_model === "fbx7hd-delta") {
+        deviceImage = freebox;
+    } else if (isSonosPlayer) {
+        deviceImage = symfonisk;
+    }
     return (
         <Card
             key={key}
@@ -94,8 +104,9 @@ export default function DeviceCard({
                         objectFit: "cover",
                         borderRadius: "1.5rem",
                         filter: available ? "none" : "grayscale(100%)",
+                        backgroundColor: "#fff",
                     }}
-                    image={symfonisk}
+                    image={deviceImage}
                     alt="Device image"
                 />
 
@@ -105,6 +116,7 @@ export default function DeviceCard({
                         flexDirection: "column",
                         justifyContent: "center",
                         width: "100%",
+
                         alignItems: "center",
                         textAlign: "center",
                     }}

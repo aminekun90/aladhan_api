@@ -11,7 +11,7 @@ from logging.config import dictConfig
 from src.api.v1 import (
     cities_router,
     prayer_times_router,
-    soco_devices_router,
+    devices_router,
     settings_router,
     audio_router,
     health_router
@@ -70,7 +70,7 @@ app.add_middleware(
 # === API routes ===
 PREFIX = "/api/v1"
 app.include_router(prayer_times_router, prefix=PREFIX, tags=["Prayer Times"])
-app.include_router(soco_devices_router, prefix=PREFIX, tags=["Sonos Devices"])
+app.include_router(devices_router, prefix=PREFIX, tags=["Sonos Devices"])
 app.include_router(cities_router, prefix=PREFIX, tags=["Cities"])
 app.include_router(settings_router, prefix=PREFIX, tags=["Settings"])
 app.include_router(audio_router, prefix=PREFIX, tags=["Audio"])

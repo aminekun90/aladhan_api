@@ -20,6 +20,7 @@ class Device:
     id: Optional[int] = None
     name: str = ""
     ip: str = ""
+    type: Optional[str] = None
     raw_data: Optional[dict] = None
 
     def get_dict(self) -> dict:

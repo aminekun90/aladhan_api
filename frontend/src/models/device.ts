@@ -2,14 +2,15 @@
 export class Device {
   private readonly id?: number;
   private readonly name: string;
-  private readonly ip?: string;
+  private readonly ip?: string | number;
+  type?: string;
   private currentlyPlayingTitle: {
     title?: string,
   };
   private readonly isPlaying: boolean;
   private volume: number;
   private rawAttributes: RawData;
-  constructor(id?: number, name: string = "", ip?: string) {
+  constructor(id?: number, name: string = "", ip?: string | number) {
     this.id = id;
     this.name = name;
     this.ip = ip;
@@ -33,12 +34,12 @@ export class Device {
     return this.name;
   }
 
-  getIp(): string | undefined {
+  getIp(): string | number | undefined {
     return this.ip;
   }
 
   getPlayingTitle(): { title: string } {
-    return { title: this.currentlyPlayingTitle.title ?? "" };
+    return { title: this.currentlyPlayingTitle?.title ?? "" };
   }
 
   setPlayingTitle(playingTitle: object): void {
@@ -52,9 +53,10 @@ export class Device {
     return this.rawAttributes;
   }
   static fromJson(json: RawData): Device {
-    const device = new Device(undefined, json.name, json.ip_address);
+    const device = new Device(undefined, json.name, json.ip_address || json.id);
     device.setPlayingTitle(json.track_info);
     device.setVolume(json.volume);
+
     device.rawAttributes = json;
     return device;
   }
@@ -63,19 +65,22 @@ export class Device {
     device.setPlayingTitle(response.raw_data.track_info);
     device.setVolume(response.raw_data.volume);
     device.rawAttributes = response.raw_data;
+    device.type = response.type
+
     return device;
   }
 }
 export interface ResponseDevice {
   id: number,
   name: string,
-  ip: string,
-  raw_data: RawData
+  ip: string | number,
+  raw_data: RawData,
+  type: string
 }
 
 
 export interface RawData {
-
+  "id"?: number,
   "name": string,
   "track_info": { title?: string },
   "current_transport_state": string,
@@ -114,6 +119,8 @@ export interface RawData {
   "buttons_enabled": boolean,
   "voice_service_configured": boolean,
   "mic_enabled": boolean,
+  "device_name"?: string,
+  "device_model"?: string,
 };
 /**
  * Backend JSON structure

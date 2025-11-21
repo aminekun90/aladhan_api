@@ -3,7 +3,7 @@ import { Device } from "./device";
 export type Settings = {
     id: number,
     selected_method: string,
-    force_date: Date | null,
+    force_date?: Date | null,
     city?: {
         readonly id: number,
         readonly name: string

@@ -16,13 +16,13 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
     # ------------------------------------------------------------------
     # CREATE
     # ------------------------------------------------------------------
-    def add_device(self, name: str, ip: str, raw_data: dict | str | None = None) -> None:
+    def add_device(self, name: str, ip: str, raw_data: dict | str | None = None,type: Optional[str] = None) -> None:
         """Add a new device to the database."""
         with self.session_maker() as session:
             raw_json = (
                 json.dumps(raw_data) if isinstance(raw_data, dict) else raw_data or "{}"
             )
-            device = DeviceTable(name=name, ip=ip, raw_data=raw_json)
+            device = DeviceTable(name=name, ip=ip, raw_data=raw_json,type=type)
             session.add(device)
             session.commit()
 
@@ -39,6 +39,7 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                     name=d.name,
                     ip=d.ip,
                     raw_data=json.loads(d.raw_data) if isinstance(d.raw_data, str) else d.raw_data,
+                    type=d.type
                 )
                 for d in devices
             ]
@@ -117,7 +118,11 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                 if existing_device:
                     existing_device.name = device.name
                     existing_device.raw_data = device.raw_data
+                    existing_device.type = device.type
+                    print(f"Update existing device: {device.name} ({device.ip}:{device.type})")
+                    
                 else:
+                    print(f"Adding new device: {device.name} ({device.ip}:{device.type})")
                     session.add(
                         DeviceTable(
                             name=device.name,
@@ -125,6 +130,7 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                             raw_data=json.dumps(device.raw_data)
                             if isinstance(device.raw_data, dict)
                             else device.raw_data,
+                            type=device.type
                         )
                     )
             session.commit()

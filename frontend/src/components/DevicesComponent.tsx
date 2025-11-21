@@ -12,7 +12,7 @@ export function DevicesComponent({ devices, onClick, soCoDevices }: Readonly<{ d
                     // Check if device is available in soCoDevices
                     const available = soCoDevices && soCoDevices.length > 0 ? soCoDevices.some(d => {
                         console.log(d, device)
-                        return d.getIp() === device.getIp()
+                        return d.getIp() == device.getIp()
                     }) : false;
                     console.log(`Device ${device.getName()} (${device.getIp()}) is ${available ? 'available' : 'not available'}`);
                     return <DeviceCard key={device.getId()} device={device} available={available} onClick={() => {

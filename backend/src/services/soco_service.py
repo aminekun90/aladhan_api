@@ -74,7 +74,7 @@ class SoCoService:
         if not devices:
             return []
         """Convert list of device dicts to list of Device domain models."""
-        return [Device(id=None,ip=d["ip_address"], name=d["name"], raw_data=d) for d in devices] if devices else []
+        return [Device(id=None,ip=d["ip_address"], name=d["name"], raw_data=d, type="sonos_player") for d in devices] if devices else []
 
     def play_audio(self, device: Device, url: str,volume: int) -> None:
         soco_device = SoCo(device.ip)
