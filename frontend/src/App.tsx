@@ -134,7 +134,7 @@ function App() {
             <Typography dir="rtl" variant="h4" sx={{ textAlign: 'center', margin: '1em 0', }}>{currentHijirDate}</Typography>
             {settingsLoading && <CircularProgress />}
             {!!currentSetting && <>
-              <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{currentSetting.city?.name + " | " + currentSetting.city?.country}</Typography>
+              <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{(currentSetting.city?.name ?? "Not set") + " | " + (currentSetting.city?.country ?? "Not set")}</Typography>
               <PrayersComponent coord={{ lat: currentSetting?.city?.lat ?? 47.23999925644779, lon: currentSetting?.city?.lon ?? -1.5304936560937061 }} updateDate={(date: string) => { setCurrentHijirDate(date) }} />
 
             </>}
