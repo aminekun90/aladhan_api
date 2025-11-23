@@ -50,6 +50,29 @@ def freebox_authenticate():
         return {"status": "success", "message": "Authenticated with Freebox successfully"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+# set volum to freebox device
+@router.post("/freebox/device/{device_id}/volume/{volume}", description="Set volume for a Freebox device")
+def set_freebox_device_volume(device_id: str, volume: int):
+    try:
+        success = freebox_service.set_volume(device_id, volume)
+        if success:
+            return {"status": "success", "message": f"Volume set to {volume} for device {device_id}"}
+        else:
+            return {"status": "error", "message": "Failed to set volume"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+#play media on freebox device
+@router.post("/freebox/device/{device_id}/play", description="Play media on a Freebox device")
+def play_media_on_freebox_device(device_id: str, media_url: str, volume: int = 15):
+    try:
+        success = freebox_service.play_media(device_id, media_url)
+        if success:
+            return {"status": "success", "message": f"Playing media on device {device_id}"}
+        else:
+            return {"status": "error", "message": "Failed to play media"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 @router.get("/devices", response_model=List[Device], description="List all devices from the database")
 def list_devices_db():
     devices = soco_service.get_soco()
