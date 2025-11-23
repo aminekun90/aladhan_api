@@ -128,7 +128,7 @@ class FreeboxService:
         return r.json().get('success', False)
     def play_media(self, player_id, media_url, content_type="audio/mp3",volume=15):
         self.set_volume(player_id, volume = volume if isinstance(volume,int) and volume >=0 and volume <=100 else 15)
-        url = f"{self.base_url}/api/v8/player/{player_id}/open"
+        url = f"{self.base_url}/api/v8/player/{player_id}/api/v6/control/open"
         payload = {
             "url": media_url,
             "content_type": content_type,
