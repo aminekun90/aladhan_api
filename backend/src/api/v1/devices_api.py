@@ -43,7 +43,13 @@ def list_soco_devices():
         return freebox_devices
     
     return devices
-
+@router.get("freebox/auth", description="Authenticate with Freebox to access its devices")
+def freebox_authenticate():
+    try:
+        freebox_service.login()
+        return {"status": "success", "message": "Authenticated with Freebox successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 @router.get("/devices", response_model=List[Device], description="List all devices from the database")
 def list_devices_db():
     devices = soco_service.get_soco()
