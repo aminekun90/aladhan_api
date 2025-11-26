@@ -135,7 +135,7 @@ class FreeboxService:
             r.raise_for_status()
         except Exception as e:
             print(f"Connection error: {e}")
-            raise
+            raise Exception("Failed to connect to Freebox for login.")
 
         challenge = r.json().get('result', {}).get('challenge')
         

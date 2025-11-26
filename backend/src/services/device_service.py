@@ -95,7 +95,7 @@ class DeviceService:
                 self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
             
         except Exception as e:
-            logger.info(f"❌ Failed to play audio for {device.id}: {e}")
+            logger.info(f"❌ Failed to play audio for device : name:{device.name} id: {device.id} \nwith error: {e}")
 
 
     # ------------------------------
@@ -266,9 +266,9 @@ class DeviceService:
             return {"status": "error", "message": "Missing device ID"}
         settings: Optional[Settings] = self.settings_repository.get_setting_by_device_id(device_id=device.id)
         if settings and not settings.enable_scheduler:
-            logger.info("🚫 Scheduler is disabled")
+            logger.info(f"🚫 Scheduler is disabledfor device {device.name}" )
             self.clear_device_jobs(device.id)
-            return {"status": "error", "message": "Scheduler is disabled"}
+            return {"status": "warning", "message": "Scheduler is disabled"}
         if not (settings and settings.city and settings.selected_method):
             logger.info(f"🚫 Missing settings for device {device.id} {device.ip} : {settings}")
             return {"status": "error", "message": "Missing settings for device"}
