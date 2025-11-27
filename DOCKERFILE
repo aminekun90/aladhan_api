@@ -13,7 +13,7 @@ RUN yarn build --outDir dist
 ##########################################################
 # === Stage 1: Backend build ===
 ##########################################################
-FROM python:3.13-slim-bookworm AS backend-build
+FROM python:3.14-slim-bookworm AS backend-build
 
 ARG TARGETARCH
 WORKDIR /app
@@ -45,7 +45,7 @@ COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
 ##########################################################
 # === Stage 2: Runtime ===
 ##########################################################
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 WORKDIR /app
 
