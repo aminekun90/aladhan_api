@@ -6,6 +6,7 @@ import time
 import os
 from src.domain.models import Device
 from typing import  Dict, Any
+from src.schemas.exceptions import AuthException
 
 class FreeboxService:
     def __init__(self, host="mafreebox.freebox.fr", app_id="pi.aladhan.remote", app_name="Aladhan Pi Remote", device_name="Raspberry Pi"):
@@ -86,7 +87,7 @@ class FreeboxService:
             r = self.session.post(f"{self.base_url}/api/v8/login/authorize/", json=payload)
             r.raise_for_status()
         except requests.exceptions.RequestException as e:
-             raise Exception(f"Failed to contact Freebox for registration: {e}")
+             raise AuthException(f"Failed to contact Freebox for registration: {e}")
 
         result = r.json().get('result')
         
@@ -99,7 +100,7 @@ class FreeboxService:
         start_time = time.time()
         while True:
             if time.time() - start_time > 60:
-                raise Exception("Authorization timed out. You didn't press the button in time.")
+                raise AuthException("Authorization timed out. You didn't press the button in time.")
 
             try:
                 r = self.session.get(f"{self.base_url}/api/v8/login/authorize/{self.track_id}")
@@ -110,9 +111,9 @@ class FreeboxService:
                     print("Authorization granted! Token saved.")
                     break
                 elif status == 'denied':
-                    raise Exception("Authorization denied by user.")
+                    raise AuthException("Authorization denied by user.")
                 elif status == 'timeout':
-                    raise Exception("Authorization timed out.")
+                    raise AuthException("Authorization timed out.")
             except requests.exceptions.RequestException:
                 pass # Retry on transient network errors
             
@@ -135,12 +136,12 @@ class FreeboxService:
             r.raise_for_status()
         except Exception as e:
             print(f"Connection error: {e}")
-            raise Exception("Failed to connect to Freebox for login.")
+            raise AuthException("Failed to connect to Freebox for login.")
 
         challenge = r.json().get('result', {}).get('challenge')
         
         if not self.app_token or not challenge:
-            raise Exception("Login failed: Missing token or challenge.")
+            raise AuthException("Login failed: Missing token or challenge.")
 
         # 3. Create Password (HMAC SHA1)
         # Note: The 'hacf-fr' repo and official docs confirm this order: hmac(key=app_token, msg=challenge)
@@ -172,7 +173,7 @@ class FreeboxService:
             self.session_token = result.get('result', {}).get('session_token')
             print("Freebox Login Successful.")
         else:
-            raise Exception(f"Login failed: {result.get('msg')}")
+            raise AuthException(f"Login failed: {result.get('msg')}")
 
     def _ensure_session(self):
         """Helper to ensure we are logged in before making requests."""
