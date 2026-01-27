@@ -3,7 +3,7 @@
 ##########################################################
 # === Stage 0: Frontend build ===
 ##########################################################
-FROM node:lts-krypton AS frontend-build
+FROM node:lts-jod AS frontend-build
 
 # Enable Corepack & lock Yarn version
 RUN corepack enable \
