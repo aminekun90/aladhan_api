@@ -11,7 +11,7 @@ def health():
     return Response(content="OK", status_code=200)
 @router.get("/today")
 def today():
-    return Response(content=date.today().isoformat(), status_code=200)
+    return Response(content=date.today().strftime("%Y-%m-%d %H:%M:%S"), status_code=200)
 @router.get("/version")
 def version():
     return Response(content="0.1.0", status_code=200)

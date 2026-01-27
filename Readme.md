@@ -83,6 +83,26 @@ To restart unless stopped add `\ --restart unless-stopped`
 docker run -d --name adhan-api --network host --restart unless-stopped -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -v /home/pi/data:/app/src/data aminekun90/adhan-api
 ```
 
+Update the container
+
+- Remove the container
+
+```sh
+docker rm -f adhan-api
+```
+
+- Pull the image again
+
+```sh
+docker pull aminekun90/adhan-api
+```
+
+- run the container
+
+```sh
+docker run -d --name adhan-api --network host --restart unless-stopped -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -v /home/pi/data:/app/src/data aminekun90/adhan-api
+```
+
 ## Api doc
 
 Check swagger at localhost:8000/docs#/
