@@ -1,9 +1,10 @@
-from src.domain import SettingsRepository
 from typing import List, Optional
-from src.domain.models import Settings
+
 from src.core.repository_factory import RepositoryContainer
-from src.services.device_service import DeviceService
+from src.domain import SettingsRepository
+from src.domain.models import Settings
 from src.schemas.log_config import LogConfig
+from src.services.device_service import DeviceService
 
 logger = LogConfig.get_logger()
 repository = RepositoryContainer()

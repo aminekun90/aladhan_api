@@ -1,7 +1,8 @@
 import os
-from src.domain.models import Audio
-from src.domain import AudioRepository
 from typing import Optional
+
+from src.domain import AudioRepository
+from src.domain.models import Audio
 from src.schemas.log_config import LogConfig
 
 logger = LogConfig.get_logger()

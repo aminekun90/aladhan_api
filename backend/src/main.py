@@ -1,25 +1,24 @@
 import os
-
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 from logging.config import dictConfig
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
 from src.api.v1 import (
-    cities_router,
-    prayer_times_router,
-    devices_router,
-    settings_router,
     audio_router,
-    health_router
+    cities_router,
+    devices_router,
+    health_router,
+    prayer_times_router,
+    settings_router,
 )
 from src.core.repository_factory import RepositoryContainer
+from src.schemas.log_config import LogConfig
 from src.services.device_service import DeviceService
 from src.services.env_service import EnvService
-from src.schemas.log_config import LogConfig
 
 # === Repositories & Services ===
 repos = RepositoryContainer()

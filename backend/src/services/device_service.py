@@ -1,18 +1,19 @@
 import socket
-
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from src.domain.models import Device, Settings
-from src.domain import DeviceRepository, SettingsRepository
-from src.services.adhan_service import get_prayer_times
 from src.calculations.adhan_calc import SCHEDULABLE_KEYS
-from src.services.soco_service import SoCoService
-from src.services.freebox_service import FreeboxService
+from src.domain import DeviceRepository, SettingsRepository
+from src.domain.models import Device, Settings
 from src.schemas.log_config import LogConfig
+from src.services.adhan_service import get_prayer_times
+from src.services.freebox_service import FreeboxService
+from src.services.soco_service import SoCoService
 from src.utils.date_utils import get_tz
+
 logger = LogConfig.get_logger()
 DEFAULT_TZ = "Europe/Paris"
 class DeviceService:

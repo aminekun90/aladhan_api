@@ -1,8 +1,7 @@
-# src/services/cities_service.py
-import sqlite3
-from typing import List, Dict, Optional
-from src.domain.models import City
+from typing import List, Optional
+
 from src.domain.city_repository import CityRepository
+from src.domain.models import City
 
 DB_PATH = "src/data/cities.db"
 

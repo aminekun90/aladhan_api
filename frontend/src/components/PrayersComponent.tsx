@@ -19,7 +19,7 @@ export function PrayersComponent({ updateDate, coord }: Readonly<{ updateDate: (
         <Grid container spacing={3} sx={{ flexGrow: 1, justifyContent: 'center' }}>
             {isLoading && <Typography>Loading...</Typography>}
             {error && <Typography>Error fetching prayers</Typography>}
-            {data?.prayers.count((prayer) => prayer.getTime().getTime() >=  Date.now()) === 0 && <Typography>Prayers not found</Typography>}
+            
             {!!data && data.prayers.map((prayer, id) => (
                 <Grid size={{ xs: 6, md: 2 }} key={prayer.getName()}>
                     <PrayerCard timezone={prayer.getTimeZone()} id={id?.toString()} title={prayer?.getName()} date={prayer?.getTime()} setSelectedCard={() => { }} isNext={data.prayers.find((inner) => inner.getTime().getTime() >= new Date().getTime()) === prayer} />

@@ -1,7 +1,6 @@
 from typing import get_args
 
 import pytest
-
 from src.calculations.calendar import locales
 
 

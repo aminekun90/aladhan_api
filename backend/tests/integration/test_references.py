@@ -1,9 +1,7 @@
 import json
-
 from pathlib import Path
 
 import pytest
-
 from src.calculations.calendar import Gregorian, Hijri
 
 

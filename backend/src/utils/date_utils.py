@@ -1,4 +1,5 @@
 from zoneinfo import ZoneInfo
+
 from src.schemas.log_config import LogConfig
 
 DEFAULT_TZ = "Europe/Paris"

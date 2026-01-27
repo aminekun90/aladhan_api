@@ -1,12 +1,15 @@
-import requests
-import hmac
 import hashlib
+import hmac
 import json
-import time
 import os
+import time
+from typing import Any, Dict
+
+import requests
+
 from src.domain.models import Device
-from typing import  Dict, Any
 from src.schemas.exceptions import AuthException
+
 
 class FreeboxService:
     def __init__(self, host="mafreebox.freebox.fr", app_id="pi.aladhan.remote", app_name="Aladhan Pi Remote", device_name="Raspberry Pi"):

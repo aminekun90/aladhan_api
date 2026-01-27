@@ -1,8 +1,8 @@
 from bisect import bisect_left
 
 import pytest
-
-from src.calculations.calendar import Hijri, helpers, um_qura as ummalqura
+from src.calculations.calendar import Hijri, helpers
+from src.calculations.calendar import um_qura as ummalqura
 from src.calculations.calendar.um_qura import HIJRI_RANGE
 
 hijri_min_y, hijri_max_y = HIJRI_RANGE[0][0], HIJRI_RANGE[1][0]

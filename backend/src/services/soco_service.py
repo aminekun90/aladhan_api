@@ -1,10 +1,12 @@
+from typing import Any, Dict, List
+
 import soco
-from soco import SoCo, discover
-from typing import List, Dict, Any
 from fastapi.encoders import jsonable_encoder
+from soco import SoCo, discover
 
 from src.domain.models import Device
 from src.schemas.log_config import LogConfig
+
 logger = LogConfig.get_logger()
 
 class SoCoService:

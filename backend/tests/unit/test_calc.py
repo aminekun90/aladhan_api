@@ -1,5 +1,7 @@
 from datetime import date
+
 from src.calculations.adhan_calc import PrayerTimes
+
 
 def test_basic_calc():
     d = date(2025, 10, 2)

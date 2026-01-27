@@ -1,9 +1,11 @@
-from datetime import date, datetime
-from typing import Optional, List, Dict
 from calendar import monthrange
-from src.calculations.calendar import Gregorian
+from datetime import date, datetime
+from typing import Dict, List, Optional
+
 from src.calculations.adhan_calc import PrayerTimes
+from src.calculations.calendar import Gregorian
 from src.utils.date_utils import get_tz
+
 
 def get_prayer_times(
     base_date: date,

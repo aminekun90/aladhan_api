@@ -1,7 +1,6 @@
 from datetime import date
 
 import pytest
-
 from src.calculations.calendar import Gregorian, Hijri
 from src.calculations.calendar.um_qura import GREGORIAN_RANGE, HIJRI_RANGE
 
