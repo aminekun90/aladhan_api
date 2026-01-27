@@ -3,12 +3,25 @@
 ##########################################################
 # === Stage 0: Frontend build ===
 ##########################################################
-FROM node:lts-jod AS frontend-build
+FROM node:lts-krypton AS frontend-build
+
+# Enable Corepack & lock Yarn version
+RUN corepack enable \
+ && corepack prepare yarn@4.12.0 --activate
+
 WORKDIR /app/frontend
-COPY frontend/package.json frontend/yarn.lock ./
-RUN yarn config set network-timeout 600000 -g && yarn install --frozen-lockfile
+
+# Copy dependency descriptors first (better cache)
+COPY frontend/package.json frontend/yarn.lock frontend/.yarnrc.yml ./
+COPY frontend/.yarn ./.yarn
+
+# Install deps (Yarn v4 way)
+RUN yarn install --immutable
+
+# Copy sources & build
 COPY frontend/ ./
 RUN yarn build --outDir dist
+
 
 ##########################################################
 # === Stage 1: Backend build ===
@@ -32,15 +45,14 @@ RUN curl -LsSf https://github.com/astral-sh/uv/releases/download/0.8.19/uv-insta
 # --- COPY SOURCE FILES ---
 COPY backend/src ./src
 
-# ### <--- NEW: COPY ALEMBIC FILES ###
-# Without these, the container cannot run migrations!
+# --- Alembic & entrypoint ---
 COPY backend/alembic ./alembic
 COPY backend/alembic.ini .
-COPY backend/entrypoint.sh . 
-# ####################################
+COPY backend/entrypoint.sh .
 
 # Copy frontend build from frontend stage
 COPY --from=frontend-build /app/frontend/dist ./src/frontend/dist
+
 
 ##########################################################
 # === Stage 2: Runtime ===
@@ -55,9 +67,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=backend-build /app/.venv /app/.venv
 COPY --from=backend-build /root/.local /root/.local
-
 COPY --from=backend-build /app/ .
-
 
 RUN chmod +x entrypoint.sh
 
@@ -66,7 +76,6 @@ ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Expose port
 EXPOSE 8000
 
 CMD ["./entrypoint.sh"]
