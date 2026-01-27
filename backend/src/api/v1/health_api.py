@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from fastapi import APIRouter, Response
 from src.core.repository_factory import RepositoryContainer
 
@@ -8,6 +9,9 @@ repos = RepositoryContainer()
 @router.get("/health")
 def health():
     return Response(content="OK", status_code=200)
+@router.get("/today")
+def today():
+    return Response(content=date.today().isoformat(), status_code=200)
 @router.get("/version")
 def version():
     return Response(content="0.1.0", status_code=200)

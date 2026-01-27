@@ -1,10 +1,10 @@
 import freebox from "@/assets/freebox-devialet.png";
 import symfonisk from "@/assets/symfonisk.jpg";
 import { Device } from "@/models/device";
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
-
 import {
     Box,
     Card,
@@ -97,6 +97,10 @@ export default function DeviceCard({
             }}
         >
             <CardActionArea>
+                {device.type === "freebox_player" && <Box sx={{ mb: 2 }} >
+                    <IconButton><LockOpenIcon /></IconButton>
+                </Box>}
+
                 <CardMedia
                     component="img"
                     sx={{
@@ -157,6 +161,7 @@ export default function DeviceCard({
                             )}
                         </IconButton>
                     </Box>
+
                 </Box>
             </CardActionArea>
         </Card >

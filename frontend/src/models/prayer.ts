@@ -23,8 +23,8 @@ export class Prayer {
 
 function parseTime(timeString: string): Date {
   const timeParts = timeString.split(' ')[0].split(':');
-  const hours = parseInt(timeParts[0], 10);
-  const minutes = parseInt(timeParts[1], 10);
+  const hours = Number.parseInt(timeParts[0], 10);
+  const minutes = Number.parseInt(timeParts[1], 10);
 
   const currentDate = new Date();
   currentDate.setHours(hours, minutes, 0, 0);

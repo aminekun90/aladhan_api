@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 from datetime import date, datetime
+from src.schemas.log_config import LogConfig
 from typing import Optional, List
 from src.calculations.calendar import Gregorian
 from src.services.adhan_service import (
@@ -13,7 +14,7 @@ from src.core.repository_factory import RepositoryContainer
 
 from src.schemas.prayer_times import PrayerTimesResponse
 from src.utils.date_utils import get_tz
-
+logger = LogConfig.get_logger()
 METHOD="France"
 MADHAB="Shafi"
 repository = RepositoryContainer()
@@ -40,6 +41,7 @@ def prayer_times(
     tz: Optional[str] = Query(TZ)
 ):
     d = parse_date(day)
+    logger.info(f"prayer_times: {d} {lat} {lon} {method} {madhab} {tz}")
     return get_prayer_times(d, lat, lon, method, madhab,tz if tz else get_tz())
 
 

@@ -29,7 +29,7 @@ export async function getMethods(): Promise<{ method: string, description: strin
     return [];
 }
 
-export async function getPrayers(coord: { lat?: number, lon?: number }): Promise<{ prayers: Prayer[], date: string, hijri_date: string }> {
+export async function getPrayers(coord: { lat?: number, lon?: number }): Promise<{ prayers: Array<Prayer>, date: string, hijri_date: string }> {
     const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=${coord.lat ?? 47.23999925644779}&lon=${coord.lon ?? -1.5304936560937061}`, {
         headers: {
             'Content-Type': 'application/json'
