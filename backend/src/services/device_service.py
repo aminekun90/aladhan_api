@@ -326,13 +326,16 @@ class DeviceService:
         if not device:
             return {"status": "error", "message": "Device not found"}
         # get audio by id
-        audio = settings.audio
-        if not audio:
+        if isinstance(settings.audio, dict):
+            audio_name = settings.audio.get("name")
+        else:
+            audio_name = getattr(settings.audio, "name", None)
+        if not audio_name:
             return {"status": "error", "message": "Audio not found"}
         
         # Build the playable URL
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
-        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio.name}" 
+        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}" 
        
         self.soco_service.play_audio(device, url=url,volume=settings.volume)
 
