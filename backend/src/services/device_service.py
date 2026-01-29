@@ -313,3 +313,27 @@ class DeviceService:
             "prayers": ordered_timings,
             "tz"     : tz
         }
+        
+    def play_audio_in_device(self,  device_id: int):
+        if  not device_id:
+            return {"status": "error", "message": "Missing device ID"}
+        # get setting by device id
+        settings = self.settings_repository.get_setting_by_device_id(device_id=device_id)
+        if not settings:
+            return {"status": "error", "message": "Missing settings for device"}
+        # get device by id
+        device = self.get_device_by_id(device_id=device_id)
+        if not device:
+            return {"status": "error", "message": "Device not found"}
+        # get audio by id
+        audio = settings.audio
+        if not audio:
+            return {"status": "error", "message": "Audio not found"}
+        
+        # Build the playable URL
+        port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
+        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio.name}" 
+       
+        self.soco_service.play_audio(device, url=url,volume=settings.volume)
+
+        return {"status": "success", "message": f"Audio played successfully for device {device_id}"}

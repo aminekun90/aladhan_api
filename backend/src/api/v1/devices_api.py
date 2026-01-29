@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+
+from src.core.repository_factory import RepositoryContainer
+from src.domain.models import Device
 
 # Import your services and models
 from src.schemas.soco_device import SoCoDevice
-from src.services.soco_service import SoCoService
-from src.services.freebox_service import FreeboxService
-from src.core.repository_factory import RepositoryContainer
 from src.services.device_service import DeviceService
-from src.domain.models import Device
+from src.services.freebox_service import FreeboxService
+from src.services.soco_service import SoCoService
 
 # Initialize Services
 repos = RepositoryContainer()
@@ -124,3 +126,10 @@ def schedule_prayers(device_id: int) -> dict:
 @router.get("/devices/schedule", description="Schedule prayers for all devices")
 def schedule_prayers_all() -> list[dict]:
     return device_service.schedule_prayers_for_all_devices()
+
+@router.post("/device/play/{device_id}", description="Play the audio for a specific device id")
+def play_prayer(device_id: int) -> dict:
+    device = device_service.get_device_by_id(device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return device_service.play_audio_in_device(device_id= device_id)
