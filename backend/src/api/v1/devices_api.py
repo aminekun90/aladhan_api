@@ -1,12 +1,11 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from src.core.repository_factory import RepositoryContainer
 from src.domain.models import Device
 
 # Import your services and models
-from src.schemas.soco_device import SoCoDevice
 from src.services.device_service import DeviceService
 from src.services.freebox_service import FreeboxService
 from src.services.soco_service import SoCoService

@@ -6,6 +6,7 @@ import { DateClock } from "@/components/Clock";
 import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
+import { useToast } from '@aminekun90/react-toast';
 import InfoIcon from '@mui/icons-material/Info';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -25,6 +26,8 @@ const darkTheme = createTheme({
   },
 });
 function App() {
+  const { show } = useToast();
+
 
   const [currentHijirDate, setCurrentHijirDate] = useState<string>("");
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
@@ -52,30 +55,59 @@ function App() {
     mutationFn: () => scheduleAllDevices(),
     onSuccess: () => {
       console.log("✅ All devices scheduled successfully");
+      show({
+        type: 'success',
+        title: 'Devices Scheduled',
+        message: 'All devices have been scheduled !',
+        position: 'top-right',
+        duration: 3000,
+        progressBar: true
+      });
     }
   })
   const syncPrayers = () => {
     console.log("Syncing prayers...");
+    show({
+      type: 'success',
+      title: 'Syncing Prayers',
+      message: 'Prayers have been synced !',
+      position: 'top-right',
+      duration: 3000,
+      progressBar: true
+    });
     scheduleAllDevicesMutation.mutate();
 
   }
-  // mutation create device settings with device ID
+
 
   const createSettingMutation = useMutation({
     mutationFn: (device: Device) => createDeviceSettings(device.getId()),
     onSuccess: (data: Settings | null) => {
       console.log("✅ Settings saved successfully:", data);
+      show({
+        type: 'success',
+        title: 'Settings Saved',
+        message: 'Settings have been saved !',
+        position: 'top-right',
+        duration: 3000,
+        progressBar: true
+      });
       setCurrentSetting(data);
     }
   })
   useEffect(() => {
-    if (settings && settings.length > 0 && !settingsLoading) {
-      setCurrentSetting(settings.find(s => s.device?.getIp() === currentDeviceIp) || null);
-    }
-  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError, deviceClicked],);
+    const updateSetting = () => {
+      if (settings && settings.length > 0 && !settingsLoading) {
+        setCurrentSetting(settings.find(s => s.device?.getIp() === currentDeviceIp) || null);
+      }
+    };
+
+    updateSetting();
+  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError, deviceClicked]);
 
   return (
     <ThemeProvider theme={darkTheme}>
+       
       <CssBaseline />
       <Stack
         direction="column"

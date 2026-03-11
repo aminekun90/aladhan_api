@@ -6,6 +6,7 @@ import {
 } from "@/api/apiPrayer";
 import { City } from "@/models/City";
 import { AudioFile, Settings } from "@/models/Settings";
+import { useToast } from "@aminekun90/react-toast";
 import {
     CloseOutlined,
     VolumeDown,
@@ -62,14 +63,24 @@ export function SettingsDialog({
     const [enableScheduler, setEnableScheduler] = useState(settings.enable_scheduler);
     const [cityName, setCityName] = useState(settings.city?.name ?? "");
     const [selectedCity, setSelectedCity] = useState<City | null>(settings.city ?? null);
-
+const { show } = useToast();
     useEffect(() => {
         if (settings?.audio) setAudioFile(settings.audio);
     }, [settings]);
 
     const mutateSettings = useMutation({
         mutationFn: (s: Settings) => saveSetting(s),
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+            show({
+                type: 'success',
+                title: 'Settings Saved',
+                message: 'Settings have been saved !',
+                position: 'top-right',
+                duration: 3000,
+                progressBar: true
+            })
+            onClose();
+        },
     });
 
     const handleMethodChange = (event: { target: { value: string } }) => setMethod(event.target.value);
