@@ -6,7 +6,7 @@ import { DateClock } from "@/components/Clock";
 import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
-import { useToast } from '@aminekun90/react-toast';
+import { ToastContainer, useToast } from '@aminekun90/react-toast';
 import InfoIcon from '@mui/icons-material/Info';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -107,7 +107,7 @@ function App() {
 
   return (
     <ThemeProvider theme={darkTheme}>
-       
+       <ToastContainer />
       <CssBaseline />
       <Stack
         direction="column"
