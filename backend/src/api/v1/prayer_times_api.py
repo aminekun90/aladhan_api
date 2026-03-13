@@ -20,6 +20,7 @@ MADHAB = "Shafi"
 TZ = get_tz()
 router = APIRouter()
 
+
 def parse_date(s: Optional[str]) -> date:
     """Parse une date ou retourne aujourd'hui si None."""
     if not s:
@@ -29,17 +30,23 @@ def parse_date(s: Optional[str]) -> date:
     except Exception:
         raise HTTPException(400, "Invalid date format. Use YYYY-MM-DD")
 
+
 @router.get("/prayer-times", response_model=PrayerTimesResponse)
 def prayer_times(
     lat: Annotated[float, Query(...)],
     lon: Annotated[float, Query(...)],
-    day: Annotated[Optional[str], Query(None, description="Date in YYYY-MM-DD format. Defaults to today.")] = None,
-    method: Annotated[str, Query(METHOD)] = METHOD,
-    madhab: Annotated[str, Query(MADHAB)] = MADHAB,
-    tz: Annotated[Optional[str], Query(TZ)] = None,
+    day: Annotated[
+        Optional[str],
+        Query(description="Date in YYYY-MM-DD format. Defaults to today."),
+    ] = None,
+    method: Annotated[str, Query()] = METHOD,
+    madhab: Annotated[str, Query()] = MADHAB,
+    tz: Annotated[Optional[str], Query()] = None,
 ):
+    # Utilisation de la constante TZ par défaut si tz est None
+    effective_tz = tz if tz else TZ
     d = parse_date(day)
-    return get_prayer_times(d, lat, lon, method, madhab, tz if tz else get_tz())
+    return get_prayer_times(d, lat, lon, method, madhab, effective_tz)
 
 
 @router.get("/prayer-times/month", response_model=List[PrayerTimesResponse])
@@ -48,16 +55,16 @@ def prayer_times_month(
     lon: Annotated[float, Query(...)],
     year: Annotated[Optional[int], Query(ge=1900, le=2100)] = None,
     month: Annotated[Optional[int], Query(ge=1, le=12)] = None,
-    method: Annotated[str, Query(METHOD)] = METHOD,
-    madhab: Annotated[str, Query(MADHAB)] = MADHAB,
-    tz: Annotated[Optional[str], Query(TZ)] = None
+    method: Annotated[str, Query()] = METHOD,
+    madhab: Annotated[str, Query()] = MADHAB,
+    tz: Annotated[Optional[str], Query()] = None,
 ):
-    # Calcul dynamique si les valeurs sont absentes
     now = date.today()
     y = year if year is not None else now.year
     m = month if month is not None else now.month
-    
-    return get_month_prayer_times(y, m, lat, lon, method, madhab, tz if tz else get_tz())
+    effective_tz = tz if tz else TZ
+
+    return get_month_prayer_times(y, m, lat, lon, method, madhab, effective_tz)
 
 
 @router.get("/prayer-times/year", response_model=List[PrayerTimesResponse])
@@ -65,14 +72,14 @@ def prayer_times_year(
     lat: Annotated[float, Query(...)],
     lon: Annotated[float, Query(...)],
     year: Annotated[Optional[int], Query(ge=1900, le=2100)] = None,
-    method: Annotated[str, Query(METHOD)] = METHOD,
-    madhab: Annotated[str, Query(MADHAB)] = MADHAB,
-    tz: Annotated[Optional[str], Query(TZ)] = None
+    method: Annotated[str, Query()] = METHOD,
+    madhab: Annotated[str, Query()] = MADHAB,
+    tz: Annotated[Optional[str], Query()] = None,
 ):
-    # Calcul dynamique si l'année est absente
     y = year if year is not None else date.today().year
-    
-    return get_year_prayer_times(y, lat, lon, method, madhab, tz if tz else get_tz())
+    effective_tz = tz if tz else TZ
+
+    return get_year_prayer_times(y, lat, lon, method, madhab, effective_tz)
 
 
 @router.get("/available-methods", response_model=List[dict])
@@ -82,11 +89,14 @@ def available_methods():
 
 @router.get("/to_hijri_date")
 def to_hijri_date(
-    day: Annotated[Optional[str], Query(None, description="Date in YYYY-MM-DD format. Defaults to today.")] = None,
+    day: Annotated[
+        Optional[str],
+        Query(description="Date in YYYY-MM-DD format. Defaults to today."),
+    ] = None,
 ):
     d = parse_date(day)
     hijri_date = Gregorian.fromdate(d).to_hijri()
     return {
         "date": d.isoformat(),
-        "hijri_date": f"{hijri_date.day_name(language='ar')} {hijri_date.day} {hijri_date.month_name(language='ar')} {hijri_date.year}"
+        "hijri_date": f"{hijri_date.day_name(language='ar')} {hijri_date.day} {hijri_date.month_name(language='ar')} {hijri_date.year}",
     }
