@@ -260,6 +260,16 @@ class PrayerTimes:
         Returns a dict keyed by ORDERED_KEYS with formatted local-time strings
         (or None when an event does not occur, e.g. polar conditions).
         """
+        return {k: self._format(v) for k, v in self.compute_datetimes(base_date, latitude, longitude).items()}
+
+    def compute_datetimes(self, base_date: date, latitude: float,
+                          longitude: float) -> dict[str, Optional[datetime]]:
+        """Compute prayer times as timezone-aware datetimes keyed by ORDERED_KEYS.
+
+        Prefer this over the string-returning ``compute`` for scheduling: it
+        avoids re-parsing formatted strings and the DST/day-boundary bugs that
+        come with naive ``datetime`` reconstruction.
+        """
         lat_rad = math.radians(latitude)
         jd0 = self.julian_day(base_date.year, base_date.month, base_date.day)
         _, eqt_min = self.sun_position(jd0)
@@ -297,7 +307,7 @@ class PrayerTimes:
         times_utc.update(self._night_marks(lat_rad, jd0, longitude, fajr_utc, sunset_utc))
 
         return {
-            k: self._format(self._to_local_datetime(base_date, times_utc.get(k)))
+            k: self._to_local_datetime(base_date, times_utc.get(k))
             for k in ORDERED_KEYS
         }
 

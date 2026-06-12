@@ -9,7 +9,7 @@ from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.domain import DeviceRepository, SettingsRepository
 from src.domain.models import Device, Settings
 from src.schemas.log_config import LogConfig
-from src.services.adhan_service import get_prayer_times
+from src.services.adhan_service import get_prayer_datetimes
 from src.services.freebox_service import FreeboxService
 from src.services.soco_service import SoCoService
 from src.utils.date_utils import get_tz
@@ -19,8 +19,11 @@ DEFAULT_TZ = "Europe/Paris"
 class DeviceService:
     _instance = None
     def __new__(cls,device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = False):
-        cls._instance = super().__new__(cls)
-        cls._instance._init_props(device_repository, settings_repository,debug)
+        # True singleton: initialise once so a single BackgroundScheduler is
+        # shared. Re-instantiating must not spawn a second scheduler.
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._init_props(device_repository, settings_repository, debug)
         return cls._instance
     def _init_props(self, device_repository: DeviceRepository, settings_repository: SettingsRepository, debug: bool = False):
         """ Initialize class properties."""
@@ -122,11 +125,6 @@ class DeviceService:
         tomorrow = datetime.now() + timedelta(days=1)
         return datetime.combine(tomorrow.date(), datetime.min.time()) + timedelta(hours=1)
 
-    def _parse_prayer_datetime(self, time_str: str) -> datetime:
-        """Convert '07:09:48 (CEST)' → datetime object for today."""
-        clean_time = time_str.split()[0]  # remove "(CEST)"
-        return datetime.combine(date.today(), datetime.strptime(clean_time, "%H:%M:%S").time())
-
     # ------------------------------
     # 🧹 Job Management
     # ------------------------------
@@ -138,11 +136,12 @@ class DeviceService:
                 if self.debug:
                     logger.info(f"🗑️ Removed job {job.id}")
 
-    def _schedule_prayer_jobs(self, device: Device, ordered_timings: dict, force_refresh: bool,settings: Settings):
-        """Add prayer jobs to the scheduler for this device."""
-        now = datetime.now()
-        for prayer_name, prayer_time in ordered_timings.items():
-            prayer_datetime = self._parse_prayer_datetime(prayer_time)
+    def _schedule_prayer_jobs(self, device: Device, ordered_timings: dict, force_refresh: bool, settings: Settings):
+        """Add prayer jobs to the scheduler from timezone-aware datetimes."""
+        now = datetime.now(ZoneInfo(get_tz() or DEFAULT_TZ))
+        for prayer_name, prayer_datetime in ordered_timings.items():
+            if prayer_datetime is None:
+                continue
             if prayer_datetime > now or force_refresh:
                 job_id = f"device_{device.id}_{prayer_name}"
                 self.scheduler.add_job(
@@ -151,10 +150,10 @@ class DeviceService:
                     run_date=prayer_datetime,
                     id=job_id,
                     args=[device, prayer_name, settings],
+                    replace_existing=True,
                 )
-                logger.info(f"✅ Scheduled {prayer_name} at {prayer_datetime} (Device {device.id}) - job id: {job_id}")
-        # display all scheduled jobs
-        logger.info(f"📅 Scheduled prayers {self.scheduler.get_jobs()}")
+                logger.info(f"Scheduled {prayer_name} at {prayer_datetime} (device {device.id}, job {job_id})")
+        logger.info(f"Active jobs after scheduling device {device.id}: {len(self.scheduler.get_jobs())}")
 
     def _schedule_refresh_job(self, device: Device, refresh_interval_minutes: Optional[int]):
         """Schedule next refresh (default: at 1 AM next day, plus DST if applicable)."""
@@ -279,10 +278,10 @@ class DeviceService:
         lon = settings.city.get("lon") if isinstance(settings.city, dict) else settings.city.lon
         if not lat or not lon :
             return {"status": "error", "message": "Missing coordinates for device"}
-        # 📅 Get prayer times
-        logger.info(f"📅 Getting prayer times for device {device.id}")
-        
-        prayer_times = get_prayer_times(
+        # Get prayer times as timezone-aware datetimes (no string re-parsing)
+        logger.info(f"Getting prayer times for device {device.id}")
+
+        prayer_datetimes = get_prayer_datetimes(
             lat=lat or 0,
             lon=lon or 0,
             method=settings.selected_method,
@@ -290,10 +289,10 @@ class DeviceService:
             tz=get_tz(),
             madhab="Shafi",
         )
-        if not prayer_times:
+        if not prayer_datetimes:
             return {"status": "error", "message": "Failed to get prayer times"}
 
-        ordered_timings = {k: prayer_times["times"][k] for k in SCHEDULABLE_KEYS}
+        ordered_timings = {k: prayer_datetimes[k] for k in SCHEDULABLE_KEYS}
 
         # 🧹 Remove previous jobs to avoid duplicates
         self.clear_device_jobs(device.id)
@@ -310,7 +309,7 @@ class DeviceService:
         return {
             "status" : "success",
             "message": f"Prayers scheduled successfully for device {device.id}. Next refresh at {next_refresh}.",
-            "prayers": ordered_timings,
+            "prayers": {k: (v.isoformat() if v else None) for k, v in ordered_timings.items()},
             "tz"     : tz
         }
         

@@ -7,6 +7,19 @@ from src.calculations.calendar import Gregorian
 from src.utils.date_utils import get_tz
 
 
+def get_prayer_datetimes(
+    base_date: date,
+    lat: float,
+    lon: float,
+    method: str,
+    madhab: str,
+    tz: Optional[str],
+) -> Dict[str, Optional[datetime]]:
+    """Return prayer times as timezone-aware datetimes (for scheduling)."""
+    pt = PrayerTimes(method=method, madhab=madhab, tz=tz or get_tz())
+    return pt.compute_datetimes(base_date, lat, lon)
+
+
 def get_prayer_times(
     base_date: date,
     lat: float,
