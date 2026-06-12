@@ -1,4 +1,5 @@
 import { allTimings } from "@/api/apiPrayer";
+import { logger } from "@/utils/logger";
 import { DialogPdfGrid } from "@/components/DialogPdfGrid";
 import { Timing } from "@/models/Timing";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
@@ -104,14 +105,16 @@ export function DateCalendarComponent({
 
       return ""; // Fallback for safety
     } catch (error) {
-      console.error("Failed to parse Hijri date:", error);
+      logger.error("Failed to parse Hijri date:", error);
       return ""; // Return an empty string on error
     }
   }, [events]);
 
   // --- END OF useMemo SOLUTION ---
 
-  const handleDayClick = (value:any) => setSelectedDate(value);
+  const handleDayClick = (value: Dayjs | null) => {
+    if (value) setSelectedDate(value);
+  };
 
   return (
     <Grid container sx={{ flexGrow: 1, justifyContent: "center", padding: 2 }}>

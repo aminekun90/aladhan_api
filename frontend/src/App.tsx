@@ -16,6 +16,7 @@ import { Grid } from '@mui/system';
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import packageJson from '../package.json';
+import { DEFAULT_COORD } from "@/const";
 import { createDeviceSettings, getDevices, getSoCoDevices, scheduleAllDevices } from "./api/apiDevice";
 import { AboutDialog } from "./components/about";
 import { Settings } from "./models/Settings";
@@ -28,6 +29,9 @@ const darkTheme = createTheme({
 function App() {
   const { show } = useToast();
 
+  const notifySuccess = (title: string, message: string) => {
+    show({ type: 'success', title, message, position: 'top-right', duration: 3000, progressBar: true });
+  };
 
   const [currentHijirDate, setCurrentHijirDate] = useState<string>("");
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
@@ -54,44 +58,19 @@ function App() {
   const scheduleAllDevicesMutation = useMutation({
     mutationFn: () => scheduleAllDevices(),
     onSuccess: () => {
-      console.log("✅ All devices scheduled successfully");
-      show({
-        type: 'success',
-        title: 'Devices Scheduled',
-        message: 'All devices have been scheduled !',
-        position: 'top-right',
-        duration: 3000,
-        progressBar: true
-      });
+      notifySuccess('Devices Scheduled', 'All devices have been scheduled !');
     }
   })
   const syncPrayers = () => {
-    console.log("Syncing prayers...");
-    show({
-      type: 'success',
-      title: 'Syncing Prayers',
-      message: 'Prayers have been synced !',
-      position: 'top-right',
-      duration: 3000,
-      progressBar: true
-    });
+    notifySuccess('Syncing Prayers', 'Prayers have been synced !');
     scheduleAllDevicesMutation.mutate();
-
   }
 
 
   const createSettingMutation = useMutation({
     mutationFn: (device: Device) => createDeviceSettings(device.getId()),
     onSuccess: (data: Settings | null) => {
-      console.log("✅ Settings saved successfully:", data);
-      show({
-        type: 'success',
-        title: 'Settings Saved',
-        message: 'Settings have been saved !',
-        position: 'top-right',
-        duration: 3000,
-        progressBar: true
-      });
+      notifySuccess('Settings Saved', 'Settings have been saved !');
       setCurrentSetting(data);
     }
   })
@@ -167,7 +146,7 @@ function App() {
             {settingsLoading && <CircularProgress />}
             {!!currentSetting && <>
               <Typography sx={{ textAlign: 'center', margin: '1em 0' }}>{(currentSetting.city?.name ?? "Not set") + " | " + (currentSetting.city?.country ?? "Not set")}</Typography>
-              <PrayersComponent coord={{ lat: currentSetting?.city?.lat ?? 47.23999925644779, lon: currentSetting?.city?.lon ?? -1.5304936560937061 }} updateDate={(date: string) => { setCurrentHijirDate(date) }} />
+              <PrayersComponent coord={{ lat: currentSetting?.city?.lat ?? DEFAULT_COORD.lat, lon: currentSetting?.city?.lon ?? DEFAULT_COORD.lon }} updateDate={(date: string) => { setCurrentHijirDate(date) }} />
 
             </>}
             {deviceError && <Typography>Error fetching devices</Typography>
@@ -195,12 +174,12 @@ function App() {
 
               }} />}
 
-            {!!currentSetting && <DateCalendarComponent coord={{ lat: currentSetting?.city?.lat ?? 47.23999925644779, lon: currentSetting?.city?.lon ?? -1.5304936560937061 }} />}
+            {!!currentSetting && <DateCalendarComponent coord={{ lat: currentSetting?.city?.lat ?? DEFAULT_COORD.lat, lon: currentSetting?.city?.lon ?? DEFAULT_COORD.lon }} />}
 
           </Grid>
         </Box>
         <Typography sx={{ color: 'white', fontSize: 12 }}>Version beta {packageJson.version}</Typography>
-        {currentDeviceIp && currentSetting && <SettingsDialog isOpen={isSettingOpen} onClose={() => { setIsSettingOpen(false) }} settings={currentSetting} />
+        {currentDeviceIp && currentSetting && <SettingsDialog key={currentSetting.id} isOpen={isSettingOpen} onClose={() => { setIsSettingOpen(false) }} settings={currentSetting} />
         }</Stack>
       <AboutDialog open={isAboutOpen} onClose={() => { setIsAboutOpen(false) }} />
     </ThemeProvider>

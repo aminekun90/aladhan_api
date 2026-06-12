@@ -1,6 +1,6 @@
 
 import api from "@/api/apiConfig";
-import { CONFIG } from "@/const";
+import { CONFIG, DEFAULT_COORD } from "@/const";
 import { City } from "@/models/City";
 import { Device, ResponseDevice } from "@/models/device";
 import { Prayer } from "@/models/prayer";
@@ -30,7 +30,7 @@ export async function getMethods(): Promise<{ method: string, description: strin
 }
 
 export async function getPrayers(coord: { lat?: number, lon?: number }): Promise<{ prayers: Array<Prayer>, date: string, hijri_date: string }> {
-    const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=${coord.lat ?? 47.23999925644779}&lon=${coord.lon ?? -1.5304936560937061}`, {
+    const prayers = await api.get<Timing>(`${CONFIG.getPrayers}?lat=${coord.lat ?? DEFAULT_COORD.lat}&lon=${coord.lon ?? DEFAULT_COORD.lon}`, {
         headers: {
             'Content-Type': 'application/json'
         }
@@ -50,7 +50,6 @@ export async function getSettings(): Promise<Settings[] | void> {
         }
     });
     if (settingsResp) {
-        console.log("API response settings", settingsResp);
         return settingsResp.map((setting) => ({
             ...setting,
             device: Device.fromResponse(setting.device as unknown as ResponseDevice)
@@ -87,7 +86,7 @@ export async function allTimings(month?: number, year?: number, coord?: { lat?: 
     const finalMonth = month ?? (currentDate.getMonth() + 1).toString();
     const finalYear = year ?? currentDate.getFullYear().toString();
 
-    const finalUrl = `${CONFIG.allTimings}?month=${finalMonth}&year=${finalYear}&lat=${coord?.lat ?? 47.23999925644779}&lon=${coord?.lon ?? -1.5304936560937061}`;
+    const finalUrl = `${CONFIG.allTimings}?month=${finalMonth}&year=${finalYear}&lat=${coord?.lat ?? DEFAULT_COORD.lat}&lon=${coord?.lon ?? DEFAULT_COORD.lon}`;
 
     const response = await api.get<Timing[]>(finalUrl, {
         headers: {

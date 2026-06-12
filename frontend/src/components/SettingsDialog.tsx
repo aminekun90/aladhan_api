@@ -36,7 +36,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
+import { ChangeEvent, SyntheticEvent, useState } from "react";
 type AutocompleteValue = string | City | null;
 export function SettingsDialog({
     isOpen,
@@ -63,10 +63,8 @@ export function SettingsDialog({
     const [enableScheduler, setEnableScheduler] = useState(settings.enable_scheduler);
     const [cityName, setCityName] = useState(settings.city?.name ?? "");
     const [selectedCity, setSelectedCity] = useState<City | null>(settings.city ?? null);
-const { show } = useToast();
-    useEffect(() => {
-        if (settings?.audio) setAudioFile(settings.audio);
-    }, [settings]);
+    const [forceDate, setForceDate] = useState<Date | undefined>(settings.force_date ?? undefined);
+    const { show } = useToast();
 
     const mutateSettings = useMutation({
         mutationFn: (s: Settings) => saveSetting(s),
@@ -101,6 +99,7 @@ const { show } = useToast();
             audio_id: audioFile?.id ?? settings.audio_id,
             enable_scheduler: enableScheduler,
             city_id: selectedCity?.id ?? settings.city_id,
+            force_date: forceDate,
         };
         mutateSettings.mutate(updatedSettings);
     };
@@ -169,7 +168,7 @@ const { show } = useToast();
                             </FormControl>
                         )}
 
-                        <DatePicker defaultValue={dayjs(settings.force_date)} label="Date" onChange={(newValue) => { settings.force_date = newValue?.toDate(); }} />
+                        <DatePicker defaultValue={dayjs(settings.force_date)} label="Date" onChange={(newValue) => { setForceDate(newValue?.toDate()); }} />
 
                         <Stack spacing={2} direction="row" sx={{ alignItems: "center", mb: 1 }}>
                             <VolumeDown />

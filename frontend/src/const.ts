@@ -1,4 +1,8 @@
-
+/** Default location (Nantes, France) used when no city is selected. */
+export const DEFAULT_COORD = {
+  lat: 47.23999925644779,
+  lon: -1.5304936560937061,
+} as const;
 
 export const CONFIG = {
   apiURL: "http://localhost/api/v1/",
