@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from logging.config import dictConfig
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -36,14 +36,14 @@ async def lifespan(app: FastAPI):
     device_service.host_ip = host_ip
     device_service.api_port = api_port
 
-    logger.info(f"🌐 Starting app on {host_ip}:{api_port} — scheduling prayers for all devices")
+    logger.info(f"Starting app on {host_ip}:{api_port} - scheduling prayers for all devices")
     response = device_service.schedule_prayers_for_all_devices()
-    logger.info(f"📅 Scheduled prayers for all devices: {response}")
+    logger.info(f"Scheduled prayers for all devices: {response}")
     # Yield control to FastAPI to run the app
     yield
 
-    # **Shutdown logic** (if needed)
-    logger.info("🛑 Shutting down — stopping scheduler")
+    # Shutdown logic
+    logger.info("Shutting down - stopping scheduler")
     device_service.scheduler.shutdown(wait=False)
 
 # === Create FastAPI app with lifespan ===
@@ -52,8 +52,6 @@ app = FastAPI(
     version="1.0.0",
     description="Prayer times calculation API (Python FastAPI implementation)",
     lifespan=lifespan,
-    logger=logger,
-    logger_config=LogConfig().model_dump(),
 )
 
 
@@ -78,16 +76,17 @@ app.include_router(health_router, prefix=PREFIX, tags=["Health"])
 # === Frontend static serving ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend/dist")
-app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
+ASSETS_DIR = os.path.join(FRONTEND_DIR, "assets")
+# Only mount when a build exists, so the API still boots in dev without a frontend.
+if os.path.isdir(ASSETS_DIR):
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+else:
+    logger.warning(f"Frontend assets not found at {ASSETS_DIR}; skipping static mount")
 
 @app.get("/{full_path:path}", name="serve_frontend_app", tags=["Frontend"])
 async def serve_react_app(full_path: str):
-    '''
-    Serve the React app
-    '''
-    # find usage for full_path
-    # Serve the React app
+    """Serve the React single-page app (client-side routing fallback)."""
     index_file = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
-    return {"error": "index.html not found"}, 404
+    raise HTTPException(status_code=404, detail="Frontend build not found")
