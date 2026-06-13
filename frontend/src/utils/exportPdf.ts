@@ -1,5 +1,7 @@
 import { logger } from "@/utils/logger";
 
+const MARGIN_MM = 12;
+
 /**
  * Render a DOM element into a paginated A4 PDF and trigger a download.
  *
@@ -13,8 +15,14 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
     import("jspdf"),
   ]);
 
+  // Make sure the Arabic (Amiri) and display fonts are actually loaded before
+  // the capture, otherwise Arabic falls back to a non-shaping font.
   try {
-    await document.fonts.ready; // ensure Amiri/Fraunces are loaded before capture
+    await Promise.all([
+      document.fonts.load('400 16px "Amiri"'),
+      document.fonts.load('700 16px "Amiri"'),
+      document.fonts.ready,
+    ]);
   } catch {
     /* fonts API unavailable — proceed anyway */
   }
@@ -30,27 +38,20 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  const imgWidth = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  // Fit the whole sheet onto a single page, preserving aspect ratio.
+  const maxWidth = pageWidth - MARGIN_MM * 2;
+  const maxHeight = pageHeight - MARGIN_MM * 2;
+  const ratio = canvas.height / canvas.width;
 
-  const imgData = canvas.toDataURL("image/jpeg", 0.92);
-
-  if (imgHeight <= pageHeight) {
-    pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
-  } else {
-    // Slice the tall canvas across multiple pages.
-    let remaining = imgHeight;
-    let position = 0;
-    while (remaining > 0) {
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      remaining -= pageHeight;
-      if (remaining > 0) {
-        pdf.addPage();
-        position -= pageHeight;
-      }
-    }
+  let imgWidth = maxWidth;
+  let imgHeight = imgWidth * ratio;
+  if (imgHeight > maxHeight) {
+    imgHeight = maxHeight;
+    imgWidth = imgHeight / ratio;
   }
+  const x = (pageWidth - imgWidth) / 2;
 
+  pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", x, MARGIN_MM, imgWidth, imgHeight);
   pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
   logger.info("Calendar PDF exported:", filename);
 }

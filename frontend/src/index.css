@@ -190,11 +190,15 @@ a:hover { color: var(--brass-bright); }
 }
 .pdf-table tbody td:first-child { text-align: left; padding-left: 12px; font-weight: 600; }
 .pdf-table tbody tr:nth-child(even) td { background: var(--pdf-brass-soft); }
-.pdf-table tbody tr.pdf-today td {
-  background: rgba(224, 144, 90, 0.16);
-  box-shadow: inset 2px 0 0 var(--pdf-brass);
+.pdf-table tbody td.pdf-hijri-cell { min-width: 150px; }
+.pdf-hijri {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  unicode-bidi: plaintext;
+  font-size: 15px;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
-.pdf-hijri { font-family: var(--font-arabic); direction: rtl; font-size: 13px; white-space: nowrap; }
 
 .pdf-footer {
   display: flex;

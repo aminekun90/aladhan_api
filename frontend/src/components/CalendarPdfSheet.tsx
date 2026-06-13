@@ -17,10 +17,20 @@ function gregorianDay(iso: string): string {
   return d.charAt(0).toUpperCase() + d.slice(1);
 }
 
-/** Drop the leading Arabic weekday (already shown in the Gregorian column). */
+const ARABIC_INDIC = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+
+/** Convert Western digits to Arabic-Indic so the whole Hijri date is uniform
+ * RTL (Western digits get reordered by the bidi algorithm inside Arabic). */
+function toArabicDigits(value: string): string {
+  return value.replace(/[0-9]/g, (d) => ARABIC_INDIC[Number(d)]);
+}
+
+/** Drop the leading Arabic weekday (already shown in the Gregorian column) and
+ * use Arabic-Indic numerals for correct right-to-left reading. */
 function hijriDayMonthYear(hijri: string): string {
   const parts = hijri.trim().split(/\s+/);
-  return parts.length > 1 ? parts.slice(1).join(" ") : hijri;
+  const withoutWeekday = parts.length > 1 ? parts.slice(1).join(" ") : hijri;
+  return toArabicDigits(withoutWeekday);
 }
 
 interface CalendarPdfSheetProps {
@@ -34,7 +44,6 @@ interface CalendarPdfSheetProps {
 /** Off-screen, print-styled calendar sheet rasterized into the PDF. */
 export const CalendarPdfSheet = forwardRef<HTMLDivElement, CalendarPdfSheetProps>(
   ({ events, monthLabel, hijriLabel, location, method }, ref) => {
-    const today = dayjs().format("YYYY-MM-DD");
     return (
       <div ref={ref} className="pdf-sheet">
         <header className="pdf-header">
@@ -67,9 +76,9 @@ export const CalendarPdfSheet = forwardRef<HTMLDivElement, CalendarPdfSheetProps
           </thead>
           <tbody>
             {events.map((event) => (
-              <tr key={event.date} className={event.date.startsWith(today) ? "pdf-today" : undefined}>
+              <tr key={event.date}>
                 <td>{gregorianDay(event.date)}</td>
-                <td>
+                <td className="pdf-hijri-cell">
                   <span className="pdf-hijri">{hijriDayMonthYear(event.hijri_date)}</span>
                 </td>
                 {PRAYER_COLUMNS.map((p) => (
