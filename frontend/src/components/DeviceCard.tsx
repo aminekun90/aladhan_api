@@ -10,6 +10,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SkipNextIcon from "@mui/icons-material/SkipNext";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
 import {
+    alpha,
     Box,
     Card,
     CardActionArea,
@@ -22,6 +23,8 @@ import {
 } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { MouseEvent, useState } from "react";
+
+const BRASS = "#d4ad5f";
 
 const TYPE_LABELS: Record<string, string> = {
     sonos_player: "Sonos",
@@ -85,47 +88,22 @@ export default function DeviceCard({
                 position: "relative",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
-                alignItems: "center",
-                maxWidth: 220,
-                width: "max-content",
+                width: 200,
                 cursor: "pointer",
-                opacity: available ? 1 : 0.6,
-                transform: clicked ? "scale(1.02)" : "scale(1)",
-                transition: "all 0.25s ease",
-                background: "rgba(255, 255, 255, 0.15)",
-                backdropFilter: "blur(2px) saturate(180%)",
-                border: "0.0625rem solid rgba(255, 255, 255, 0.4)",
-                borderRadius: "2rem",
-                padding: "1.25rem",
-                boxShadow:
-                    "0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255, 255, 255, 0.3)",
+                opacity: available ? 1 : 0.55,
+                transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease",
+                transform: clicked ? "translateY(-4px)" : "none",
+                background: "var(--surface)",
+                backdropFilter: "blur(10px)",
+                border: `1px solid ${clicked ? alpha(BRASS, 0.6) : "var(--line)"}`,
+                borderRadius: "1.5rem",
+                padding: "1.1rem",
+                boxShadow: clicked ? `0 14px 44px ${alpha(BRASS, 0.22)}` : "none",
                 "&:hover": {
-                    boxShadow:
-                        "0 10px 40px rgba(31, 38, 135, 0.25), inset 0 6px 24px rgba(255, 255, 255, 0.4)",
+                    transform: "translateY(-4px)",
+                    borderColor: alpha(BRASS, 0.45),
+                    boxShadow: `0 14px 44px ${alpha(BRASS, 0.16)}`,
                 },
-                "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    borderRadius: "2rem",
-                    backdropFilter: "blur(1px)",
-                    boxShadow:
-                        "inset -10px -8px 0px -11px rgba(255, 255, 255, 1), inset 0px -9px 0px -8px rgba(255, 255, 255, 1)",
-                    opacity: 0.6,
-                    zIndex: -1,
-                    filter: "blur(1px) drop-shadow(10px 4px 6px black) brightness(115%)",
-                    pointerEvents: "none",
-                },
-                ...(clicked && {
-                    border: `0.125rem solid ${theme.palette.primary.main}`,
-                    boxShadow:
-                        "0 0 25px rgba(100, 180, 255, 0.6), inset 0 6px 24px rgba(255,255,255,0.4)",
-                }),
             }}
         >
             <CardActionArea>
@@ -142,18 +120,28 @@ export default function DeviceCard({
                     {isFreeboxPlayer && <IconButton size="small"><LockOpenIcon fontSize="small" /></IconButton>}
                 </Box>
 
-                <CardMedia
-                    component="img"
-                    sx={{
-                        width: "100%",
-                        objectFit: "cover",
-                        borderRadius: "1.5rem",
-                        filter: available ? "none" : "grayscale(100%)",
-                        backgroundColor: "#fff",
-                    }}
-                    image={deviceImage}
-                    alt="Device image"
-                />
+                <Box sx={{
+                    width: "100%",
+                    aspectRatio: "1 / 1",
+                    borderRadius: "1.25rem",
+                    overflow: "hidden",
+                    border: "1px solid var(--line)",
+                    background: "radial-gradient(120% 120% at 50% 0%, rgba(212,173,95,0.12), rgba(13,20,38,0.6))",
+                }}>
+                    <CardMedia
+                        component="img"
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            mixBlendMode: "luminosity",
+                            opacity: available ? 0.92 : 0.5,
+                            filter: available ? "none" : "grayscale(100%)",
+                        }}
+                        image={deviceImage}
+                        alt={device.getName()}
+                    />
+                </Box>
 
                 <Box
                     sx={{
