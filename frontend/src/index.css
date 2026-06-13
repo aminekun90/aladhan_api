@@ -116,3 +116,91 @@ a:hover { color: var(--brass-bright); }
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* ============================================================
+   Printable calendar sheet (rasterized to PDF via html2canvas)
+   Light, ink-on-cream with brass gilding — print-friendly.
+   ============================================================ */
+.pdf-sheet {
+  --pdf-ink: #1b2435;
+  --pdf-muted: #6b7282;
+  --pdf-brass: #b3893f;
+  --pdf-brass-soft: rgba(179, 137, 63, 0.08);
+  --pdf-line: rgba(27, 36, 53, 0.12);
+  width: 794px;
+  box-sizing: border-box;
+  padding: 46px 44px 40px;
+  background: #fbf8f1;
+  color: var(--pdf-ink);
+  font-family: var(--font-ui);
+}
+
+.pdf-header { text-align: center; }
+.pdf-arch { display: block; margin: 0 auto 6px; }
+.pdf-wordmark {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+.pdf-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--pdf-muted);
+  margin: 2px 0 0;
+}
+.pdf-hijri-head {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  font-size: 22px;
+  color: var(--pdf-brass);
+  margin: 8px 0 0;
+}
+.pdf-meta {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pdf-muted);
+  margin: 10px 0 0;
+}
+.pdf-rule {
+  height: 2px;
+  margin: 18px 0 16px;
+  background: linear-gradient(90deg, transparent, var(--pdf-brass), transparent);
+}
+
+.pdf-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pdf-table thead th {
+  background: var(--pdf-brass);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 8px 6px;
+  text-align: center;
+}
+.pdf-table thead th:first-child { border-radius: 6px 0 0 6px; text-align: left; padding-left: 12px; }
+.pdf-table thead th:last-child { border-radius: 0 6px 6px 0; }
+.pdf-table tbody td {
+  padding: 7px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--pdf-line);
+  font-variant-numeric: tabular-nums;
+}
+.pdf-table tbody td:first-child { text-align: left; padding-left: 12px; font-weight: 600; }
+.pdf-table tbody tr:nth-child(even) td { background: var(--pdf-brass-soft); }
+.pdf-table tbody tr.pdf-today td {
+  background: rgba(224, 144, 90, 0.16);
+  box-shadow: inset 2px 0 0 var(--pdf-brass);
+}
+.pdf-hijri { font-family: var(--font-arabic); direction: rtl; font-size: 13px; white-space: nowrap; }
+
+.pdf-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--pdf-muted);
+}

@@ -1,6 +1,7 @@
 import { allTimings } from "@/api/apiPrayer";
+import { CalendarPdfSheet } from "@/components/CalendarPdfSheet";
+import { exportElementToPdf } from "@/utils/exportPdf";
 import { logger } from "@/utils/logger";
-import { DialogPdfGrid } from "@/components/DialogPdfGrid";
 import { Timing } from "@/models/Timing";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
@@ -8,6 +9,7 @@ import {
     capitalize,
     Card,
     Chip,
+    CircularProgress,
     Grid,
     IconButton,
     Stack,
@@ -25,7 +27,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useQuery } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/fr";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type TimingKey = "Imsak" | "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 
@@ -34,7 +36,8 @@ export function DateCalendarComponent({
 }: Readonly<{ coord: { lat?: number; lon?: number } }>) {
   const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
-  const [openPdfModal, setOpenPdfModal] = useState<boolean>(false);
+  const [exporting, setExporting] = useState<boolean>(false);
+  const pdfSheetRef = useRef<HTMLDivElement>(null);
 
   // Fetch events for the current month
   const {
@@ -117,6 +120,18 @@ export function DateCalendarComponent({
     if (value) setSelectedDate(value);
   };
 
+  const handleExportPdf = async () => {
+    if (!events?.length || !pdfSheetRef.current) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(pdfSheetRef.current, `aladhan-${selectedDate.format("YYYY-MM")}`);
+    } catch (error) {
+      logger.error("PDF export failed:", error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <Grid container sx={{ flexGrow: 1, justifyContent: "center", px: { xs: 0, sm: 2 } }}>
       <Card
@@ -142,9 +157,11 @@ export function DateCalendarComponent({
           sx={{ display: "flex", alignItems: "center" }}
         >
           <Tooltip title="Exporter en PDF">
-            <IconButton onClick={() => setOpenPdfModal(true)}>
-              <PictureAsPdfIcon />
-            </IconButton>
+            <span>
+              <IconButton onClick={handleExportPdf} disabled={exporting || !events?.length}>
+                {exporting ? <CircularProgress size={20} sx={{ color: "var(--brass)" }} /> : <PictureAsPdfIcon />}
+              </IconButton>
+            </span>
           </Tooltip>
         </Grid>
 
@@ -202,15 +219,18 @@ export function DateCalendarComponent({
         </Box>
       </Card>
 
-      {events && (
-        <DialogPdfGrid
-          events={events}
-          openDialog={openPdfModal}
-          onClose={() => setOpenPdfModal(false)}
-          // remove from hijri date the day and date keep year and month for example الإثنين 5 جمادى الأولى 1447
-          // becomes جمادى الأولى 1447
-          title={`${capitalize(selectedDate.format("MMMM YYYY"))} - ${hijriMonthYear}`}
-        />
+      {/* Off-screen branded sheet rasterized into the PDF on export. */}
+      {!!events?.length && (
+        <Box sx={{ position: "absolute", left: -10000, top: 0, pointerEvents: "none" }} aria-hidden>
+          <CalendarPdfSheet
+            ref={pdfSheetRef}
+            events={events}
+            monthLabel={capitalize(selectedDate.format("MMMM YYYY"))}
+            hijriLabel={hijriMonthYear}
+            location={`${(coord.lat ?? 0).toFixed(3)}, ${(coord.lon ?? 0).toFixed(3)}`}
+            method={events[0]?.method ?? "—"}
+          />
+        </Box>
       )}
     </Grid>
   );
