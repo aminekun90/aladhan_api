@@ -4,6 +4,8 @@ import symfonisk from "@/assets/symfonisk.jpg";
 import { Device } from "@/models/device";
 import { logger } from "@/utils/logger";
 import BluetoothIcon from "@mui/icons-material/Bluetooth";
+import GraphicEqIcon from "@mui/icons-material/GraphicEq";
+import LaptopMacIcon from "@mui/icons-material/LaptopMac";
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -30,6 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
     sonos_player: "Sonos",
     freebox_player: "Freebox",
     bluetooth_speaker: "Bluetooth",
+    local_player: "Cet appareil",
 };
 
 export default function DeviceCard({
@@ -71,7 +74,9 @@ export default function DeviceCard({
     const isSonosPlayer = device.type === "sonos_player";
     const isFreeboxPlayer = device.type === "freebox_player";
     const isBluetooth = device.type === "bluetooth_speaker";
-    const controllable = !!device.getId() && !isBluetooth; // BT speakers are fire-and-forget
+    const isLocal = device.type === "local_player";
+    const iconOnly = isBluetooth || isLocal; // no product photo for these
+    const controllable = !!device.getId() && !isBluetooth && !isLocal; // fire-and-forget players
 
     let deviceImage = symfonisk; // use generic image by default
     if (isFreeboxPlayer || device.getRawAttributes().device_model === "fbx7hd-delta") {
@@ -125,22 +130,31 @@ export default function DeviceCard({
                     aspectRatio: "1 / 1",
                     borderRadius: "1.25rem",
                     overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     border: "1px solid var(--line)",
                     background: "radial-gradient(120% 120% at 50% 0%, rgba(212,173,95,0.12), rgba(13,20,38,0.6))",
                 }}>
-                    <CardMedia
-                        component="img"
-                        sx={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            mixBlendMode: "luminosity",
-                            opacity: available ? 0.92 : 0.5,
-                            filter: available ? "none" : "grayscale(100%)",
-                        }}
-                        image={deviceImage}
-                        alt={device.getName()}
-                    />
+                    {iconOnly ? (
+                        <Box sx={{ color: "var(--brass)", display: "grid", placeItems: "center", opacity: available ? 0.95 : 0.5 }}>
+                            {isLocal ? <LaptopMacIcon sx={{ fontSize: 64 }} /> : <GraphicEqIcon sx={{ fontSize: 64 }} />}
+                        </Box>
+                    ) : (
+                        <CardMedia
+                            component="img"
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                mixBlendMode: "luminosity",
+                                opacity: available ? 0.92 : 0.5,
+                                filter: available ? "none" : "grayscale(100%)",
+                            }}
+                            image={deviceImage}
+                            alt={device.getName()}
+                        />
+                    )}
                 </Box>
 
                 <Box

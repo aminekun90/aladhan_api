@@ -127,7 +127,8 @@ def play_media_on_freebox_device(device_id: str, media_url: str, volume: int = 1
 
 @router.get("/devices", response_model=List[Device], description="List all devices stored in the database")
 def list_devices_db():
-    # This just reads from DB, no scanning
+    # Ensure the virtual 'this device' player is always present, then read from DB.
+    device_service.ensure_local_device()
     return device_service.list_devices()
 
 @router.get("/device/schedule/{device_id}", description="Schedule prayers for a specific device id")

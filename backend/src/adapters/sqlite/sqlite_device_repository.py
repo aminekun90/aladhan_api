@@ -72,6 +72,7 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                     name=device.name,
                     ip=device.ip,
                     raw_data=json.loads(device.raw_data) if isinstance(device.raw_data, str) else device.raw_data,
+                    type=device.type,
                 )
         return None
 
@@ -85,6 +86,7 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                     name=device.name,
                     ip=device.ip,
                     raw_data=json.loads(device.raw_data) if isinstance(device.raw_data, str) else device.raw_data,
+                    type=device.type,
                 )
         return None
 

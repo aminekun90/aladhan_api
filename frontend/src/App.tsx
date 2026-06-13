@@ -132,6 +132,21 @@ function App() {
     syncSelectedSetting();
   }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError, deviceClicked]);
 
+  // Select the always-available "this device" player by default, so the adhan
+  // plays on the host out of the box when nothing else is chosen.
+  useEffect(() => {
+    const selectLocalByDefault = () => {
+      if (currentDeviceIp != null || deviceLoading || !devices?.length) return;
+      const local = devices.find(d => d.type === "local_player");
+      if (!local) return;
+      setCurrentDeviceIp(local.getIp());
+      const found = settings?.find(s => s.device?.getIp() === local.getIp());
+      if (found) setCurrentSetting(found);
+      else createSettingMutation.mutate(local);
+    };
+    selectLocalByDefault();
+  }, [devices, deviceLoading, settings, currentDeviceIp, createSettingMutation]);
+
   const coord = {
     lat: currentSetting?.city?.lat ?? DEFAULT_COORD.lat,
     lon: currentSetting?.city?.lon ?? DEFAULT_COORD.lon,

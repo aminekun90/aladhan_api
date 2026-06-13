@@ -8,16 +8,26 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.domain import DeviceRepository, SettingsRepository
-from src.domain.models import Device, Settings
+from src.domain.models import Audio, City, Device, Settings
 from src.schemas.log_config import LogConfig
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
 from src.services.adhan_service import get_prayer_datetimes
 from src.services.bluetooth_service import BluetoothService
 from src.services.freebox_service import FreeboxService
+from src.services.local_player_service import LocalPlayerService
 from src.services.soco_service import SoCoService
 from src.utils.date_utils import get_tz
 
 AUDIO_DIR = "src/data/audio"
+
+# Virtual "this device" player — always available, plays on the host.
+LOCAL_DEVICE_IP = "127.0.0.1"
+LOCAL_DEVICE_TYPE = "local_player"
+LOCAL_DEVICE_NAME = "Cet appareil"
+# Default location (Nantes, France) used until the user picks a city.
+DEFAULT_LAT = 47.23999925644779
+DEFAULT_LON = -1.5304936560937061
+DEFAULT_METHOD = "France"
 
 logger = LogConfig.get_logger()
 DEFAULT_TZ = "Europe/Paris"
@@ -40,6 +50,7 @@ class DeviceService:
         self.soco_service = SoCoService()
         self.freebox_service = FreeboxService()
         self.bluetooth_service = BluetoothService()
+        self.local_player = LocalPlayerService()
         self.host_ip = self.get_local_ip()
         self.api_port = 8000
         logger.info(f"🌐 Host IP: {self.host_ip}:{self.api_port}")
@@ -69,6 +80,63 @@ class DeviceService:
             s.close()
         return ip
     
+    # ------------------------------
+    # 🖥️ Virtual local device
+    # ------------------------------
+    def ensure_local_device(self) -> Device:
+        """Guarantee a virtual 'this device' player exists and return it.
+
+        Always available so the adhan can play on the host even when no real
+        speaker is discovered. Upserted by its loopback IP so it stays unique.
+        """
+        existing = self.device_repository.get_device_by_ip(LOCAL_DEVICE_IP)
+        if existing and existing.id:
+            return existing
+        device = Device(id=None, name=LOCAL_DEVICE_NAME, ip=LOCAL_DEVICE_IP,
+                        type=LOCAL_DEVICE_TYPE, raw_data={"virtual": True})
+        self.device_repository.upsert_devices_bulk([device])
+        logger.info("Ensured virtual local device is available")
+        return self.device_repository.get_device_by_ip(LOCAL_DEVICE_IP) or device
+
+    def _default_audio_name(self) -> Optional[str]:
+        """First bundled audio file, used as the local device's default adhan."""
+        try:
+            files = sorted(f for f in os.listdir(AUDIO_DIR) if f.endswith(".mp3"))
+            return files[0] if files else None
+        except OSError:
+            return None
+
+    def _effective_local_settings(self, device: Device) -> Optional[Settings]:
+        """Settings for the local device, filling sane defaults where unset.
+
+        Returns None only when the user has explicitly disabled the scheduler.
+        Enabled by default (no settings row yet → enabled).
+        """
+        stored = self.settings_repository.get_setting_by_device_id(device_id=device.id) if device.id else None
+        if stored and not stored.enable_scheduler:
+            return None  # user turned it off
+
+        def coord(attr: str, fallback: float) -> float:
+            if stored and stored.city:
+                value = stored.city.get(attr) if isinstance(stored.city, dict) else getattr(stored.city, attr, None)
+                if value:
+                    return value
+            return fallback
+
+        audio_name = None
+        if stored and stored.audio:
+            audio_name = stored.audio.get("name") if isinstance(stored.audio, dict) else getattr(stored.audio, "name", None)
+        audio_name = audio_name or self._default_audio_name()
+
+        return Settings(
+            id=stored.id if stored else None,
+            enable_scheduler=True,
+            selected_method=(stored.selected_method if stored and stored.selected_method else DEFAULT_METHOD),
+            volume=stored.volume if stored else 50,
+            city=City(name=LOCAL_DEVICE_NAME, lat=coord("lat", DEFAULT_LAT), lon=coord("lon", DEFAULT_LON)),
+            audio=Audio(name=audio_name) if audio_name else None,
+        )
+
     # ------------------------------
     # 🕌 Prayer Job
     # ------------------------------
@@ -105,6 +173,8 @@ class DeviceService:
                 self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
             elif device.type == "bluetooth_speaker":
                 self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
+            elif device.type == LOCAL_DEVICE_TYPE:
+                self.local_player.play_file(os.path.join(AUDIO_DIR, audio_name))
             else:
                 logger.warning(f"Unknown device type '{device.type}' for device {device.id}")
         except Exception as e:
@@ -273,7 +343,17 @@ class DeviceService:
         """Schedules all prayer times for today for this device."""
         if not device or not device.id:
             return {"status": "error", "message": "Missing device ID"}
-        settings: Optional[Settings] = self.settings_repository.get_setting_by_device_id(device_id=device.id)
+
+        # Virtual local device: enabled by default with sane fallbacks so the
+        # adhan plays on the host out of the box.
+        if device.type == LOCAL_DEVICE_TYPE:
+            settings: Optional[Settings] = self._effective_local_settings(device)
+            if settings is None:
+                logger.info(f"Local device scheduler disabled for {device.name}")
+                self.clear_device_jobs(device.id)
+                return {"status": "warning", "message": "Scheduler is disabled"}
+        else:
+            settings = self.settings_repository.get_setting_by_device_id(device_id=device.id)
         if settings and not settings.enable_scheduler:
             logger.info(f"🚫 Scheduler is disabledfor device {device.name}" )
             self.clear_device_jobs(device.id)
@@ -325,23 +405,28 @@ class DeviceService:
     def play_audio_in_device(self,  device_id: int):
         if  not device_id:
             return {"status": "error", "message": "Missing device ID"}
-        # get setting by device id
-        settings = self.settings_repository.get_setting_by_device_id(device_id=device_id)
-        if not settings:
-            return {"status": "error", "message": "Missing settings for device"}
-        # get device by id
         device = self.get_device_by_id(device_id=device_id)
         if not device:
             return {"status": "error", "message": "Device not found"}
-        # get audio by id
+
+        # Local device falls back to defaults so it can always play.
+        if device.type == LOCAL_DEVICE_TYPE:
+            settings = self._effective_local_settings(device)
+            if settings is None:
+                settings = Settings(volume=50, audio=Audio(name=self._default_audio_name()))
+        else:
+            settings = self.settings_repository.get_setting_by_device_id(device_id=device_id)
+            if not settings:
+                return {"status": "error", "message": "Missing settings for device"}
+
         if isinstance(settings.audio, dict):
             audio_name = settings.audio.get("name")
         else:
             audio_name = getattr(settings.audio, "name", None)
         if not audio_name:
             return {"status": "error", "message": "Audio not found"}
-        
-        # Build the playable URL (network players) / local path (Bluetooth)
+
+        # Build the playable URL (network players) / local path (Bluetooth/local)
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
         url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
 
@@ -349,6 +434,8 @@ class DeviceService:
             self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=settings.volume)
         elif device.type == "bluetooth_speaker":
             self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
+        elif device.type == LOCAL_DEVICE_TYPE:
+            self.local_player.play_file(os.path.join(AUDIO_DIR, audio_name))
         else:
             self.soco_service.play_audio(device, url=url, volume=settings.volume)
 

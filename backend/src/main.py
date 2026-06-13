@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
     device_service.api_port = api_port
 
     logger.info(f"Starting app on {host_ip}:{api_port} - scheduling prayers for all devices")
+    device_service.ensure_local_device()  # always-available 'this device' player
     response = device_service.schedule_prayers_for_all_devices()
     logger.info(f"Scheduled prayers for all devices: {response}")
     # Yield control to FastAPI to run the app
