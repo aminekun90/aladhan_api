@@ -7,17 +7,18 @@ import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { ToastContainer, useToast } from '@aminekun90/react-toast';
+import BluetoothSearchingIcon from '@mui/icons-material/BluetoothSearching';
 import InfoIcon from '@mui/icons-material/Info';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SyncIcon from '@mui/icons-material/Sync';
 import { alpha, Box, CircularProgress, createTheme, CssBaseline, IconButton, Stack, ThemeProvider, Tooltip, Typography } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { Grid } from '@mui/system';
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import packageJson from '../package.json';
 import { DEFAULT_COORD } from "@/const";
-import { createDeviceSettings, getDevices, getSoCoDevices, scheduleAllDevices } from "./api/apiDevice";
+import { createDeviceSettings, getDevices, getSoCoDevices, scanBluetooth, scheduleAllDevices } from "./api/apiDevice";
 import { AboutDialog } from "./components/about";
 import { Settings } from "./models/Settings";
 import { Device } from "./models/device";
@@ -28,6 +29,7 @@ const darkTheme = createTheme({
 });
 function App() {
   const { show } = useToast();
+  const queryClient = useQueryClient();
 
   const notifySuccess = (title: string, message: string) => {
     show({ type: 'success', title, message, position: 'top-right', duration: 3000, progressBar: true });
@@ -65,6 +67,14 @@ function App() {
     notifySuccess('Syncing Prayers', 'Prayers have been synced !');
     scheduleAllDevicesMutation.mutate();
   }
+
+  const scanBluetoothMutation = useMutation({
+    mutationFn: () => scanBluetooth(),
+    onSuccess: (found) => {
+      notifySuccess('Bluetooth Scan', `Found ${found.length} device(s)`);
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+    },
+  });
 
 
   const createSettingMutation = useMutation({
@@ -126,6 +136,11 @@ function App() {
                 <SyncIcon />
               </IconButton>
             </Tooltip>}
+            <Tooltip title="Scan Bluetooth speakers">
+              <IconButton onClick={() => { scanBluetoothMutation.mutate() }} disabled={scanBluetoothMutation.isPending} sx={{ color: 'white', height: 60, width: 60 }}>
+                <BluetoothSearchingIcon />
+              </IconButton>
+            </Tooltip>
             {!!currentSetting &&
               <Tooltip title="Settings">
                 <IconButton onClick={() => { setIsSettingOpen(true) }} sx={{ color: 'white', height: 60, width: 60 }}>
