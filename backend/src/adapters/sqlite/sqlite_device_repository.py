@@ -129,9 +129,8 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                         DeviceTable(
                             name=device.name,
                             ip=device.ip,
-                            raw_data=json.dumps(device.raw_data)
-                            if isinstance(device.raw_data, dict)
-                            else device.raw_data,
+                            # Column is JSON — store the dict directly (no double-encoding).
+                            raw_data=device.raw_data,
                             type=device.type
                         )
                     )

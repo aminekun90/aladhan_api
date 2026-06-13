@@ -1,4 +1,5 @@
 import base64
+import json
 from datetime import date
 from sqlalchemy import Integer, Float, String, LargeBinary, ForeignKey, Date, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -46,11 +47,18 @@ class DeviceTable(Base):
     settings = relationship("SettingsTable", back_populates="device", cascade=DELETE_STRATEGY)
 
     def get_dict(self, include_settings: bool = False):
+        # Tolerate legacy rows where raw_data was double-encoded as a JSON string.
+        raw = self.raw_data
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except (ValueError, TypeError):
+                raw = None
         data = {
             "id": self.id,
             "name": self.name,
             "ip": self.ip,
-            "raw_data": self.raw_data,
+            "raw_data": raw,
             "type": self.type,
         }
         if include_settings:

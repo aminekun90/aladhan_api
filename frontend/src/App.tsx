@@ -116,10 +116,11 @@ function App() {
   });
 
   const createSettingMutation = useMutation({
+    // Auto-provisions default settings when a device without settings is selected.
+    // This is not a user "save", so it stays silent.
     mutationFn: (device: Device) => createDeviceSettings(device.getId()),
     onSuccess: (data: Settings | null) => {
-      notifySuccess('Settings Saved', 'Settings have been saved !');
-      setCurrentSetting(data);
+      if (data) setCurrentSetting(data);
     },
   });
 

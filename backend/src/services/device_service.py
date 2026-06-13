@@ -109,12 +109,12 @@ class DeviceService:
     def _effective_local_settings(self, device: Device) -> Optional[Settings]:
         """Settings for the local device, filling sane defaults where unset.
 
-        Returns None only when the user has explicitly disabled the scheduler.
-        Enabled by default (no settings row yet → enabled).
+        The local player is always enabled — it is the guaranteed fallback so the
+        adhan plays on the host out of the box. Any configured city / method /
+        audio from a stored settings row is honored; the rest falls back to
+        sensible defaults (Nantes / France / first bundled audio).
         """
         stored = self.settings_repository.get_setting_by_device_id(device_id=device.id) if device.id else None
-        if stored and not stored.enable_scheduler:
-            return None  # user turned it off
 
         def coord(attr: str, fallback: float) -> float:
             if stored and stored.city:
