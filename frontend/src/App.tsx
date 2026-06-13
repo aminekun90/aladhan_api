@@ -249,10 +249,22 @@ function App() {
 
           <Box component="section">
             <SectionHeading>Appareils</SectionHeading>
-            {deviceError && <Typography sx={{ textAlign: "center", color: "var(--mist)" }}>Error fetching devices</Typography>}
-            {deviceLoading && <Box sx={{ textAlign: "center" }}><CircularProgress sx={{ color: "var(--brass)" }} /></Box>}
-            {devices && !deviceLoading && socoDevices && !socoDevicesError && !socoLoading && (
-              <DevicesComponent devices={devices} soCoDevices={socoDevices} onClick={handleDeviceClick} />
+            {deviceLoading ? (
+              <Box sx={{ textAlign: "center" }}><CircularProgress sx={{ color: "var(--brass)" }} /></Box>
+            ) : deviceError ? (
+              <Typography sx={{ textAlign: "center", color: "var(--mist)" }}>Error fetching devices</Typography>
+            ) : (
+              <>
+                {/* Render DB devices (incl. 'Cet appareil') immediately; Sonos
+                    discovery only refines availability and runs in the background. */}
+                <DevicesComponent devices={devices ?? []} soCoDevices={socoDevices ?? []} onClick={handleDeviceClick} />
+                {socoLoading && !socoDevicesError && (
+                  <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ mt: 2, color: "var(--mist)" }}>
+                    <CircularProgress size={14} sx={{ color: "var(--brass)" }} />
+                    <Typography sx={{ fontSize: "0.8rem", letterSpacing: "0.04em" }}>Recherche des enceintes…</Typography>
+                  </Stack>
+                )}
+              </>
             )}
           </Box>
 
