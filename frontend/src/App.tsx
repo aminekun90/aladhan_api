@@ -5,10 +5,12 @@ import { DevicesComponent } from "@/components/DevicesComponent";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { DEFAULT_COORD } from "@/const";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { theme } from "@/theme";
 import { ToastContainer, useToast } from '@aminekun90/react-toast';
 import BluetoothSearchingIcon from '@mui/icons-material/BluetoothSearching';
 import InfoIcon from '@mui/icons-material/Info';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -148,10 +150,17 @@ function App() {
     selectLocalByDefault();
   }, [devices, deviceLoading, settings, currentDeviceIp, createSettingMutation]);
 
-  const coord = {
-    lat: currentSetting?.city?.lat ?? DEFAULT_COORD.lat,
-    lon: currentSetting?.city?.lon ?? DEFAULT_COORD.lon,
-  };
+  const { coords: geoCoords, status: geoStatus, request: requestLocation } = useGeolocation();
+
+  // Coordinate precedence: an explicitly configured city wins; otherwise use the
+  // device's GPS position; finally fall back to the default location.
+  const hasCity = currentSetting?.city?.lat != null && currentSetting?.city?.lon != null;
+  const coord = hasCity
+    ? { lat: currentSetting!.city!.lat, lon: currentSetting!.city!.lon }
+    : (geoCoords ?? DEFAULT_COORD);
+  const locationLabel = hasCity
+    ? `${currentSetting?.city?.name ?? "Not set"} · ${currentSetting?.city?.country ?? ""}`
+    : geoCoords ? "Ma position" : "Localisation par défaut";
 
   const handleDeviceClick = (device: Device) => {
     setDeviceClicked(!deviceClicked);
@@ -217,14 +226,15 @@ function App() {
                 {currentHijirDate}
               </Typography>
             )}
-            {!!currentSetting && (
-              <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={{ mt: 1.5, color: "var(--mist)" }}>
-                <PlaceOutlinedIcon sx={{ fontSize: "1rem" }} />
-                <Typography sx={{ fontSize: "0.85rem", letterSpacing: "0.04em" }}>
-                  {(currentSetting.city?.name ?? "Not set")} · {(currentSetting.city?.country ?? "Not set")}
-                </Typography>
-              </Stack>
-            )}
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mt: 1.5, color: "var(--mist)" }}>
+              <PlaceOutlinedIcon sx={{ fontSize: "1rem" }} />
+              <Typography sx={{ fontSize: "0.85rem", letterSpacing: "0.04em" }}>{locationLabel}</Typography>
+              <Tooltip title={geoStatus === "denied" ? "Localisation refusée" : "Utiliser ma position"}>
+                <IconButton size="small" onClick={requestLocation} sx={{ ml: 0.5 }}>
+                  <MyLocationIcon sx={{ fontSize: "1rem", color: geoCoords ? "var(--brass)" : "inherit" }} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
           </Box>
         </Box>
 
@@ -232,12 +242,10 @@ function App() {
         <Stack spacing={{ xs: 6, md: 9 }} sx={{ px: { xs: 2, md: 5 }, pb: 8, width: "100%", maxWidth: 1200, mx: "auto" }}>
           {settingsLoading && <Box sx={{ textAlign: "center" }}><CircularProgress sx={{ color: "var(--brass)" }} /></Box>}
 
-          {!!currentSetting && (
-            <Box component="section">
-              <SectionHeading>Heures de prière</SectionHeading>
-              <PrayersComponent coord={coord} updateDate={setCurrentHijirDate} />
-            </Box>
-          )}
+          <Box component="section">
+            <SectionHeading>Heures de prière</SectionHeading>
+            <PrayersComponent coord={coord} updateDate={setCurrentHijirDate} />
+          </Box>
 
           <Box component="section">
             <SectionHeading>Appareils</SectionHeading>
@@ -248,12 +256,10 @@ function App() {
             )}
           </Box>
 
-          {!!currentSetting && (
-            <Box component="section">
-              <SectionHeading>Calendrier</SectionHeading>
-              <DateCalendarComponent coord={coord} />
-            </Box>
-          )}
+          <Box component="section">
+            <SectionHeading>Calendrier</SectionHeading>
+            <DateCalendarComponent coord={coord} />
+          </Box>
         </Stack>
 
         <Typography sx={{ textAlign: "center", color: "var(--mist)", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", pb: 4 }}>

@@ -25,11 +25,21 @@ class SQLiteCityRepository(SQLRepositoryBase, CityRepository):
             if country:
                 query = query.filter(CityTable.country == country.upper())
 
-            # Limit results to 50 for autocomplete
-            results = query.limit(50).all()
+            # Pull a wider window, then dedupe by (name, country) so the same
+            # place doesn't appear many times (the GeoNames dump has duplicates).
+            results = query.limit(300).all()
 
-            # Build City objects
-            return [City(id=r.id, name=r.name, lat=r.lat, lon=r.lon, country=r.country) for r in results]
+            seen: set[tuple[str, str]] = set()
+            cities: List[City] = []
+            for r in results:
+                key = (r.name.upper(), (r.country or "").upper())
+                if key in seen:
+                    continue
+                seen.add(key)
+                cities.append(City(id=r.id, name=r.name, lat=r.lat, lon=r.lon, country=r.country))
+                if len(cities) >= 50:
+                    break
+            return cities
 
     def get_city(self, name: str) -> Optional[City]:
         """Retrieve a city by exact name."""

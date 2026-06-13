@@ -7,7 +7,7 @@ import { PrayerCard } from './PrayerCard';
 
 export function PrayersComponent({ updateDate, coord }: Readonly<{ updateDate: (date: string) => void, coord: { lat?: number, lon?: number } }>) {
     const { data, error, isLoading } = useQuery({
-        queryKey: ["prayers"],
+        queryKey: ["prayers", coord.lat, coord.lon],
         queryFn: () => getPrayers(coord),
     });
     useEffect(() => {
