@@ -19,22 +19,34 @@ device_service = DeviceService(repos.device_repo, repos.setting_repo)
 
 router = APIRouter()
 
-@router.get("/freebox/auth", description="Trigger Freebox authentication. WARNING: This request will hang until you press the RIGHT ARROW on the Freebox Server.")
-def freebox_authenticate():
-    """
-    Endpoint to perform the initial pairing.
-    1. Call this endpoint.
-    2. Run to your Freebox Server.
-    3. Press the Right Arrow to authorize 'Aladhan Pi Remote'.
-    4. This endpoint will return success once approved.
+@router.post("/freebox/auth/start", description="Begin Freebox pairing (non-blocking). Returns a track_id to poll.")
+def freebox_auth_start():
+    """Start pairing, then press the RIGHT ARROW on the Freebox display.
+
+    Returns immediately with a track_id; poll /freebox/auth/status to know when
+    the user has authorized the app.
     """
     try:
-        # This checks if we have a valid token. 
-        # If not, it starts the registration loop and waits for the button press.
-        freebox_service.login()
-        return {"status": "success", "message": "Authenticated with Freebox successfully. Token saved to disk."}
+        return freebox_service.start_registration()
     except Exception as e:
-        # If the user is too slow (timeout) or denies access
+        raise HTTPException(status_code=400, detail=f"Failed to start pairing: {str(e)}")
+
+
+@router.get("/freebox/auth/status", description="Poll Freebox pairing status: pending | granted | denied | timeout.")
+def freebox_auth_status(track_id: int | None = None):
+    try:
+        return freebox_service.registration_status(track_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/freebox/auth", description="Verify Freebox session (logs in with the saved token).")
+def freebox_authenticate():
+    """Open a session using the token saved during pairing."""
+    try:
+        freebox_service.login()
+        return {"status": "success", "message": "Authenticated with Freebox successfully."}
+    except Exception as e:
         raise HTTPException(status_code=400, detail=f"Authentication failed: {str(e)}")
 
 @router.get("/soco/devices", response_model=List[Dict[str, Any]], description="List all devices (Sonos + Freebox) and upsert them into the DB")

@@ -18,4 +18,5 @@ dependencies = [
     "soco>=0.30.12",
     "sqlalchemy>=2.0.44",
     "uvicorn[standard]>=0.37.0",
+    "zeroconf>=0.149.16",
 ]
