@@ -88,7 +88,7 @@ export default function DeviceCard({
                 position: "relative",
                 display: "flex",
                 flexDirection: "column",
-                width: 200,
+                width: { xs: 150, sm: 180, md: 200 },
                 cursor: "pointer",
                 opacity: available ? 1 : 0.55,
                 transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease",

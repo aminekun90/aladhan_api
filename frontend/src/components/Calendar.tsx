@@ -11,6 +11,7 @@ import {
     Grid,
     IconButton,
     Stack,
+    Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -117,39 +118,20 @@ export function DateCalendarComponent({
   };
 
   return (
-    <Grid container sx={{ flexGrow: 1, justifyContent: "center", padding: 2 }}>
+    <Grid container sx={{ flexGrow: 1, justifyContent: "center", px: { xs: 0, sm: 2 } }}>
       <Card
         sx={{
-          padding: 2,
-          minWidth: 300,
+          p: { xs: 1.5, sm: 2 },
+          width: "100%",
+          maxWidth: 420,
           borderRadius: "1.5rem",
-          background: "rgba(255, 255, 255, 0.15)",
-          backdropFilter: "blur(2px) saturate(180%)",
-          border: "0.0625rem solid rgba(255, 255, 255, 0.4)",
-          boxShadow:
-            "0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255,255,255,0.3)",
-          transition: "all 0.25s ease",
+          background: "var(--surface)",
+          backdropFilter: "blur(10px)",
+          border: "1px solid var(--line)",
+          transition: "border-color .25s ease, box-shadow .25s ease",
           "&:hover": {
-            boxShadow:
-              "0 10px 40px rgba(31, 38, 135, 0.25), inset 0 6px 24px rgba(255,255,255,0.4)",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(255, 255, 255, 0.1)",
-            borderRadius: "1.5rem",
-            backdropFilter: "blur(1px)",
-            boxShadow:
-              "inset -10px -8px 0px -11px rgba(255,255,255,1), inset 0px -9px 0px -8px rgba(255,255,255,1)",
-            opacity: 0.6,
-            zIndex: -1,
-            filter:
-              "blur(1px) drop-shadow(5px 2px 4px rgba(0,0,0,0.3)) brightness(115%)",
-            pointerEvents: "none",
+            borderColor: "rgba(212,173,95,0.35)",
+            boxShadow: "0 14px 44px rgba(212,173,95,0.12)",
           },
         }}
       >
@@ -157,14 +139,13 @@ export function DateCalendarComponent({
           container
           component="div"
           justifyContent="flex-end"
-          sx={{ display: "flex", alignItems: "center", height: 60 }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
-          <IconButton
-            sx={{ color: "white", height: 60, width: 60 }}
-            onClick={() => setOpenPdfModal(true)}
-          >
-            <PictureAsPdfIcon />
-          </IconButton>
+          <Tooltip title="Exporter en PDF">
+            <IconButton onClick={() => setOpenPdfModal(true)}>
+              <PictureAsPdfIcon />
+            </IconButton>
+          </Tooltip>
         </Grid>
 
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr-FR">
@@ -181,35 +162,35 @@ export function DateCalendarComponent({
           </Typography>
           {eventsForSelectedDay.length > 0 ? (
             eventsForSelectedDay.map((event: Timing, index) => (
-              <Stack
-                direction="column"
-                spacing={1}
-                key={`${event.date}-${index}`}
-              >
-                <Typography dir="rtl" key={event.hijri_date}>
+              <Stack spacing={1.5} key={`${event.date}-${index}`} sx={{ mt: 1 }}>
+                <Typography dir="rtl" sx={{ fontFamily: "var(--font-arabic)", fontSize: "1.1rem", color: "var(--brass-bright)" }}>
                   {event.hijri_date}
                 </Typography>
-                {(
-                  [
-                    "Imsak",
-                    "Fajr",
-                    "Dhuhr",
-                    "Asr",
-                    "Maghrib",
-                    "Isha",
-                  ] as TimingKey[]
-                ).map((key) => (
-                  <Chip
-                    key={`${index}-${key}`}
-                    label={`${key}: ${event.times[key]}`}
-                    sx={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      backdropFilter: "blur(2px)",
-                      color: theme.palette.text.primary,
-                      fontWeight: 600,
-                    }}
-                  />
-                ))}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
+                  {(
+                    [
+                      "Imsak",
+                      "Fajr",
+                      "Dhuhr",
+                      "Asr",
+                      "Maghrib",
+                      "Isha",
+                    ] as TimingKey[]
+                  ).map((key) => (
+                    <Chip
+                      key={`${index}-${key}`}
+                      size="small"
+                      label={`${key} ${event.times[key]}`}
+                      sx={{
+                        backgroundColor: "rgba(212,173,95,0.1)",
+                        border: "1px solid var(--line)",
+                        color: theme.palette.text.primary,
+                        fontWeight: 500,
+                        fontFamily: "var(--font-ui)",
+                      }}
+                    />
+                  ))}
+                </Box>
               </Stack>
             ))
           ) : (

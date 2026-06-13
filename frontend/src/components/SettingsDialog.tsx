@@ -139,7 +139,7 @@ export function SettingsDialog({
                             getOptionLabel={(city) => `${(city as City).name}, ${(city as City).country}`}
                             isOptionEqualToValue={(option, value) => (option as City).id === (value as City).id}
                             renderInput={(params) => <TextField {...params} label="Ville" variant="outlined" />}
-                            sx={{ width: 300 }}
+                            sx={{ width: "100%", maxWidth: 360 }}
                         />
 
                         <FormControl fullWidth sx={{ m: 1 }} variant="standard">

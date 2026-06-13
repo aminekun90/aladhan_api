@@ -16,12 +16,12 @@ export function PrayersComponent({ updateDate, coord }: Readonly<{ updateDate: (
         }
     }, [data, updateDate]);
     return (
-        <Grid container spacing={3} sx={{ flexGrow: 1, justifyContent: 'center' }}>
-            {isLoading && <Typography>Loading...</Typography>}
-            {error && <Typography>Error fetching prayers</Typography>}
-            
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ flexGrow: 1, justifyContent: 'center', maxWidth: 1000, mx: 'auto' }}>
+            {isLoading && <Typography sx={{ color: 'var(--mist)' }}>Loading…</Typography>}
+            {error && <Typography sx={{ color: 'var(--mist)' }}>Error fetching prayers</Typography>}
+
             {!!data && data.prayers.map((prayer, id) => (
-                <Grid size={{ xs: 6, md: 2 }} key={prayer.getName()}>
+                <Grid size={{ xs: 6, sm: 4, md: 2 }} key={prayer.getName()}>
                     <PrayerCard timezone={prayer.getTimeZone()} id={id?.toString()} title={prayer?.getName()} date={prayer?.getTime()} setSelectedCard={() => { }} isNext={data.prayers.find((inner) => inner.getTime().getTime() >= new Date().getTime()) === prayer} />
                 </Grid>
             ))}
