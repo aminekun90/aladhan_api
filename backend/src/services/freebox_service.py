@@ -246,6 +246,38 @@ class FreeboxService:
         r.raise_for_status()
         return r.json().get('success', False)
 
+    def control(self, player_id, action: str) -> bool:
+        """Send a transport command (play, pause, stop, next, prev) to a player."""
+        # Freebox normalizes "previous" to "prev".
+        command = "prev" if action == "previous" else action
+        return self._player_request(player_id, "post", f"control/{command}")
+
+    def mute(self, player_id, muted: bool) -> bool:
+        return self._player_request(player_id, "put", "control/mute", {"mute": muted})
+
+    def get_status(self, player_id) -> Dict[str, Any]:
+        """Return the raw player status payload (foreground app, player state)."""
+        self._ensure_session()
+        url = f"{self.base_url}/api/v8/player/{player_id}/api/v6/player_status"
+        r = self.session.get(url, headers=self._get_headers())
+        if r.status_code in (401, 403):
+            self.login()
+            r = self.session.get(url, headers=self._get_headers())
+        r.raise_for_status()
+        return r.json().get("result", {}) or {}
+
+    def _player_request(self, player_id, method: str, path: str, payload: dict | None = None) -> bool:
+        """Issue an authenticated player control request, retrying once on auth expiry."""
+        self._ensure_session()
+        url = f"{self.base_url}/api/v8/player/{player_id}/api/v6/{path}"
+        send = lambda: getattr(self.session, method)(url, json=payload, headers=self._get_headers())
+        r = send()
+        if r.status_code in (401, 403):
+            self.login()
+            r = send()
+        r.raise_for_status()
+        return r.json().get("success", False)
+
     def from_list(self, players: list[dict] | None) -> list[Device]:
         if not players:
             return []

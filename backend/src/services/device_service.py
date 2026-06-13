@@ -9,6 +9,7 @@ from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.domain import DeviceRepository, SettingsRepository
 from src.domain.models import Device, Settings
 from src.schemas.log_config import LogConfig
+from src.schemas.player import ControlResult, PlayerAction, PlayerState
 from src.services.adhan_service import get_prayer_datetimes
 from src.services.freebox_service import FreeboxService
 from src.services.soco_service import SoCoService
@@ -339,3 +340,57 @@ class DeviceService:
         self.soco_service.play_audio(device, url=url,volume=settings.volume)
 
         return {"status": "success", "message": f"Audio played successfully for device {device_id}"}
+
+    # ------------------------------
+    # Transport controls (unified)
+    # ------------------------------
+    def control_device(self, device_id: int, action: PlayerAction) -> ControlResult:
+        device = self.get_device_by_id(device_id)
+        if not device:
+            return ControlResult(status="error", message="Device not found")
+        try:
+            if device.type == "sonos_player":
+                state = self.soco_service.control(device, action)
+                return ControlResult(status="success", message=f"{action.value} sent", state=state)
+            if device.type == "freebox_player":
+                if action in (PlayerAction.MUTE, PlayerAction.UNMUTE):
+                    ok = self.freebox_service.mute(device.ip, action == PlayerAction.MUTE)
+                else:
+                    ok = self.freebox_service.control(device.ip, action.value)
+                return ControlResult(status="success" if ok else "error", message=f"{action.value} sent")
+            return ControlResult(status="error", message=f"Unsupported device type: {device.type}")
+        except Exception as exc:
+            logger.warning(f"Control {action.value} failed for device {device_id}: {exc}")
+            return ControlResult(status="error", message=str(exc))
+
+    def set_device_volume(self, device_id: int, volume: int) -> ControlResult:
+        device = self.get_device_by_id(device_id)
+        if not device:
+            return ControlResult(status="error", message="Device not found")
+        try:
+            if device.type == "sonos_player":
+                state = self.soco_service.set_volume(device, volume)
+                return ControlResult(status="success", message="volume set", state=state)
+            if device.type == "freebox_player":
+                ok = self.freebox_service.set_volume(device.ip, max(0, min(100, volume)))
+                return ControlResult(status="success" if ok else "error", message="volume set")
+            return ControlResult(status="error", message=f"Unsupported device type: {device.type}")
+        except Exception as exc:
+            logger.warning(f"Set volume failed for device {device_id}: {exc}")
+            return ControlResult(status="error", message=str(exc))
+
+    def get_device_state(self, device_id: int) -> Optional[PlayerState]:
+        device = self.get_device_by_id(device_id)
+        if not device:
+            return None
+        if device.type == "sonos_player":
+            return self.soco_service.get_state(device)
+        # Freebox: best-effort normalized state.
+        state = PlayerState(device_id=device.id, name=device.name, ip=device.ip, type=device.type)
+        try:
+            status = self.freebox_service.get_status(device.ip)
+            state.transport_state = (status.get("player_state") or "UNKNOWN").upper()
+        except Exception as exc:
+            logger.warning(f"Freebox status failed for device {device_id}: {exc}")
+            state.online = False
+        return state

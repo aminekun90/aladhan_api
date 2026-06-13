@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.core.repository_factory import RepositoryContainer
 from src.domain.models import Device
+from src.schemas.player import ControlResult, PlayerAction, PlayerState
 
 # Import your services and models
 from src.services.device_service import DeviceService
@@ -132,3 +133,33 @@ def play_prayer(device_id: int) -> dict:
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
     return device_service.play_audio_in_device(device_id= device_id)
+
+
+# ------------------------------
+# Unified transport controls (Sonos + Freebox)
+# ------------------------------
+@router.post("/device/{device_id}/control/{action}", response_model=ControlResult,
+             description="Transport control: play | pause | stop | next | previous | mute | unmute")
+def control_device(device_id: int, action: PlayerAction) -> ControlResult:
+    result = device_service.control_device(device_id, action)
+    if result.status == "error" and result.message == "Device not found":
+        raise HTTPException(status_code=404, detail=result.message)
+    return result
+
+
+@router.post("/device/{device_id}/volume/{volume}", response_model=ControlResult,
+             description="Set volume (0-100) for a device, regardless of backend")
+def set_device_volume(device_id: int, volume: int) -> ControlResult:
+    result = device_service.set_device_volume(device_id, volume)
+    if result.status == "error" and result.message == "Device not found":
+        raise HTTPException(status_code=404, detail=result.message)
+    return result
+
+
+@router.get("/device/{device_id}/state", response_model=PlayerState,
+            description="Current normalized playback state of a device")
+def get_device_state(device_id: int) -> PlayerState:
+    state = device_service.get_device_state(device_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return state
