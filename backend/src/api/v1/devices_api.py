@@ -7,6 +7,7 @@ from src.domain.models import Device
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
 
 # Import your services and models
+from src.services.bluetooth_service import BluetoothService
 from src.services.device_service import DeviceService
 from src.services.freebox_service import FreeboxService
 from src.services.soco_service import SoCoService
@@ -15,6 +16,7 @@ from src.services.soco_service import SoCoService
 repos = RepositoryContainer()
 soco_service = SoCoService()
 freebox_service = FreeboxService()
+bluetooth_service = BluetoothService()
 device_service = DeviceService(repos.device_repo, repos.setting_repo)
 
 router = APIRouter()
@@ -175,3 +177,38 @@ def get_device_state(device_id: int) -> PlayerState:
     if state is None:
         raise HTTPException(status_code=404, detail="Device not found")
     return state
+
+
+# ------------------------------
+# Bluetooth (BlueZ — Linux/Raspberry Pi)
+# ------------------------------
+@router.get("/bluetooth/status", description="Bluetooth capability of the host (Linux/BlueZ required)")
+def bluetooth_status() -> Dict[str, Any]:
+    return bluetooth_service.status()
+
+
+@router.get("/bluetooth/scan", response_model=List[Device],
+            description="Scan for nearby Bluetooth speakers and persist them")
+def bluetooth_scan(timeout: int = 8) -> List[Device]:
+    devices = bluetooth_service.scan(timeout=timeout)
+    if devices:
+        device_service.upsert_devices_bulk(devices)
+    return devices
+
+
+@router.post("/bluetooth/{mac}/pair", description="Pair and trust a Bluetooth speaker")
+def bluetooth_pair(mac: str) -> dict:
+    ok = bluetooth_service.pair(mac)
+    return {"status": "success" if ok else "error", "mac": mac}
+
+
+@router.post("/bluetooth/{mac}/connect", description="Connect a paired Bluetooth speaker")
+def bluetooth_connect(mac: str) -> dict:
+    ok = bluetooth_service.connect(mac)
+    return {"status": "success" if ok else "error", "mac": mac}
+
+
+@router.post("/bluetooth/{mac}/disconnect", description="Disconnect a Bluetooth speaker")
+def bluetooth_disconnect(mac: str) -> dict:
+    ok = bluetooth_service.disconnect(mac)
+    return {"status": "success" if ok else "error", "mac": mac}

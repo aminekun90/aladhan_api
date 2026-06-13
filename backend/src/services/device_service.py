@@ -1,3 +1,4 @@
+import os
 import socket
 from datetime import date, datetime, timedelta
 from typing import Optional
@@ -11,9 +12,12 @@ from src.domain.models import Device, Settings
 from src.schemas.log_config import LogConfig
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
 from src.services.adhan_service import get_prayer_datetimes
+from src.services.bluetooth_service import BluetoothService
 from src.services.freebox_service import FreeboxService
 from src.services.soco_service import SoCoService
 from src.utils.date_utils import get_tz
+
+AUDIO_DIR = "src/data/audio"
 
 logger = LogConfig.get_logger()
 DEFAULT_TZ = "Europe/Paris"
@@ -35,6 +39,7 @@ class DeviceService:
         self.debug = debug
         self.soco_service = SoCoService()
         self.freebox_service = FreeboxService()
+        self.bluetooth_service = BluetoothService()
         self.host_ip = self.get_local_ip()
         self.api_port = 8000
         logger.info(f"🌐 Host IP: {self.host_ip}:{self.api_port}")
@@ -86,11 +91,11 @@ class DeviceService:
             logger.info(f"⚠️ Missing audio name for {device.id}, skipping {prayer_name} call.")
             return
 
-        # Build the playable URL
+        # Build the playable URL (network players) / local path (Bluetooth)
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
-        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}" 
-        
-        logger.info(f"🕌 It's time for {prayer_name} (Device {device.id}) -> playing {url}")
+        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
+
+        logger.info(f"It's time for {prayer_name} (device {device.id}) -> playing {audio_name}")
 
         # Trigger playback
         try:
@@ -98,9 +103,12 @@ class DeviceService:
                 self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=settings.volume)
             elif device.type == "sonos_player":
                 self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
-            
+            elif device.type == "bluetooth_speaker":
+                self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
+            else:
+                logger.warning(f"Unknown device type '{device.type}' for device {device.id}")
         except Exception as e:
-            logger.info(f"❌ Failed to play audio for device : name:{device.name} id: {device.id} \nwith error: {e}")
+            logger.warning(f"Failed to play audio for device name:{device.name} id:{device.id}: {e}")
 
 
     # ------------------------------
@@ -333,11 +341,16 @@ class DeviceService:
         if not audio_name:
             return {"status": "error", "message": "Audio not found"}
         
-        # Build the playable URL
+        # Build the playable URL (network players) / local path (Bluetooth)
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
-        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}" 
-       
-        self.soco_service.play_audio(device, url=url,volume=settings.volume)
+        url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
+
+        if device.type == "freebox_player":
+            self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=settings.volume)
+        elif device.type == "bluetooth_speaker":
+            self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
+        else:
+            self.soco_service.play_audio(device, url=url, volume=settings.volume)
 
         return {"status": "success", "message": f"Audio played successfully for device {device_id}"}
 
