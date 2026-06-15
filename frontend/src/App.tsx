@@ -115,8 +115,23 @@ function App() {
   const scanBluetoothMutation = useMutation({
     mutationFn: () => scanBluetooth(),
     onSuccess: (found) => {
-      notifySuccess('Bluetooth Scan', `Found ${found.length} device(s)`);
-      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      if (found.length > 0) {
+        notifySuccess('Bluetooth', `${found.length} enceinte(s) trouvée(s)`);
+        queryClient.invalidateQueries({ queryKey: ["devices"] });
+      } else {
+        show({
+          type: 'info', title: 'Bluetooth',
+          message: "Aucune enceinte trouvée. Vérifiez que l'enceinte est en mode appairage et que le Bluetooth est actif sur le serveur.",
+          position: 'top-right', duration: 5000, progressBar: true,
+        });
+      }
+    },
+    onError: () => {
+      show({
+        type: 'error', title: 'Bluetooth',
+        message: "Le scan Bluetooth a échoué (Bluetooth indisponible sur le serveur ?).",
+        position: 'top-right', duration: 5000, progressBar: true,
+      });
     },
   });
 

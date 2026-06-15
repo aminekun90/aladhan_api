@@ -45,16 +45,32 @@ class BluetoothService:
     # ------------------------------
     # Discovery & pairing
     # ------------------------------
-    def scan(self, timeout: int = 8) -> List[Device]:
-        """Scan for nearby Bluetooth devices and return them as domain Devices."""
+    def scan(self, timeout: int = 8, audio_only: bool = True) -> List[Device]:
+        """Scan for nearby Bluetooth devices and return them as domain Devices.
+
+        By default only audio output devices (speakers/headphones) are returned —
+        phones, watches, etc. are filtered out since they can't play the adhan.
+        """
         if not self.available():
             logger.warning("Bluetooth scan requested on a host without BlueZ; returning empty")
             return []
         # Power the adapter on, run a timed discovery, then read the device list.
         self._ctl(["power", "on"])
         self._ctl(["--timeout", str(timeout), "scan", "on"], timeout=timeout + 5)
-        out = self._ctl(["devices"])
-        return self._parse_devices(out)
+        devices = self._parse_devices(self._ctl(["devices"]))
+        if audio_only:
+            devices = [d for d in devices if isinstance(d.ip, str) and self._is_audio_device(d.ip)]
+        return devices
+
+    def _is_audio_device(self, mac: str) -> bool:
+        """True if the device advertises an audio sink (A2DP speaker/headphones)."""
+        info = self._ctl(["info", mac]).lower()
+        return (
+            "audio sink" in info          # A2DP sink UUID name
+            or "0000110b" in info         # A2DP Sink service UUID
+            or "0000111e" in info         # Handsfree
+            or "icon: audio" in info      # audio-card / audio-headset / audio-headphones
+        )
 
     def list_connected(self) -> set[str]:
         """Return the MAC addresses of currently connected Bluetooth devices."""
