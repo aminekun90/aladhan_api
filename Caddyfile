@@ -1,0 +1,28 @@
+# Caddy reverse proxy — terminates HTTPS in front of the Adhan API so the
+# browser treats the site as a "secure context" and geolocation works on phones.
+#
+# Uses Caddy's INTERNAL CA (a self-signed root) — no public domain or internet
+# needed. Two ways to get rid of the browser warning:
+#   1. Click "Advanced → proceed" once (the origin is still HTTPS, so
+#      geolocation already works after that), or
+#   2. Install Caddy's root CA on your devices for a clean padlock. The root is
+#      written to the mounted volume at:
+#        /data/caddy/pki/authorities/local/root.crt
+#      Copy it out with:  docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./
+#      then trust it on your phone/computer.
+
+{
+	# Don't auto-redirect HTTP->HTTPS for IP hosts handled below; we do it explicitly.
+	auto_https disable_redirects
+}
+
+# HTTPS on 443 for any hostname/IP, signed by the internal CA.
+:443 {
+	tls internal
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Redirect plain HTTP to HTTPS.
+:80 {
+	redir https://{host}{uri} permanent
+}

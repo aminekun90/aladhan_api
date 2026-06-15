@@ -117,9 +117,35 @@ http://<server-ip>:8000        e.g. http://192.168.1.66:8000
 - **Auto-location**: the app uses the browser's geolocation to pick prayer
   times for your position automatically.
   ⚠️ Browsers only allow geolocation on `localhost` or over **HTTPS**. When you
-  open `http://<pi-ip>:8000` from a phone, geolocation is blocked — just select
-  your city manually (search is instant), or put the app behind HTTPS (e.g. a
-  reverse proxy / Tailscale) to enable auto-location.
+  open `http://<pi-ip>:8000` from a phone, geolocation is blocked — either
+  select your city manually (search is instant) or enable HTTPS (below).
+
+## Enable HTTPS (for phone auto-location)
+
+A bundled [Caddy](https://caddyserver.com) reverse proxy terminates HTTPS using
+its own internal CA — no public domain or internet required.
+
+```bash
+docker compose --profile https up -d
+```
+
+Then open **`https://<server-ip>`** (port 443) from your phone or computer.
+
+- The first time, the browser shows a certificate warning (the CA is
+  self-signed). Click **Advanced → Proceed** — the origin is now HTTPS, so
+  **geolocation works**.
+- To remove the warning entirely, install Caddy's root certificate on your
+  devices:
+
+  ```bash
+  docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./aladhan-root.crt
+  # then trust aladhan-root.crt on each device (Android: Settings → Security →
+  # Install a certificate; iOS: install profile then enable in Trust Settings;
+  # macOS/Windows: add to the system trust store)
+  ```
+
+> Tip: if you use [Tailscale](https://tailscale.com), `tailscale serve https / http://127.0.0.1:8000`
+> gives a real, already-trusted certificate with zero warnings.
 
 ## Slimming the cities database
 
