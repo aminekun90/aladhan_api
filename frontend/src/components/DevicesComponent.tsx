@@ -13,9 +13,11 @@ export function DevicesComponent({ devices, onClick, onOpenSettings, soCoDevices
         <Stack spacing={2} sx={{ mt: 2 }} >
             <Grid container spacing={3} sx={{ flexGrow: 1, justifyContent: 'center' }}>
                 {devices?.map((device) => {
-                    // Local & Freebox players are always reachable; Sonos availability
-                    // depends on live network discovery.
-                    const available = device.type === "sonos_player"
+                    // "Cet appareil" is always reachable. Sonos & Freebox are network
+                    // players: available only if the live scan (/soco/devices) found
+                    // them now — so on a foreign network they correctly show offline.
+                    const liveScanned = device.type === "sonos_player" || device.type === "freebox_player";
+                    const available = liveScanned
                         ? !!soCoDevices?.some(d => d.getIp() === device.getIp())
                         : true;
                     return <DeviceCard

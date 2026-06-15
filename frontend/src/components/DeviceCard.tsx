@@ -73,7 +73,8 @@ export default function DeviceCard({
     const isBluetooth = device.type === "bluetooth_speaker";
     const isLocal = device.type === "local_player";
     const iconOnly = isBluetooth || isLocal; // no product photo for these
-    const controllable = !!device.getId() && !isBluetooth && !isLocal; // fire-and-forget players
+    // Transport controls only make sense for a reachable network player.
+    const controllable = available && !!device.getId() && !isBluetooth && !isLocal;
 
     let deviceImage = symfonisk;
     if (isFreeboxPlayer || device.getRawAttributes().device_model === "fbx7hd-delta") {
@@ -126,7 +127,7 @@ export default function DeviceCard({
                 </Tooltip>
             )}
 
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mb: 2, flexWrap: "wrap" }}>
                 {device.type && (
                     <Chip
                         size="small"
@@ -136,7 +137,11 @@ export default function DeviceCard({
                         variant={selected ? "filled" : "outlined"}
                     />
                 )}
-                {isFreeboxPlayer && <LockOpenIcon fontSize="small" sx={{ color: "var(--mist)" }} />}
+                {!available && (
+                    <Chip size="small" label="Hors ligne" color="default" variant="outlined"
+                        sx={{ color: "var(--mist)", borderColor: "var(--line)" }} />
+                )}
+                {isFreeboxPlayer && available && <LockOpenIcon fontSize="small" sx={{ color: "var(--mist)" }} />}
             </Box>
 
             <Box sx={{
