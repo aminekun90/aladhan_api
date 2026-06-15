@@ -103,6 +103,43 @@ docker pull aminekun90/adhan-api
 docker run -d --name adhan-api --network host --restart unless-stopped -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -v /home/pi/data:/app/src/data aminekun90/adhan-api
 ```
 
+## Using it from a phone or computer
+
+The app is responsive and installable. Once the server runs (Pi, computer, or
+Docker), open it from any device on the same network:
+
+```
+http://<server-ip>:8000        e.g. http://192.168.1.66:8000
+```
+
+- **Install as an app**: on Android/desktop Chrome use "Install app"; on iOS
+  Safari use "Add to Home Screen". A web manifest + icon are included.
+- **Auto-location**: the app uses the browser's geolocation to pick prayer
+  times for your position automatically.
+  ⚠️ Browsers only allow geolocation on `localhost` or over **HTTPS**. When you
+  open `http://<pi-ip>:8000` from a phone, geolocation is blocked — just select
+  your city manually (search is instant), or put the app behind HTTPS (e.g. a
+  reverse proxy / Tailscale) to enable auto-location.
+
+## Slimming the cities database
+
+The bundled GeoNames data can be huge. To rebuild a compact cities table
+(~12 MB instead of ~1.5 GB), see `backend/scripts/README.md`:
+
+```bash
+cd backend
+uv run python scripts/build_cities_db.py \
+  --source src/data/allCountries.txt --target src/data/cities.db --in-place
+```
+
+## Playing the adhan on the machine itself
+
+A virtual **"Cet appareil"** device is always available and plays the adhan
+through the host's own speakers (in addition to Sonos / Freebox / Bluetooth).
+In Docker this needs host audio — pass the sound card through (uncomment
+`devices: [/dev/snd:/dev/snd]` in `docker_compose.yml`, or add
+`--device /dev/snd` to `docker run`).
+
 ## Api doc
 
 Check swagger at localhost:8000/docs#/

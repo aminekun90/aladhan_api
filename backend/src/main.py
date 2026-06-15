@@ -86,7 +86,17 @@ else:
 
 @app.get("/{full_path:path}", name="serve_frontend_app", tags=["Frontend"])
 async def serve_react_app(full_path: str):
-    """Serve the React single-page app (client-side routing fallback)."""
+    """Serve static frontend files (manifest, icons, …) or fall back to the SPA.
+
+    Real files in the build directory are served directly so PWA assets work;
+    any other path returns index.html for client-side routing.
+    """
+    if full_path:
+        candidate = os.path.realpath(os.path.join(FRONTEND_DIR, full_path))
+        # Path-traversal guard: candidate must stay inside FRONTEND_DIR.
+        if candidate.startswith(os.path.realpath(FRONTEND_DIR) + os.sep) and os.path.isfile(candidate):
+            return FileResponse(candidate)
+
     index_file = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)

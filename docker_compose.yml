@@ -1,21 +1,37 @@
-version: "3.9"
-
 services:
   adhan-api:
     build:
       context: .
       dockerfile: Dockerfile
-      # Optional: specify platforms if needed
+      # Build for the Pi's architecture when building on another machine:
       # platforms:
-      #   - linux/arm/v7
-      #   - linux/arm64
+      #   - linux/arm64    # Raspberry Pi 4/5 (64-bit OS)
+      #   - linux/arm/v7   # Raspberry Pi (32-bit OS)
       #   - linux/amd64
     container_name: adhan-api
-    ports:
-      - "8000:8000"
+    # Host networking is required for Sonos (SSDP) and Freebox (mDNS) discovery
+    # to reach the LAN. Under host mode the app listens directly on port 8000.
+    network_mode: host
     environment:
-      TZ: Europe/Paris
+      TZ: ${TZ:-Europe/Paris}
       UVICORN_HOST: 0.0.0.0
       UVICORN_PORT: 8000
       LOG_LEVEL: info
+    volumes:
+      # Persists the database (cities + devices + settings) and the Freebox
+      # token across rebuilds. Seeded from the image on first run.
+      - adhan-data:/app/src/data
+    # Local "this device" / Bluetooth playback on a Raspberry Pi needs host
+    # audio. Uncomment to pass the sound card through to the container:
+    # devices:
+    #   - /dev/snd:/dev/snd
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
+
+volumes:
+  adhan-data:
