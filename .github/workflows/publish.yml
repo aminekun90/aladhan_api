@@ -16,58 +16,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repo
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # 2️⃣ Restore cached cities.db directory
+      # cities.db is git-ignored (built from GeoNames), so cache the generated
+      # file between runs and only rebuild it on a cache miss.
       - name: Restore cached cities.db
         id: restore-db
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
-          path: backend/src/data
-          key: cities-db-v1
+          path: backend/src/data/cities.db
+          key: cities-db-${{ hashFiles('backend/scripts/build_cities_db.py') }}
 
-      # 3️⃣ Install Python for data_tools
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version-file: data_tools/.python-version
+          python-version-file: backend/.python-version
 
-      # 4️⃣ Generate cities.db if cache miss (placeholder)
-      - name: Generate cities.db (if cache miss)
+      # Build the compact cities table so the image ships with working city
+      # search / reverse-geocode (cities1000 = populated places >= 1000 pop).
+      - name: Generate cities.db (cache miss)
         if: steps.restore-db.outputs.cache-hit != 'true'
         run: |
-          echo "cities.db not found in cache — will be generated at container runtime"
+          curl -fsSL -o /tmp/cities1000.zip https://download.geonames.org/export/dump/cities1000.zip
+          unzip -o /tmp/cities1000.zip -d /tmp
+          python3 backend/scripts/build_cities_db.py \
+            --source /tmp/cities1000.txt \
+            --out backend/src/data/cities.db \
+            --min-population 0
 
-      # 5️⃣ Set up QEMU
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
-      # 6️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
-      # 7️⃣ Log in to Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
-      # 8️⃣ Extract version from pyproject.toml
       - name: Extract version
         run: |
           VERSION=$(grep -Po '(?<=^version = ")[^"]*' backend/pyproject.toml)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      # 9️⃣ Build & push multi-arch Docker image
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          file: DOCKERFILE
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          file: Dockerfile
+          # arm64 (Pi 4/5 64-bit) + amd64 are verified. arm/v7 (32-bit Pi) is
+          # omitted — the Python/Node build chain is unreliable under QEMU there;
+          # re-add "linux/arm/v7" if you run a 32-bit OS.
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             aminekun90/adhan-api:latest
