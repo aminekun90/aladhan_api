@@ -98,6 +98,13 @@ export async function allTimings(month?: number, year?: number, coord?: { lat?: 
 }
 
 
+export async function getNearestCity(lat: number, lon: number): Promise<City | null> {
+    const result = await api.get<City>(`${CONFIG.getCitiesByName}/nearest?lat=${lat}&lon=${lon}`, {
+        headers: { 'Content-Type': 'application/json' },
+    });
+    return result ?? null;
+}
+
 export async function getCitiesByName(name: string, country?: string): Promise<City[]> {
 
     const response = await api.get<City[]>(`${CONFIG.getCitiesByName}?name=${name}${country ? '&country=' + country : ''}`, {

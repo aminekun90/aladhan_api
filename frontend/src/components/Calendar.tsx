@@ -33,7 +33,8 @@ type TimingKey = "Imsak" | "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 
 export function DateCalendarComponent({
   coord,
-}: Readonly<{ coord: { lat?: number; lon?: number } }>) {
+  locationLabel,
+}: Readonly<{ coord: { lat?: number; lon?: number }; locationLabel?: string }>) {
   const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [exporting, setExporting] = useState<boolean>(false);
@@ -227,7 +228,7 @@ export function DateCalendarComponent({
             events={events}
             monthLabel={capitalize(selectedDate.format("MMMM YYYY"))}
             hijriLabel={hijriMonthYear}
-            location={`${(coord.lat ?? 0).toFixed(3)}, ${(coord.lon ?? 0).toFixed(3)}`}
+            location={locationLabel ?? `${(coord.lat ?? 0).toFixed(3)}, ${(coord.lon ?? 0).toFixed(3)}`}
             method={events[0]?.method ?? "—"}
           />
         </Box>

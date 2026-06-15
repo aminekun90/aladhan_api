@@ -1,4 +1,4 @@
-import { getSettings } from "@/api/apiPrayer";
+import { getNearestCity, getSettings } from "@/api/apiPrayer";
 import { DateCalendarComponent } from '@/components/Calendar';
 import { DateClock } from "@/components/Clock";
 import { DevicesComponent } from "@/components/DevicesComponent";
@@ -152,6 +152,13 @@ function App() {
 
   const { coords: geoCoords, status: geoStatus, request: requestLocation } = useGeolocation();
 
+  // Reverse-geocode the GPS position to a city name for display.
+  const { data: nearestCity } = useQuery({
+    queryKey: ["nearestCity", geoCoords?.lat, geoCoords?.lon],
+    queryFn: () => getNearestCity(geoCoords!.lat, geoCoords!.lon),
+    enabled: !!geoCoords,
+  });
+
   // Coordinate precedence: an explicitly configured city wins; otherwise use the
   // device's GPS position; finally fall back to the default location.
   const hasCity = currentSetting?.city?.lat != null && currentSetting?.city?.lon != null;
@@ -160,7 +167,9 @@ function App() {
     : (geoCoords ?? DEFAULT_COORD);
   const locationLabel = hasCity
     ? `${currentSetting?.city?.name ?? "Not set"} · ${currentSetting?.city?.country ?? ""}`
-    : geoCoords ? "Ma position" : "Localisation par défaut";
+    : geoCoords
+      ? (nearestCity ? `${nearestCity.name} · ${nearestCity.country}` : "Ma position")
+      : "Localisation par défaut";
 
   const handleDeviceClick = (device: Device) => {
     setDeviceClicked(!deviceClicked);
@@ -270,7 +279,7 @@ function App() {
 
           <Box component="section">
             <SectionHeading>Calendrier</SectionHeading>
-            <DateCalendarComponent coord={coord} />
+            <DateCalendarComponent coord={coord} locationLabel={locationLabel} />
           </Box>
         </Stack>
 
