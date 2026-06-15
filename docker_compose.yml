@@ -21,10 +21,17 @@ services:
       # Persists the database (cities + devices + settings) and the Freebox
       # token across rebuilds. Seeded from the image on first run.
       - adhan-data:/app/src/data
-    # Local "this device" / Bluetooth playback on a Raspberry Pi needs host
-    # audio. Uncomment to pass the sound card through to the container:
+      # --- Bluetooth (optional) ---
+      # Lets the container's bluetoothctl drive the HOST's bluetoothd. The Pi
+      # must have a BT adapter and bluetoothd running on the host. Uncomment:
+      # - /var/run/dbus:/var/run/dbus
+    # --- Local / Bluetooth audio on the Pi (optional) ---
+    # Pass the host sound card through so "Cet appareil" / a BT speaker can play.
+    # Uncomment (and the D-Bus volume above) to enable:
     # devices:
     #   - /dev/snd:/dev/snd
+    # cap_add:
+    #   - NET_ADMIN
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s

@@ -166,6 +166,33 @@ In Docker this needs host audio — pass the sound card through (uncomment
 `devices: [/dev/snd:/dev/snd]` in `docker_compose.yml`, or add
 `--device /dev/snd` to `docker run`).
 
+## Bluetooth speakers (Raspberry Pi)
+
+First check the Pi actually has Bluetooth and it's running:
+
+```bash
+bluetoothctl list          # lists controllers; empty = no/disabled adapter
+systemctl status bluetooth # bluetoothd should be active
+hciconfig                  # or: shows hci0 if an adapter is present
+```
+
+(Pi 3B+/4/5 and Zero W/2W have built-in BT; the original Pi 1/2 and CM modules
+don't.) Then the speaker must be in **pairing mode** when you scan from the app.
+
+In Docker, the container's `bluetoothctl` drives the **host's** `bluetoothd`
+over the system D-Bus — uncomment in `docker_compose.yml`:
+
+```yaml
+volumes:
+  - /var/run/dbus:/var/run/dbus
+cap_add:
+  - NET_ADMIN
+```
+
+In k8s, enable it on the adhan chart: `--set bluetooth.enabled=true` (mounts the
+host D-Bus; the pod runs privileged). Bare-metal (non-container) installs need
+nothing extra.
+
 ## Api doc
 
 Check swagger at localhost:8000/docs#/
