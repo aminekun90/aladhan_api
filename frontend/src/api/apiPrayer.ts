@@ -18,6 +18,17 @@ export async function getAzanList(): Promise<AudioFile[]> {
     return [];
 }
 
+export async function uploadAudio(file: File): Promise<AudioFile | null> {
+    const form = new FormData();
+    form.append("file", file);
+    // Empty headers so axios sets the multipart boundary itself.
+    return api.post<AudioFile>("audio/upload", form, { headers: {} });
+}
+
+export async function deleteAudio(name: string): Promise<void> {
+    await api.del(`audio/${encodeURIComponent(name)}`, { headers: { 'Content-Type': 'application/json' } });
+}
+
 export async function getMethods(): Promise<{ method: string, description: string }[]> {
     const methods = await api.get<{ method: string, description: string }[]>(`${CONFIG.methods}`, {
         headers: {

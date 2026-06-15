@@ -1,14 +1,19 @@
 import {
+    deleteAudio,
     getAzanList,
     getCitiesByName,
     getMethods,
     saveSetting,
+    uploadAudio,
 } from "@/api/apiPrayer";
+import { logger } from "@/utils/logger";
 import { City } from "@/models/City";
 import { AudioFile, Settings } from "@/models/Settings";
 import { useToast } from "@aminekun90/react-toast";
 import {
     CloseOutlined,
+    DeleteOutline,
+    UploadFile,
     VolumeDown,
     VolumeUp,
 } from "@mui/icons-material";
@@ -28,15 +33,16 @@ import {
     Select,
     Slider,
     TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import { Box, Grid, Stack } from "@mui/system";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { ChangeEvent, SyntheticEvent, useState } from "react";
+import { ChangeEvent, SyntheticEvent, useRef, useState } from "react";
 type AutocompleteValue = string | City | null;
 export function SettingsDialog({
     isOpen,
@@ -48,6 +54,9 @@ export function SettingsDialog({
         queryFn: getMethods,
     });
 
+    const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const { data: azanList } = useQuery({
         queryKey: ["azanList"],
         queryFn: getAzanList,
@@ -55,6 +64,22 @@ export function SettingsDialog({
 
     const citiesMutation = useMutation({
         mutationFn: ({ name, coutry }: { name: string; coutry?: string }) => getCitiesByName(name, coutry),
+    });
+
+    const uploadMutation = useMutation({
+        mutationFn: (file: File) => uploadAudio(file),
+        onSuccess: (uploaded) => {
+            queryClient.invalidateQueries({ queryKey: ["azanList"] });
+            if (uploaded) setAudioFile(uploaded);
+            show({ type: 'success', title: 'Audio ajouté', message: uploaded?.name ?? '', position: 'top-right', duration: 3000 });
+        },
+        onError: (err) => logger.error("Audio upload failed:", err),
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (name: string) => deleteAudio(name),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["azanList"] }),
+        onError: (err) => logger.error("Audio delete failed:", err),
     });
 
     const [method, setMethod] = useState<string>(settings.selected_method);
@@ -182,16 +207,52 @@ export function SettingsDialog({
                         />
 
                         {azanList && (
-                            <FormControl fullWidth>
-                                <InputLabel>Audio d'appel à la prière</InputLabel>
-                                <Select value={audioFile?.id} onChange={(event) => { handleAzanChange(event); }}>
-                                    {azanList.map((azan: AudioFile) => (
-                                        <MenuItem key={azan.id} value={azan.id}>
-                                            {azan.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <FormControl fullWidth>
+                                    <InputLabel>Audio d'appel à la prière</InputLabel>
+                                    <Select value={audioFile?.id ?? ""} onChange={(event) => { handleAzanChange(event); }}>
+                                        {azanList.map((azan: AudioFile) => (
+                                            <MenuItem key={azan.id} value={azan.id}>
+                                                {azan.name}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="audio/mpeg,.mp3"
+                                    hidden
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) uploadMutation.mutate(file);
+                                        e.target.value = "";
+                                    }}
+                                />
+                                <Tooltip title="Importer un MP3">
+                                    <span>
+                                        <IconButton onClick={() => fileInputRef.current?.click()} disabled={uploadMutation.isPending}>
+                                            <UploadFile />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                                <Tooltip title="Supprimer cet audio">
+                                    <span>
+                                        <IconButton
+                                            color="error"
+                                            disabled={!audioFile?.name || deleteMutation.isPending}
+                                            onClick={() => {
+                                                if (audioFile?.name) {
+                                                    deleteMutation.mutate(audioFile.name);
+                                                    setAudioFile(null);
+                                                }
+                                            }}
+                                        >
+                                            <DeleteOutline />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            </Stack>
                         )}
 
                         {audioFile && (

@@ -46,10 +46,21 @@ export async function put<T>(url: string, data: object, axiosOption: AxiosReques
     }
 }
 
+export async function del<T>(url: string, axiosOption: AxiosRequestConfig): Promise<T> {
+    try {
+        const response = await axios.delete<T>(baseUrl() + url, axiosOption);
+        return unwrap(response.status, response.data);
+    } catch (error) {
+        logger.error(error);
+        return null as unknown as T;
+    }
+}
+
 const api = {
     get,
     post,
-    put
+    put,
+    del
 }
 
 export default api;

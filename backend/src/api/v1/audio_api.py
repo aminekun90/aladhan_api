@@ -1,5 +1,5 @@
 import base64
-from fastapi import APIRouter, Query,Response
+from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile
 from src.core.repository_factory import RepositoryContainer
 from .models import AudioResponse, MessageResponse
 from src.services.audio_service import AudioService
@@ -54,6 +54,29 @@ def load_audios_from_data_folder() -> MessageResponse:
     """
     audio_service.load_audios_files_from_data_folder()
     return MessageResponse(message="Audios loaded successfully")
+
+@router.post("/audio/upload")
+async def upload_audio(file: UploadFile = File(...)) -> AudioResponse:
+    """Upload an MP3 adhan file (stored on disk + in the database)."""
+    is_mp3 = (file.content_type in ("audio/mpeg", "audio/mp3")
+              or (file.filename or "").lower().endswith(".mp3"))
+    if not is_mp3:
+        raise HTTPException(status_code=400, detail="Only MP3 files are supported")
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+    audio = audio_service.save_uploaded_audio(file.filename or "adhan.mp3", content)
+    return AudioResponse(**audio.get_dict())
+
+
+@router.delete("/audio/{name}")
+def delete_audio(name: str) -> MessageResponse:
+    """Delete an audio file by name (from the database and disk)."""
+    if not audio_service.get_audio_by_name(name):
+        raise HTTPException(status_code=404, detail="Audio not found")
+    audio_service.delete_audio(name)
+    return MessageResponse(message=f"Deleted {name}")
+
 
 @router.get("/audio/{audio_name}")
 def get_audio_blob(audio_name: str):
