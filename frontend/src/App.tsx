@@ -17,7 +17,7 @@ import { Box, CircularProgress, CssBaseline, IconButton, Stack, ThemeProvider, T
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ReactNode, useEffect, useState } from "react";
 import packageJson from '../package.json';
-import { createDeviceSettings, getDevices, getSoCoDevices, scanBluetooth, scheduleAllDevices } from "./api/apiDevice";
+import { createDeviceSettings, getConnectedBluetooth, getDevices, getSoCoDevices, scanBluetooth, scheduleAllDevices } from "./api/apiDevice";
 import { AboutDialog } from "./components/about";
 import { Settings } from "./models/Settings";
 import { Device } from "./models/device";
@@ -96,6 +96,11 @@ function App() {
   const { data: settings, error: settingsError, isLoading: settingsLoading } = useQuery({
     queryKey: ["settings"],
     queryFn: getSettings,
+  });
+  const { data: connectedBt } = useQuery({
+    queryKey: ["connectedBluetooth"],
+    queryFn: getConnectedBluetooth,
+    refetchInterval: 30000,
   });
 
   const scheduleAllDevicesMutation = useMutation({
@@ -269,6 +274,7 @@ function App() {
                 <DevicesComponent
                   devices={devices ?? []}
                   soCoDevices={socoDevices ?? []}
+                  connectedBtMacs={connectedBt ?? []}
                   selectedIp={currentDeviceIp}
                   onClick={selectDevice}
                   onOpenSettings={openDeviceSettings}

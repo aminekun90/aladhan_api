@@ -101,3 +101,8 @@ export async function scanBluetooth(timeout = 8): Promise<Device[]> {
 export async function connectBluetooth(mac: string): Promise<{ status: string; mac: string }> {
     return api.post(`bluetooth/${mac}/connect`, {}, JSON_HEADERS);
 }
+
+export async function getConnectedBluetooth(): Promise<string[]> {
+    const result = await api.get<{ connected: string[] }>("bluetooth/connected", JSON_HEADERS);
+    return result?.connected ?? [];
+}

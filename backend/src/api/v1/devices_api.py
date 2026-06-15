@@ -200,6 +200,11 @@ def bluetooth_scan(timeout: int = 8) -> List[Device]:
     return devices
 
 
+@router.get("/bluetooth/connected", description="MAC addresses of currently connected Bluetooth speakers")
+def bluetooth_connected() -> Dict[str, Any]:
+    return {"connected": sorted(bluetooth_service.list_connected())}
+
+
 @router.post("/bluetooth/{mac}/pair", description="Pair and trust a Bluetooth speaker")
 def bluetooth_pair(mac: str) -> dict:
     ok = bluetooth_service.pair(mac)

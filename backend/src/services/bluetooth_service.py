@@ -50,10 +50,25 @@ class BluetoothService:
         if not self.available():
             logger.warning("Bluetooth scan requested on a host without BlueZ; returning empty")
             return []
-        # Run a timed discovery, then read the known-devices list.
+        # Power the adapter on, run a timed discovery, then read the device list.
+        self._ctl(["power", "on"])
         self._ctl(["--timeout", str(timeout), "scan", "on"], timeout=timeout + 5)
         out = self._ctl(["devices"])
         return self._parse_devices(out)
+
+    def list_connected(self) -> set[str]:
+        """Return the MAC addresses of currently connected Bluetooth devices."""
+        if not self.available():
+            return set()
+        # BlueZ >= 5.65 supports `devices Connected`; fall back to per-device info.
+        out = self._ctl(["devices", "Connected"])
+        macs = {m.group(1).upper() for m in _DEVICE_LINE.finditer(out)}
+        if macs or "Connected" in out:
+            return macs
+        return {
+            d.ip.upper() for d in self._parse_devices(self._ctl(["devices"]))
+            if isinstance(d.ip, str) and self.is_connected(d.ip)
+        }
 
     def pair(self, mac: str) -> bool:
         return self._connect_step(mac, "pair") and self._connect_step(mac, "trust")
