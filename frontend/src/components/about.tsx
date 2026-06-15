@@ -1,10 +1,11 @@
+import packageJson from '../../package.json';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Link, Typography } from "@mui/material";
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean, onClose?: () => void }>) {
     return (
         <Dialog open={open} onClose={onClose} aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description">
-            <DialogTitle>About Aladhan-pi beta 0.1.0</DialogTitle>
+            <DialogTitle>About Aladhan-pi · v{packageJson.version}</DialogTitle>
             <DialogContent>
                 <DialogContentText>
                     <Typography variant='body1' >

@@ -4,7 +4,10 @@ from fastapi import APIRouter, HTTPException
 
 from src.core.repository_factory import RepositoryContainer
 from src.domain.models import Device
+from src.schemas.log_config import LogConfig
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
+
+logger = LogConfig.get_logger()
 
 # Import your services and models
 from src.services.bluetooth_service import BluetoothService
@@ -72,11 +75,11 @@ def list_soco_devices():
                 # Returns list of Device objects
                 freebox_devices_objs = freebox_service.from_list(players)
             else:
-                print("Warning: No Freebox players found.")
+                logger.warning("No Freebox players found")
         else:
-            print("Warning: Freebox token not found. Skipping Freebox device scan.")
+            logger.warning("Freebox token not found; skipping Freebox device scan")
     except Exception as e:
-        print(f"Warning: Could not fetch Freebox devices (Auth required?): {e}")
+        logger.warning(f"Could not fetch Freebox devices (auth required?): {e}")
 
     # 3. Save to Database
     all_devices_to_save = []
