@@ -12,7 +12,6 @@ import BluetoothSearchingIcon from '@mui/icons-material/BluetoothSearching';
 import InfoIcon from '@mui/icons-material/Info';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
-import SettingsIcon from '@mui/icons-material/Settings';
 import SyncIcon from '@mui/icons-material/Sync';
 import { Box, CircularProgress, CssBaseline, IconButton, Stack, ThemeProvider, Tooltip, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,7 +84,6 @@ function App() {
   const [isSettingOpen, setIsSettingOpen] = useState<boolean>(false);
   const [currentDeviceIp, setCurrentDeviceIp] = useState<string | number | null | undefined>();
   const [currentSetting, setCurrentSetting] = useState<Settings | null>(null);
-  const [deviceClicked, setDeviceClicked] = useState<boolean>(true);
 
   const { data: devices, error: deviceError, isLoading: deviceLoading } = useQuery({
     queryKey: ["devices"],
@@ -133,7 +131,7 @@ function App() {
       }
     };
     syncSelectedSetting();
-  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError, deviceClicked]);
+  }, [settings, settingsLoading, deviceLoading, currentDeviceIp, settingsError]);
 
   // Select the always-available "this device" player by default, so the adhan
   // plays on the host out of the box when nothing else is chosen.
@@ -171,17 +169,22 @@ function App() {
       ? (nearestCity ? `${nearestCity.name} · ${nearestCity.country}` : "Ma position")
       : "Localisation par défaut";
 
-  const handleDeviceClick = (device: Device) => {
-    setDeviceClicked(!deviceClicked);
-    if (deviceClicked) {
-      setCurrentDeviceIp(device.getIp());
-      const found = settings?.find(s => s.device?.getIp() === device.getIp());
-      if (found) setCurrentSetting(found);
-      else createSettingMutation.mutate(device);
-    } else {
+  const selectDevice = (device: Device) => {
+    // Toggle: clicking the selected device again deselects it.
+    if (currentDeviceIp === device.getIp()) {
       setCurrentDeviceIp(null);
       setCurrentSetting(null);
+      return;
     }
+    setCurrentDeviceIp(device.getIp());
+    const found = settings?.find(s => s.device?.getIp() === device.getIp());
+    if (found) setCurrentSetting(found);
+    else createSettingMutation.mutate(device);
+  };
+
+  const openDeviceSettings = (device: Device) => {
+    if (currentDeviceIp !== device.getIp()) selectDevice(device);
+    setIsSettingOpen(true);
   };
 
   return (
@@ -215,9 +218,6 @@ function App() {
                 </IconButton>
               </span>
             </Tooltip>
-            {!!currentSetting && (
-              <Tooltip title="Settings"><IconButton onClick={() => setIsSettingOpen(true)}><SettingsIcon /></IconButton></Tooltip>
-            )}
             <Tooltip title="About"><IconButton onClick={() => setIsAboutOpen(true)}><InfoIcon /></IconButton></Tooltip>
           </Stack>
         </Stack>
@@ -266,7 +266,13 @@ function App() {
               <>
                 {/* Render DB devices (incl. 'Cet appareil') immediately; Sonos
                     discovery only refines availability and runs in the background. */}
-                <DevicesComponent devices={devices ?? []} soCoDevices={socoDevices ?? []} onClick={handleDeviceClick} />
+                <DevicesComponent
+                  devices={devices ?? []}
+                  soCoDevices={socoDevices ?? []}
+                  selectedIp={currentDeviceIp}
+                  onClick={selectDevice}
+                  onOpenSettings={openDeviceSettings}
+                />
                 {socoLoading && !socoDevicesError && (
                   <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ mt: 2, color: "var(--mist)" }}>
                     <CircularProgress size={14} sx={{ color: "var(--brass)" }} />
