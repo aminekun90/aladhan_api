@@ -10,6 +10,10 @@ class CityRepository(ABC):
         ...
 
     @abstractmethod
+    def nearest_city(self, lat: float, lon: float) -> Optional[City]:
+        ...
+
+    @abstractmethod
     def get_city(self, name: str) -> Optional[City]:
         ...
 

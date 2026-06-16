@@ -103,6 +103,96 @@ docker pull aminekun90/adhan-api
 docker run -d --name adhan-api --network host --restart unless-stopped -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -v /home/pi/data:/app/src/data aminekun90/adhan-api
 ```
 
+## Using it from a phone or computer
+
+The app is responsive and installable. Once the server runs (Pi, computer, or
+Docker), open it from any device on the same network:
+
+```
+http://<server-ip>:8000        e.g. http://192.168.1.66:8000
+```
+
+- **Install as an app**: on Android/desktop Chrome use "Install app"; on iOS
+  Safari use "Add to Home Screen". A web manifest + icon are included.
+- **Auto-location**: the app uses the browser's geolocation to pick prayer
+  times for your position automatically.
+  ⚠️ Browsers only allow geolocation on `localhost` or over **HTTPS**. When you
+  open `http://<pi-ip>:8000` from a phone, geolocation is blocked — either
+  select your city manually (search is instant) or enable HTTPS (below).
+
+## Enable HTTPS (for phone auto-location)
+
+A bundled [Caddy](https://caddyserver.com) reverse proxy terminates HTTPS using
+its own internal CA — no public domain or internet required.
+
+```bash
+docker compose --profile https up -d
+```
+
+Then open **`https://<server-ip>`** (port 443) from your phone or computer.
+
+- The first time, the browser shows a certificate warning (the CA is
+  self-signed). Click **Advanced → Proceed** — the origin is now HTTPS, so
+  **geolocation works**.
+- To remove the warning entirely, install Caddy's root certificate on your
+  devices:
+
+  ```bash
+  docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./aladhan-root.crt
+  # then trust aladhan-root.crt on each device (Android: Settings → Security →
+  # Install a certificate; iOS: install profile then enable in Trust Settings;
+  # macOS/Windows: add to the system trust store)
+  ```
+
+> Tip: if you use [Tailscale](https://tailscale.com), `tailscale serve https / http://127.0.0.1:8000`
+> gives a real, already-trusted certificate with zero warnings.
+
+## Slimming the cities database
+
+The bundled GeoNames data can be huge. To rebuild a compact cities table
+(~12 MB instead of ~1.5 GB), see `backend/scripts/README.md`:
+
+```bash
+cd backend
+uv run python scripts/build_cities_db.py \
+  --source src/data/allCountries.txt --target src/data/cities.db --in-place
+```
+
+## Playing the adhan on the machine itself
+
+A virtual **"Cet appareil"** device is always available and plays the adhan
+through the host's own speakers (in addition to Sonos / Freebox / Bluetooth).
+In Docker this needs host audio — pass the sound card through (uncomment
+`devices: [/dev/snd:/dev/snd]` in `docker_compose.yml`, or add
+`--device /dev/snd` to `docker run`).
+
+## Bluetooth speakers (Raspberry Pi)
+
+First check the Pi actually has Bluetooth and it's running:
+
+```bash
+bluetoothctl list          # lists controllers; empty = no/disabled adapter
+systemctl status bluetooth # bluetoothd should be active
+hciconfig                  # or: shows hci0 if an adapter is present
+```
+
+(Pi 3B+/4/5 and Zero W/2W have built-in BT; the original Pi 1/2 and CM modules
+don't.) Then the speaker must be in **pairing mode** when you scan from the app.
+
+In Docker, the container's `bluetoothctl` drives the **host's** `bluetoothd`
+over the system D-Bus — uncomment in `docker_compose.yml`:
+
+```yaml
+volumes:
+  - /var/run/dbus:/var/run/dbus
+cap_add:
+  - NET_ADMIN
+```
+
+In k8s, enable it on the adhan chart: `--set bluetooth.enabled=true` (mounts the
+host D-Bus; the pod runs privileged). Bare-metal (non-container) installs need
+nothing extra.
+
 ## Api doc
 
 Check swagger at localhost:8000/docs#/

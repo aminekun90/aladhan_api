@@ -1,5 +1,6 @@
 from datetime import date
 
+
 class MoonSightingBase:
     DYY_NORTH_0 = (12, 21)
     DYY_SOUTH_0 = (6, 21)

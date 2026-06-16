@@ -25,11 +25,49 @@ class SQLiteCityRepository(SQLRepositoryBase, CityRepository):
             if country:
                 query = query.filter(CityTable.country == country.upper())
 
-            # Limit results to 50 for autocomplete
-            results = query.limit(50).all()
+            # Pull a wider window, then dedupe by (name, country) so the same
+            # place doesn't appear many times (the GeoNames dump has duplicates).
+            results = query.limit(300).all()
 
-            # Build City objects
-            return [City(id=r.id, name=r.name, lat=r.lat, lon=r.lon, country=r.country) for r in results]
+            seen: set[tuple[str, str]] = set()
+            cities: List[City] = []
+            for r in results:
+                key = (r.name.upper(), (r.country or "").upper())
+                if key in seen:
+                    continue
+                seen.add(key)
+                cities.append(City(id=r.id, name=r.name, lat=r.lat, lon=r.lon, country=r.country))
+                if len(cities) >= 50:
+                    break
+            return cities
+
+    def nearest_city(self, lat: float, lon: float) -> Optional[City]:
+        """Return the closest city to a coordinate (for reverse geocoding).
+
+        Scans within a small bounding box first (cheap), then picks the minimum
+        squared distance. Longitude degrees are scaled by cos(lat) so the metric
+        is roughly isotropic away from the equator.
+        """
+        import math
+
+        delta = 1.0  # ~111 km box; widened if nothing found
+        cos_lat = max(math.cos(math.radians(lat)), 0.01)
+        with self.session_maker() as session:
+            for _ in range(3):
+                rows = (
+                    session.query(CityTable.id, CityTable.name, CityTable.lat, CityTable.lon, CityTable.country)
+                    .filter(CityTable.lat.between(lat - delta, lat + delta))
+                    .filter(CityTable.lon.between(lon - delta / cos_lat, lon + delta / cos_lat))
+                    .all()
+                )
+                if rows:
+                    nearest = min(
+                        rows,
+                        key=lambda r: (r.lat - lat) ** 2 + ((r.lon - lon) * cos_lat) ** 2,
+                    )
+                    return City(id=nearest.id, name=nearest.name, lat=nearest.lat, lon=nearest.lon, country=nearest.country)
+                delta *= 4
+        return None
 
     def get_city(self, name: str) -> Optional[City]:
         """Retrieve a city by exact name."""

@@ -1,71 +1,210 @@
+/* ============================================================
+   Aladhan — "Mihrab at Dawn"
+   A celestial observatory for prayer. Deep ink night warming to
+   a dawn glow at the horizon, gilded with brass.
+   ============================================================ */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Palette */
+  --ink: #080b14;
+  --night: #0d1426;
+  --night-2: #121b33;
+  --dawn: #e0905a;          /* horizon glow */
+  --dawn-soft: rgba(224, 144, 90, 0.18);
+  --brass: #d4ad5f;         /* sacred gilding accent */
+  --brass-bright: #ecca7e;
+  --brass-dim: rgba(212, 173, 95, 0.16);
+  --parchment: #ece6d6;     /* primary text */
+  --mist: #9aa1b6;          /* secondary text */
+  --line: rgba(236, 230, 214, 0.1);
+  --surface: rgba(236, 230, 214, 0.035);
+  --surface-hi: rgba(236, 230, 214, 0.06);
+
+  /* Type */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-arabic: "Amiri", serif;
+
+  font-family: var(--font-ui);
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--parchment);
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+* {
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-  width: 100%;
-}
-#root {
-  width: 100%;
+  position: relative;
+  background-color: var(--ink);
+  overflow-x: hidden;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Layered atmosphere: dawn glow at the horizon + a night gradient above.
+   Fixed so it stays put while content scrolls. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(120% 80% at 50% 118%, var(--dawn-soft) 0%, transparent 55%),
+    radial-gradient(80% 50% at 50% 116%, rgba(212, 173, 95, 0.14) 0%, transparent 60%),
+    linear-gradient(180deg, var(--ink) 0%, var(--night) 48%, var(--night-2) 100%);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+/* Starfield + grain overlay. Stars are tiny radial dots; grain is an
+   SVG turbulence data-URI at low opacity for filmic depth. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(236, 230, 214, 0.7) 50%, transparent),
+    radial-gradient(1px 1px at 75% 18%, rgba(236, 230, 214, 0.5) 50%, transparent),
+    radial-gradient(1px 1px at 42% 12%, rgba(236, 230, 214, 0.6) 50%, transparent),
+    radial-gradient(1px 1px at 88% 42%, rgba(236, 230, 214, 0.4) 50%, transparent),
+    radial-gradient(1.5px 1.5px at 12% 60%, rgba(212, 173, 95, 0.5) 50%, transparent),
+    radial-gradient(1px 1px at 60% 50%, rgba(236, 230, 214, 0.4) 50%, transparent),
+    radial-gradient(1px 1px at 32% 72%, rgba(236, 230, 214, 0.3) 50%, transparent),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size: auto, auto, auto, auto, auto, auto, auto, 160px 160px;
+}
+
+a {
+  color: var(--brass);
+  text-decoration: none;
+}
+a:hover { color: var(--brass-bright); }
+
+/* Slim gilded scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--brass-dim);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(212, 173, 95, 0.4); background-clip: content-box; }
+
+::selection {
+  background: rgba(212, 173, 95, 0.3);
+  color: var(--brass-bright);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ============================================================
+   Printable calendar sheet (rasterized to PDF via html2canvas)
+   Light, ink-on-cream with brass gilding — print-friendly.
+   ============================================================ */
+.pdf-sheet {
+  --pdf-ink: #1b2435;
+  --pdf-muted: #6b7282;
+  --pdf-brass: #b3893f;
+  --pdf-brass-soft: rgba(179, 137, 63, 0.08);
+  --pdf-line: rgba(27, 36, 53, 0.12);
+  width: 794px;
+  box-sizing: border-box;
+  padding: 46px 44px 40px;
+  background: #fbf8f1;
+  color: var(--pdf-ink);
+  font-family: var(--font-ui);
+}
+
+.pdf-header { text-align: center; }
+.pdf-arch { display: block; margin: 0 auto 6px; }
+.pdf-wordmark {
+  font-family: var(--font-display);
+  font-size: 30px;
   font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
+  letter-spacing: 0.06em;
+  margin: 0;
 }
-button:hover {
-  border-color: #646cff;
+.pdf-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--pdf-muted);
+  margin: 2px 0 0;
 }
-button:focus,
-button:focus-visible {
-  outline: none;
+.pdf-hijri-head {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  font-size: 22px;
+  color: var(--pdf-brass);
+  margin: 8px 0 0;
+}
+.pdf-meta {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pdf-muted);
+  margin: 10px 0 0;
+}
+.pdf-rule {
+  height: 2px;
+  margin: 18px 0 16px;
+  background: linear-gradient(90deg, transparent, var(--pdf-brass), transparent);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.pdf-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pdf-table thead th {
+  background: var(--pdf-brass);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 8px 6px;
+  text-align: center;
+}
+.pdf-table thead th:first-child { border-radius: 6px 0 0 6px; text-align: left; padding-left: 12px; }
+.pdf-table thead th:last-child { border-radius: 0 6px 6px 0; }
+.pdf-table tbody td {
+  padding: 7px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--pdf-line);
+  font-variant-numeric: tabular-nums;
+}
+.pdf-table tbody td:first-child { text-align: left; padding-left: 12px; font-weight: 600; }
+.pdf-table tbody tr:nth-child(even) td { background: var(--pdf-brass-soft); }
+.pdf-table tbody td.pdf-hijri-cell { min-width: 150px; }
+.pdf-hijri {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  unicode-bidi: plaintext;
+  font-size: 15px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.pdf-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--pdf-muted);
 }

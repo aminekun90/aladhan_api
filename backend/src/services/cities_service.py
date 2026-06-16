@@ -15,5 +15,9 @@ class CityService:
 
     def get_city(self, name: str) -> Optional[City]:
         return self.city_repo.get_city(name)
-        
+
+    def nearest_city(self, lat: float, lon: float) -> Optional[City]:
+        """Reverse-geocode a coordinate to the closest known city."""
+        return self.city_repo.nearest_city(lat, lon)
+
 

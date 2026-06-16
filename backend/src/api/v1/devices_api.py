@@ -4,8 +4,13 @@ from fastapi import APIRouter, HTTPException
 
 from src.core.repository_factory import RepositoryContainer
 from src.domain.models import Device
+from src.schemas.log_config import LogConfig
+from src.schemas.player import ControlResult, PlayerAction, PlayerState
+
+logger = LogConfig.get_logger()
 
 # Import your services and models
+from src.services.bluetooth_service import BluetoothService
 from src.services.device_service import DeviceService
 from src.services.freebox_service import FreeboxService
 from src.services.soco_service import SoCoService
@@ -14,26 +19,39 @@ from src.services.soco_service import SoCoService
 repos = RepositoryContainer()
 soco_service = SoCoService()
 freebox_service = FreeboxService()
+bluetooth_service = BluetoothService()
 device_service = DeviceService(repos.device_repo, repos.setting_repo)
 
 router = APIRouter()
 
-@router.get("/freebox/auth", description="Trigger Freebox authentication. WARNING: This request will hang until you press the RIGHT ARROW on the Freebox Server.")
-def freebox_authenticate():
-    """
-    Endpoint to perform the initial pairing.
-    1. Call this endpoint.
-    2. Run to your Freebox Server.
-    3. Press the Right Arrow to authorize 'Aladhan Pi Remote'.
-    4. This endpoint will return success once approved.
+@router.post("/freebox/auth/start", description="Begin Freebox pairing (non-blocking). Returns a track_id to poll.")
+def freebox_auth_start():
+    """Start pairing, then press the RIGHT ARROW on the Freebox display.
+
+    Returns immediately with a track_id; poll /freebox/auth/status to know when
+    the user has authorized the app.
     """
     try:
-        # This checks if we have a valid token. 
-        # If not, it starts the registration loop and waits for the button press.
-        freebox_service.login()
-        return {"status": "success", "message": "Authenticated with Freebox successfully. Token saved to disk."}
+        return freebox_service.start_registration()
     except Exception as e:
-        # If the user is too slow (timeout) or denies access
+        raise HTTPException(status_code=400, detail=f"Failed to start pairing: {str(e)}")
+
+
+@router.get("/freebox/auth/status", description="Poll Freebox pairing status: pending | granted | denied | timeout.")
+def freebox_auth_status(track_id: int | None = None):
+    try:
+        return freebox_service.registration_status(track_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/freebox/auth", description="Verify Freebox session (logs in with the saved token).")
+def freebox_authenticate():
+    """Open a session using the token saved during pairing."""
+    try:
+        freebox_service.login()
+        return {"status": "success", "message": "Authenticated with Freebox successfully."}
+    except Exception as e:
         raise HTTPException(status_code=400, detail=f"Authentication failed: {str(e)}")
 
 @router.get("/soco/devices", response_model=List[Dict[str, Any]], description="List all devices (Sonos + Freebox) and upsert them into the DB")
@@ -57,11 +75,11 @@ def list_soco_devices():
                 # Returns list of Device objects
                 freebox_devices_objs = freebox_service.from_list(players)
             else:
-                print("Warning: No Freebox players found.")
+                logger.warning("No Freebox players found")
         else:
-            print("Warning: Freebox token not found. Skipping Freebox device scan.")
+            logger.warning("Freebox token not found; skipping Freebox device scan")
     except Exception as e:
-        print(f"Warning: Could not fetch Freebox devices (Auth required?): {e}")
+        logger.warning(f"Could not fetch Freebox devices (auth required?): {e}")
 
     # 3. Save to Database
     all_devices_to_save = []
@@ -112,7 +130,8 @@ def play_media_on_freebox_device(device_id: str, media_url: str, volume: int = 1
 
 @router.get("/devices", response_model=List[Device], description="List all devices stored in the database")
 def list_devices_db():
-    # This just reads from DB, no scanning
+    # Ensure the virtual 'this device' player is always present, then read from DB.
+    device_service.ensure_local_device()
     return device_service.list_devices()
 
 @router.get("/device/schedule/{device_id}", description="Schedule prayers for a specific device id")
@@ -132,3 +151,73 @@ def play_prayer(device_id: int) -> dict:
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
     return device_service.play_audio_in_device(device_id= device_id)
+
+
+# ------------------------------
+# Unified transport controls (Sonos + Freebox)
+# ------------------------------
+@router.post("/device/{device_id}/control/{action}", response_model=ControlResult,
+             description="Transport control: play | pause | stop | next | previous | mute | unmute")
+def control_device(device_id: int, action: PlayerAction) -> ControlResult:
+    result = device_service.control_device(device_id, action)
+    if result.status == "error" and result.message == "Device not found":
+        raise HTTPException(status_code=404, detail=result.message)
+    return result
+
+
+@router.post("/device/{device_id}/volume/{volume}", response_model=ControlResult,
+             description="Set volume (0-100) for a device, regardless of backend")
+def set_device_volume(device_id: int, volume: int) -> ControlResult:
+    result = device_service.set_device_volume(device_id, volume)
+    if result.status == "error" and result.message == "Device not found":
+        raise HTTPException(status_code=404, detail=result.message)
+    return result
+
+
+@router.get("/device/{device_id}/state", response_model=PlayerState,
+            description="Current normalized playback state of a device")
+def get_device_state(device_id: int) -> PlayerState:
+    state = device_service.get_device_state(device_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return state
+
+
+# ------------------------------
+# Bluetooth (BlueZ — Linux/Raspberry Pi)
+# ------------------------------
+@router.get("/bluetooth/status", description="Bluetooth capability of the host (Linux/BlueZ required)")
+def bluetooth_status() -> Dict[str, Any]:
+    return bluetooth_service.status()
+
+
+@router.get("/bluetooth/scan", response_model=List[Device],
+            description="Scan for nearby Bluetooth speakers and persist them")
+def bluetooth_scan(timeout: int = 8) -> List[Device]:
+    devices = bluetooth_service.scan(timeout=timeout)
+    if devices:
+        device_service.upsert_devices_bulk(devices)
+    return devices
+
+
+@router.get("/bluetooth/connected", description="MAC addresses of currently connected Bluetooth speakers")
+def bluetooth_connected() -> Dict[str, Any]:
+    return {"connected": sorted(bluetooth_service.list_connected())}
+
+
+@router.post("/bluetooth/{mac}/pair", description="Pair and trust a Bluetooth speaker")
+def bluetooth_pair(mac: str) -> dict:
+    ok = bluetooth_service.pair(mac)
+    return {"status": "success" if ok else "error", "mac": mac}
+
+
+@router.post("/bluetooth/{mac}/connect", description="Connect a paired Bluetooth speaker")
+def bluetooth_connect(mac: str) -> dict:
+    ok = bluetooth_service.connect(mac)
+    return {"status": "success" if ok else "error", "mac": mac}
+
+
+@router.post("/bluetooth/{mac}/disconnect", description="Disconnect a Bluetooth speaker")
+def bluetooth_disconnect(mac: str) -> dict:
+    ok = bluetooth_service.disconnect(mac)
+    return {"status": "success" if ok else "error", "mac": mac}

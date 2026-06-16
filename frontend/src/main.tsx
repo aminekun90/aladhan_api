@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from '@/App';
+import '@/i18n';
 import '@/index.css';
 import { ToastProvider } from "@aminekun90/react-toast";
 const queryClient = new QueryClient();

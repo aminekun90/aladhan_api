@@ -1,0 +1,20 @@
+{
+  "app": { "version": "Beta version {{version}}" },
+  "nav": { "sync": "Sync prayers", "scanBluetooth": "Scan Bluetooth speakers", "about": "About", "language": "Language" },
+  "location": { "useMyLocation": "Use my location", "denied": "Location denied", "myPosition": "My position", "default": "Default location" },
+  "sections": { "prayerTimes": "Prayer times", "devices": "Devices", "calendar": "Calendar" },
+  "prayers": { "loading": "Loading…", "error": "Error fetching prayers", "next": "NEXT" },
+  "devices": { "errorFetching": "Error fetching devices", "searching": "Searching for speakers…", "offline": "Offline", "settings": "Device settings" },
+  "deviceTypes": { "local_player": "This device", "sonos_player": "Sonos", "freebox_player": "Freebox", "bluetooth_speaker": "Bluetooth" },
+  "settings": { "title": "Settings", "city": "City", "coordinates": "Coordinates", "method": "Calculation method", "audio": "Adhan audio", "date": "Date", "enableScheduler": "Enable the call to prayer", "save": "Save", "saving": "Saving…", "importMp3": "Import an MP3", "deleteAudio": "Delete this audio" },
+  "calendar": { "exportPdf": "Export to PDF", "prayersOf": "Prayers of {{date}}", "noPrayers": "No prayer found.", "error": "Error fetching prayers" },
+  "pdf": { "title": "Prayer times", "date": "Date", "hijri": "Hijri", "method": "Method", "generatedOn": "Generated on {{date}}" },
+  "bluetooth": { "found": "{{count}} speaker(s) found", "noneFound": "No speaker found. Make sure the speaker is in pairing mode and Bluetooth is enabled on the server.", "scanFailed": "Bluetooth scan failed (Bluetooth unavailable on the server?)." },
+  "toast": {
+    "synced": { "title": "Syncing prayers", "message": "Prayers have been synced!" },
+    "scheduled": { "title": "Devices scheduled", "message": "All devices have been scheduled!" },
+    "audioAdded": { "title": "Audio added" },
+    "bluetooth": "Bluetooth"
+  },
+  "about": { "title": "About Aladhan-pi · v{{version}}", "body": "Aladhan-pi is an open-source Python / React project that provides accurate Islamic prayer times. Maintained by the community on GitHub — contribute, donate, or report issues.", "close": "Close" }
+}

@@ -1,77 +1,117 @@
-# adhan_calc_class.py
-import math
-from datetime import date, datetime, time, timedelta, timezone
-from typing import Optional
-from concurrent.futures import ThreadPoolExecutor
+"""Islamic prayer-time calculations.
+
+Astronomical engine ported 1:1 from the canonical Swift implementation
+(`qibla/Data/Services/AstroEngine.swift`). Keep the two in sync: any change to
+the algorithm here should be mirrored there, and the golden vectors in
+`tests/unit/test_calc.py` guard against drift.
+"""
+
 import calendar
+import math
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta, timezone
+from typing import Optional, Union
 
 try:
     from zoneinfo import ZoneInfo
-except ImportError:
+except ImportError:  # pragma: no cover - Python < 3.9
     ZoneInfo = None
-# -----------------------------
-# Prayer methods configuration
-# -----------------------------
-from .moonsight import Fajr as MSFajr, Isha as MSIsha
-ORDERED_KEYS= [
-            "Imsak","Fajr","Sunrise","Dhuhr","Asr",
-            "Sunset","Maghrib","Isha","Midnight","Firstthird","Lastthird"
-        ]
+
+from .moonsight import Fajr as MSFajr
+from .moonsight import Isha as MSIsha
+
+ORDERED_KEYS = [
+    "Imsak", "Fajr", "Sunrise", "Dhuhr", "Asr",
+    "Sunset", "Maghrib", "Isha", "Midnight", "Firstthird", "Lastthird",
+]
 SCHEDULABLE_KEYS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]
-PRAYER_METHODS: dict = {
-    "MWL": {"fajr": 18.0, "isha": 17.0,"description":"Muslim World League"},
-    "ISNA": {"fajr": 15.0, "isha": 15.0 ,"description":"Islamic Society of North America"},
-    "EGYPT": {"fajr": 19.5, "isha": 17.5 ,"description":"Egyptian General Authority of Survey"},
-    "MAKKAH": {"fajr": 18.5, "isha": ("mins", 90),"description":"Umm al-Qura University"},  # 90 min after Maghrib
-    "KARACHI": {"fajr": 18.0, "isha": 18.0, "description":"University of Islamic Sciences, Karachi"},
-    "TEHRAN": {"fajr": 17.7, "isha": 14.0, "maghrib": 4.5, "midnight": "JAFARI", "description":"Institute of Geophysics, University of Tehran"},
-    "JAFARI": {"fajr": 16.0, "isha": 14.0, "maghrib": 4.0, "midnight": "JAFARI", "description":"Shia Ithna-Ashari, Leva Institute, Qum"},
-    "GULF": {"fajr": 19.5, "isha": ("mins", 90), "description":"Gulf Region"},
-    "KUWAIT": {"fajr": 18.0, "isha": 17.5, "description":"Kuwait"},
-    "QATAR": {"fajr": 18.0, "isha": ("mins", 90), "description":"Qatar"},
-    "SINGAPORE": {"fajr": 20.0, "isha": 18.0, "description":"Singapore"},
-    "FRANCE": {"fajr": 12.0, "isha": 12.0, "description":"French Government"},
-    "TURKEY": {"fajr": 18.0, "isha": 17.0, "description":"Turkey"},
-    "RUSSIA": {"fajr": 16.0, "isha": 15.0, "description":"Russia"},
-    "MOONSIGHTING": {"fajr": MSFajr, "isha": MSIsha, "description":"Moonsighting Committee"},
-    "DUBAI": {"fajr": 18.2, "isha": 18.2, "description":"Dubai"},
-    "JAKIM": {"fajr": 20.0, "isha": 18.0, "description":"Malaysia"},
-    "TUNISIA": {"fajr": 18.0, "isha": 18.0, "description":"Tunisia"},
-    "ALGERIA": {"fajr": 18.0, "isha": 17.0, "description":"Algeria"},
-    "KEMENAG": {"fajr": 20.0, "isha": 18.0, "description":"Indonesia"},
-    "MOROCCO": {"fajr": 19.0, "isha": 17.0, "description":"Morocco"},
-    "PORTUGAL": {"fajr": 18.0, "maghrib": ("mins", 3), "isha": ("mins", 77), "description":"Portugal"},
-    "JORDAN": {"fajr": 18.0, "maghrib": ("mins", 5), "isha": 18.0, "description":"Jordan"},
-    "CUSTOM": {"fajr": 18.0, "isha": 18.0, "description":"Custom method"}  # To be filled dynamically
-}
+
+SUN_ZENITH = 90.8333  # standard sunrise/sunset zenith (refraction + solar radius)
+
+# -----------------------------
+# Method configuration types
+# -----------------------------
+# Isha / Maghrib are either angle-based ("angle", degrees) or a fixed offset
+# after sunset ("mins", minutes). Maghrib additionally supports "sunset".
 
 
+@dataclass(frozen=True)
+class MethodConfig:
+    """Resolved configuration for a calculation method.
 
-METHOD_OFFSETS = {
-    "France": {"Fajr": 15, "Isha": 15},
+    fajr     : twilight angle below horizon, or a Moonsighting Fajr class.
+    isha     : ("angle", deg) | ("mins", minutes) | a Moonsighting Isha class.
+    maghrib  : ("sunset",) | ("angle", deg) | ("mins", minutes).
+    midnight : "standard" (Sunset -> next Sunrise) | "jafari" (Sunset -> Fajr).
+    """
+
+    description: str
+    fajr: Union[float, type]
+    isha: Union[tuple, type]
+    maghrib: tuple = ("sunset",)
+    midnight: str = "standard"
+    moonsighting: bool = False
+
+
+def _angle(deg: float) -> tuple:
+    return ("angle", float(deg))
+
+
+def _mins(minutes: float) -> tuple:
+    return ("mins", float(minutes))
+
+
+PRAYER_METHODS: dict[str, MethodConfig] = {
+    "MWL":      MethodConfig("Muslim World League", 18.0, _angle(17.0)),
+    "ISNA":     MethodConfig("Islamic Society of North America", 15.0, _angle(15.0)),
+    "EGYPT":    MethodConfig("Egyptian General Authority of Survey", 19.5, _angle(17.5)),
+    "MAKKAH":   MethodConfig("Umm al-Qura University", 18.5, _mins(90)),
+    "KARACHI":  MethodConfig("University of Islamic Sciences, Karachi", 18.0, _angle(18.0)),
+    "TEHRAN":   MethodConfig("Institute of Geophysics, University of Tehran", 17.7,
+                             _angle(14.0), maghrib=_angle(4.5), midnight="jafari"),
+    "JAFARI":   MethodConfig("Shia Ithna-Ashari, Leva Institute, Qum", 16.0,
+                             _angle(14.0), maghrib=_angle(4.0), midnight="jafari"),
+    "GULF":     MethodConfig("Gulf Region", 19.5, _mins(90)),
+    "KUWAIT":   MethodConfig("Kuwait", 18.0, _angle(17.5)),
+    "QATAR":    MethodConfig("Qatar", 18.0, _mins(90)),
+    "SINGAPORE": MethodConfig("Singapore", 20.0, _angle(18.0)),
+    "FRANCE":   MethodConfig("French Government", 12.0, _angle(12.0)),
+    "TURKEY":   MethodConfig("Turkey", 18.0, _angle(17.0)),
+    "RUSSIA":   MethodConfig("Russia", 16.0, _angle(15.0)),
+    "MOONSIGHTING": MethodConfig("Moonsighting Committee", MSFajr, MSIsha, moonsighting=True),
+    "DUBAI":    MethodConfig("Dubai", 18.2, _angle(18.2)),
+    "JAKIM":    MethodConfig("Malaysia", 20.0, _angle(18.0)),
+    "TUNISIA":  MethodConfig("Tunisia", 18.0, _angle(18.0)),
+    "ALGERIA":  MethodConfig("Algeria", 18.0, _angle(17.0)),
+    "KEMENAG":  MethodConfig("Indonesia", 20.0, _angle(18.0)),
+    "MOROCCO":  MethodConfig("Morocco", 19.0, _angle(17.0)),
+    "PORTUGAL": MethodConfig("Portugal", 18.0, _mins(77), maghrib=_mins(3)),
+    "JORDAN":   MethodConfig("Jordan", 18.0, _angle(18.0), maghrib=_mins(5)),
+    "CUSTOM":   MethodConfig("Custom method", 18.0, _angle(18.0)),
 }
 
 
 # -----------------------------
-# PrayerTimes Class
+# PrayerTimes
 # -----------------------------
 class PrayerTimes:
-    def __init__(self, method="France", madhab="Shafi", tz="Europe/Paris", shafaq="general"):
+    def __init__(self, method: str = "France", madhab: str = "Shafi",
+                 tz: str = "Europe/Paris", shafaq: str = "general"):
         method = method.upper()
         if method not in PRAYER_METHODS:
             raise ValueError(f"Unknown method '{method}'")
 
         self.method = method
+        self.cfg = PRAYER_METHODS[method]
         self.madhab = madhab
         self.tz = tz
         self.shafaq = shafaq  # only used for moonsighting
-
-        self.fajr_cfg = PRAYER_METHODS[method]["fajr"]
-        self.isha_cfg = PRAYER_METHODS[method]["isha"]
+        # Shafi: shadow factor 1, Hanafi: 2.
         self.asr_factor = 1.0 if madhab.lower().startswith("sh") else 2.0
 
     # -----------------------------
-    # Static helpers (unchanged)
+    # Astronomy primitives
     # -----------------------------
     @staticmethod
     def julian_day(y: int, m: int, d: int) -> float:
@@ -79,16 +119,13 @@ class PrayerTimes:
         if mm <= 2:
             yy -= 1
             mm += 12
-        A = yy // 100
-        B = 2 - A + A // 4
-        jd_day = int(365.25 * (yy + 4716)) + int(30.6001 * (mm + 1)) + d + B - 1524.5
-        return jd_day
-    @staticmethod
-    def get_available_methods() -> list[dict]:
-        """Return a list of available prayer calculation methods keys and descriptions."""
-        return [{"method": k, "description": v["description"]} for k, v in PRAYER_METHODS.items()]
+        a = yy // 100
+        b = 2 - a + a // 4
+        return int(365.25 * (yy + 4716)) + int(30.6001 * (mm + 1)) + d + b - 1524.5
+
     @staticmethod
     def sun_position(jd: float) -> tuple[float, float]:
+        """Return (declination_rad, equation_of_time_minutes) for a Julian Day."""
         d = jd - 2451545.0
         g = math.radians((357.529 + 0.98560028 * d) % 360.0)
         q = (280.459 + 0.98564736 * d) % 360.0
@@ -98,12 +135,14 @@ class PrayerTimes:
         ra_hours = ra_deg / 15.0
         dec_rad = math.asin(math.sin(e) * math.sin(L))
         eqt = q / 15.0 - ra_hours
-        if eqt > 12: eqt -= 24
-        if eqt < -12: eqt += 24
+        if eqt > 12:
+            eqt -= 24
+        if eqt < -12:
+            eqt += 24
         return dec_rad, eqt * 60.0
 
     @staticmethod
-    def _hour_angle_for_zenith(lat_rad: float, dec_rad: float, zenith_deg: float) -> Optional[float]:
+    def _hour_angle(lat_rad: float, dec_rad: float, zenith_deg: float) -> Optional[float]:
         z_rad = math.radians(zenith_deg)
         denom = math.cos(lat_rad) * math.cos(dec_rad)
         if abs(denom) < 1e-15:
@@ -113,276 +152,204 @@ class PrayerTimes:
             return None
         return math.degrees(math.acos(cosh))
 
-    @staticmethod
-    def _asr_altitude(lat_rad: float, dec_rad: float, factor: float) -> float:
-        return math.atan(1.0 / (factor + math.tan(abs(lat_rad - dec_rad))))
+    def _refine_angle(self, lat_rad: float, jd0: float, noon_utc: float,
+                      zenith: float, direction: int) -> Optional[float]:
+        """One-iteration solar-time solver for a given zenith.
+
+        direction: -1 for morning events (before noon), +1 for evening events.
+        Returns UTC minutes from midnight, or None when the sun never reaches
+        the zenith (high latitude / polar day or night).
+        """
+        dec0, _ = self.sun_position(jd0)
+        h0 = self._hour_angle(lat_rad, dec0, zenith)
+        if h0 is None:
+            return None
+        t = noon_utc + h0 * 4.0 * direction
+        dec_try, _ = self.sun_position(jd0 + t / 1440.0)
+        h1 = self._hour_angle(lat_rad, dec_try, zenith)
+        if h1 is not None:
+            t = noon_utc + h1 * 4.0 * direction
+        return t
+
+    def _compute_asr(self, lat_rad: float, jd0: float, noon_utc: float) -> Optional[float]:
+        dec, _ = self.sun_position(jd0 + noon_utc / 1440.0)
+        alt = math.atan(1.0 / (self.asr_factor + math.tan(abs(lat_rad - dec))))
+        cosh = self._asr_cosh(lat_rad, dec, alt)
+        if cosh is None:
+            return None
+        asr_utc = noon_utc + math.degrees(math.acos(cosh)) * 4.0
+
+        dec_try, _ = self.sun_position(jd0 + asr_utc / 1440.0)
+        alt_try = math.atan(1.0 / (self.asr_factor + math.tan(abs(lat_rad - dec_try))))
+        cosh_try = self._asr_cosh(lat_rad, dec_try, alt_try)
+        if cosh_try is not None:
+            asr_utc = noon_utc + math.degrees(math.acos(cosh_try)) * 4.0
+        return asr_utc
 
     @staticmethod
-    def _to_local_datetime(base_date: date, minutes_utc: Optional[float], tz: Optional[str]) -> Optional[datetime]:
+    def _asr_cosh(lat_rad: float, dec: float, alt: float) -> Optional[float]:
+        denom = math.cos(lat_rad) * math.cos(dec)
+        if abs(denom) < 1e-15:
+            return None
+        cosh = (math.sin(alt) - math.sin(lat_rad) * math.sin(dec)) / denom
+        return cosh if -1.0 <= cosh <= 1.0 else None
+
+    # -----------------------------
+    # Fajr / Isha / Maghrib
+    # -----------------------------
+    def _compute_fajr_isha(self, base_date, lat_rad, jd0, noon_utc,
+                           sunrise_utc, sunset_utc, night_fallback):
+        if self.cfg.moonsighting:
+            lat_deg = math.degrees(lat_rad)
+            fajr_utc = sunrise_utc - MSFajr(base_date, lat_deg).minutes_before_sunrise()
+            isha_utc = sunset_utc + MSIsha(base_date, lat_deg, self.shafaq).minutes_after_sunset()
+            return fajr_utc, isha_utc
+
+        fajr_utc = self._refine_angle(lat_rad, jd0, noon_utc, 90.0 + float(self.cfg.fajr), -1)
+        if fajr_utc is None and sunrise_utc is not None:
+            fajr_utc = sunrise_utc - night_fallback / 7.0  # 1/7-of-night high-latitude rule
+
+        kind, value = self.cfg.isha
+        if kind == "mins":
+            isha_utc = sunset_utc + value if sunset_utc is not None else None
+        else:
+            isha_utc = self._refine_angle(lat_rad, jd0, noon_utc, 90.0 + value, 1)
+            if isha_utc is None and sunset_utc is not None:
+                isha_utc = sunset_utc + night_fallback / 7.0
+        return fajr_utc, isha_utc
+
+    def _compute_maghrib(self, lat_rad, jd0, noon_utc, sunset_utc) -> float:
+        kind = self.cfg.maghrib[0]
+        if kind == "sunset":
+            return sunset_utc
+        if kind == "mins":
+            return sunset_utc + self.cfg.maghrib[1]
+        # angle
+        maghrib_utc = self._refine_angle(lat_rad, jd0, noon_utc, 90.0 + self.cfg.maghrib[1], 1)
+        return maghrib_utc if maghrib_utc is not None else sunset_utc
+
+    # -----------------------------
+    # Output helpers
+    # -----------------------------
+    def _to_local_datetime(self, base_date: date, minutes_utc: Optional[float]) -> Optional[datetime]:
         if minutes_utc is None:
             return None
         dt_utc = datetime.combine(base_date, time(0, 0), tzinfo=timezone.utc) + timedelta(minutes=minutes_utc)
-        if tz:
-            if isinstance(tz, str):
-                if ZoneInfo is None:
-                    raise RuntimeError("zoneinfo required for tz-aware output; run Python 3.9+")
-                return dt_utc.astimezone(ZoneInfo(tz))
-            else:
-                return dt_utc.astimezone(tz)
-        return dt_utc
+        if not self.tz:
+            return dt_utc
+        if ZoneInfo is None:
+            raise RuntimeError("zoneinfo required for tz-aware output; run Python 3.9+")
+        tz = ZoneInfo(self.tz) if isinstance(self.tz, str) else self.tz
+        return dt_utc.astimezone(tz)
 
     @staticmethod
     def _format(dt: Optional[datetime]) -> Optional[str]:
-        if dt is None:
-            return None
-        return dt.strftime("%H:%M:%S (%Z)")
-    # -----------------------------
-    # Internal computation methods
-    # -----------------------------
-    def _compute_sunrise_sunset(self, lat_rad, jd0, dec0, noon_utc):
-        """Compute sunrise and sunset times.
+        return dt.strftime("%H:%M:%S (%Z)") if dt else None
 
-        Args:
-            lat_rad (_type_): _description_
-            jd0 (_type_): _description_
-            dec0 (_type_): _description_
-            noon_utc (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        sunrise_utc = sunset_utc = None
-        h_sun = self._hour_angle_for_zenith(lat_rad, dec0, 90.8333)
-        if h_sun is not None:
-            sunrise_utc = noon_utc - h_sun * 4.0
-            sunset_utc = noon_utc + h_sun * 4.0
-            for name, est in (("sunrise", sunrise_utc), ("sunset", sunset_utc)):
-                jd_try = jd0 + est / 1440.0
-                dec_try, _ = self.sun_position(jd_try)
-                h_new = self._hour_angle_for_zenith(lat_rad, dec_try, 90.8333)
-                if h_new is not None:
-                    if name == "sunrise":
-                        sunrise_utc = noon_utc - h_new * 4.0
-                    else:
-                        sunset_utc = noon_utc + h_new * 4.0
-        return sunrise_utc, sunset_utc
-
-
-    def _compute_asr(self, lat_rad, jd0, dhuhr_utc, noon_utc):
-        """Compute Asr time.
-
-        Args:
-            lat_rad (_type_): _description_
-            jd0 (_type_): _description_
-            dhuhr_utc (_type_): _description_
-            noon_utc (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """ 
-        asr_utc = None
-        dec_for_asr, _ = self.sun_position(jd0 + dhuhr_utc / 1440.0)
-        asr_alt = self._asr_altitude(lat_rad, dec_for_asr, self.asr_factor)
-        cosh_asr_denom = math.cos(lat_rad) * math.cos(dec_for_asr)
-        if abs(cosh_asr_denom) > 1e-15:
-            cosh_asr = (math.sin(asr_alt) - math.sin(lat_rad) * math.sin(dec_for_asr)) / cosh_asr_denom
-            if -1 <= cosh_asr <= 1:
-                h_asr = math.degrees(math.acos(cosh_asr))
-                asr_utc = noon_utc + h_asr * 4.0
-                jd_try = jd0 + asr_utc / 1440.0
-                dec_try, _ = self.sun_position(jd_try)
-                cosh_asr = (math.sin(asr_alt) - math.sin(lat_rad) * math.sin(dec_try)) / (math.cos(lat_rad) * math.cos(dec_try))
-                if -1 <= cosh_asr <= 1:
-                    h_asr = math.degrees(math.acos(cosh_asr))
-                    asr_utc = noon_utc + h_asr * 4.0
-        return asr_utc
-
-
-    def _compute_fajr_isha(self, base_date, lat_rad, jd0, dec0, noon_utc, sunrise_utc, sunset_utc):
-        """Compute Fajr and Isha times using either standard or Moonsighting methods."""
-        
-        if self.method == "MOONSIGHTING":
-            return self._compute_moonsighting_fajr_isha(base_date, lat_rad, sunrise_utc, sunset_utc)
-        else:
-            fajr_utc = self._compute_fajr_angle(lat_rad, jd0, dec0, noon_utc)
-            isha_utc = self._compute_isha_angle(lat_rad, jd0, dec0, noon_utc, sunset_utc)
-            return fajr_utc, isha_utc
-
-    # -------------------------------------
-    # Helper methods
-    # -------------------------------------
-
-    def _compute_moonsighting_fajr_isha(self, base_date, lat_rad, sunrise_utc, sunset_utc):
-        """Compute Fajr/Isha using the Moonsighting Committee method."""
-        fajr_obj = MSFajr(base_date, math.degrees(lat_rad))
-        isha_obj = MSIsha(base_date, math.degrees(lat_rad), self.shafaq)
-        fajr_utc = sunrise_utc - fajr_obj.minutes_before_sunrise()
-        isha_utc = sunset_utc + isha_obj.minutes_after_sunset()
-        return fajr_utc, isha_utc
-
-
-    def _refine_angle(self, lat_rad, jd0, dec0, noon_utc, zenith, direction):
-        """Generic refinement for angle-based times (used by Fajr/Isha)."""
-        h_angle = self._hour_angle_for_zenith(lat_rad, dec0, zenith)
-        if h_angle is None:
-            return None
-
-        time_utc = noon_utc + (h_angle * 4.0 * direction)
-        jd_try = jd0 + time_utc / 1440.0
-        dec_try, _ = self.sun_position(jd_try)
-
-        h_new = self._hour_angle_for_zenith(lat_rad, dec_try, zenith)
-        if h_new is not None:
-            time_utc = noon_utc + (h_new * 4.0 * direction)
-
-        return time_utc
-
-
-    def _compute_fajr_angle(self, lat_rad, jd0, dec0, noon_utc):
-        """Compute Fajr time using angle-based calculation."""
-        fajr_zenith = 90.0 + float(self.fajr_cfg)
-        return self._refine_angle(lat_rad, jd0, dec0, noon_utc, fajr_zenith, direction=-1)
-
-
-    def _compute_isha_angle(self, lat_rad, jd0, dec0, noon_utc, sunset_utc):
-        """Compute Isha time using either fixed minutes or angle-based method."""
-        if isinstance(self.isha_cfg, tuple) and self.isha_cfg[0] == "mins":
-            return sunset_utc + float(self.isha_cfg[1]) if sunset_utc else None
-
-        # angle-based
-        isha_angle = float(self.isha_cfg if isinstance(self.isha_cfg, (int, float)) else 18.0)
-        isha_zenith = 90.0 + isha_angle
-        return self._refine_angle(lat_rad, jd0, dec0, noon_utc, isha_zenith, direction=1)
-
-
-
-    def _build_times(self, base_date, fajr_utc, sunrise_utc, dhuhr_utc, asr_utc, sunset_utc, maghrib_utc, isha_utc):
-        """Build prayer times dictionary.
-
-        Args:
-            base_date (_type_): _description_
-            fajr_utc (_type_): _description_
-            sunrise_utc (_type_): _description_
-            dhuhr_utc (_type_): _description_
-            asr_utc (_type_): _description_
-            sunset_utc (_type_): _description_
-            maghrib_utc (_type_): _description_
-            isha_utc (bool): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        to_dt = lambda mins: self._to_local_datetime(base_date, mins, self.tz)
-        return {
-            "Fajr": to_dt(fajr_utc),
-            "Sunrise": to_dt(sunrise_utc),
-            "Dhuhr": to_dt(dhuhr_utc),
-            "Asr": to_dt(asr_utc),
-            "Sunset": to_dt(sunset_utc),
-            "Maghrib": to_dt(maghrib_utc),
-            "Isha": to_dt(isha_utc),
-        }
-
-
-    def _add_extras(self, times_dt):
-        """Add extra times: Imsak, Midnight, Firstthird, Lastthird.
-        Args:
-            times_dt (_type_): _description_
-        """
-        if times_dt["Fajr"] and times_dt["Sunset"]:
-            times_dt["Imsak"] = times_dt["Fajr"] - timedelta(minutes=10)
-            times_dt["Midnight"] = times_dt["Sunset"] + (times_dt["Sunrise"] - times_dt["Sunset"]) / 2
-            night_seconds = (times_dt["Fajr"] - times_dt["Sunset"]).total_seconds()
-            times_dt["Firstthird"] = times_dt["Sunset"] + timedelta(seconds=night_seconds / 3.0)
-            times_dt["Lastthird"] = times_dt["Sunset"] + timedelta(seconds=2.0 * night_seconds / 3.0)
-        else:
-            for k in ["Imsak", "Midnight", "Firstthird", "Lastthird"]:
-                times_dt[k] = None
-        return times_dt
-
-
-    def _apply_offsets(self, times_dt):
-        """Apply method-specific offsets to prayer times.
-
-        Args:
-            times_dt (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        if self.method in METHOD_OFFSETS:
-            for prayer, offset in METHOD_OFFSETS[self.method].items():
-                dt = times_dt.get(prayer)
-                if dt:
-                    times_dt[prayer] = dt + timedelta(minutes=offset)
-        return times_dt
-
-
-    def _format_times(self, times_dt):
-        """Format prayer times as strings.
-
-        Args:
-            times_dt (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        times_formatted = {k: self._format(v) for k, v in times_dt.items()}
-        
-        return {k: times_formatted[k] for k in ORDERED_KEYS if k in times_formatted}
+    @staticmethod
+    def get_available_methods() -> list[dict]:
+        """Return available calculation methods with their descriptions."""
+        return [{"method": k, "description": v.description} for k, v in PRAYER_METHODS.items()]
 
     # -----------------------------
-    # Compute prayer times
+    # Compute
     # -----------------------------
     def compute(self, base_date: date, latitude: float, longitude: float) -> dict:
-        """Compute prayer times for a given date and location.
+        """Compute prayer times for one date and location.
 
-        Args:
-            base_date (date): _description_
-            latitude (float): _description_
-            longitude (float): _description_
+        Returns a dict keyed by ORDERED_KEYS with formatted local-time strings
+        (or None when an event does not occur, e.g. polar conditions).
+        """
+        return {k: self._format(v) for k, v in self.compute_datetimes(base_date, latitude, longitude).items()}
 
-        Returns:
-            _type_: _description_
+    def compute_datetimes(self, base_date: date, latitude: float,
+                          longitude: float) -> dict[str, Optional[datetime]]:
+        """Compute prayer times as timezone-aware datetimes keyed by ORDERED_KEYS.
+
+        Prefer this over the string-returning ``compute`` for scheduling: it
+        avoids re-parsing formatted strings and the DST/day-boundary bugs that
+        come with naive ``datetime`` reconstruction.
         """
         lat_rad = math.radians(latitude)
         jd0 = self.julian_day(base_date.year, base_date.month, base_date.day)
-        dec0, eqt_min = self.sun_position(jd0)
+        _, eqt_min = self.sun_position(jd0)
         noon_utc = 720.0 - 4.0 * longitude - eqt_min
 
-        sunrise_utc, sunset_utc = self._compute_sunrise_sunset(lat_rad, jd0, dec0, noon_utc)
+        sunrise_utc = self._refine_angle(lat_rad, jd0, noon_utc, SUN_ZENITH, -1)
+        sunset_utc = self._refine_angle(lat_rad, jd0, noon_utc, SUN_ZENITH, 1)
+
+        # Night length used for high-latitude Fajr/Isha fallback (uses same-day sunrise).
+        if sunrise_utc is not None and sunset_utc is not None:
+            night_fallback = sunrise_utc + (1440.0 - sunset_utc)
+        else:
+            night_fallback = 0.0
+
         dhuhr_utc = noon_utc
-        asr_utc = self._compute_asr(lat_rad, jd0, dhuhr_utc, noon_utc)
+        asr_utc = self._compute_asr(lat_rad, jd0, noon_utc)
+        if asr_utc is None:
+            asr_utc = noon_utc + 150.0
 
-        fajr_utc, isha_utc = self._compute_fajr_isha(base_date, lat_rad, jd0, dec0, noon_utc, sunrise_utc, sunset_utc)
-        maghrib_utc = sunset_utc
+        fajr_utc, isha_utc = self._compute_fajr_isha(
+            base_date, lat_rad, jd0, noon_utc, sunrise_utc, sunset_utc, night_fallback
+        )
+        maghrib_utc = self._compute_maghrib(lat_rad, jd0, noon_utc, sunset_utc)
 
-        times_dt = self._build_times(base_date, fajr_utc, sunrise_utc, dhuhr_utc, asr_utc, sunset_utc, maghrib_utc, isha_utc)
-        times_dt = self._add_extras(times_dt)
-        times_dt = self._apply_offsets(times_dt)
-        return self._format_times(times_dt)
+        times_utc = {
+            "Imsak": fajr_utc - 10.0 if fajr_utc is not None else None,
+            "Fajr": fajr_utc,
+            "Sunrise": sunrise_utc,
+            "Dhuhr": dhuhr_utc,
+            "Asr": asr_utc,
+            "Sunset": sunset_utc,
+            "Maghrib": maghrib_utc,
+            "Isha": isha_utc,
+        }
+        times_utc.update(self._night_marks(lat_rad, jd0, longitude, fajr_utc, sunset_utc))
 
+        return {
+            k: self._to_local_datetime(base_date, times_utc.get(k))
+            for k in ORDERED_KEYS
+        }
+
+    def _night_marks(self, lat_rad, jd0, longitude, fajr_utc, sunset_utc) -> dict:
+        """Midnight and the night thirds, in UTC minutes.
+
+        Night spans Sunset to the next day's Sunrise (standard) or to Fajr
+        (jafari). Using the next day's recomputed sunrise — not today's + 24h —
+        keeps the midpoint accurate as day length changes.
+        """
+        if sunset_utc is None:
+            return {"Midnight": None, "Firstthird": None, "Lastthird": None}
+
+        if self.cfg.midnight == "jafari" and fajr_utc is not None:
+            night = (fajr_utc + 1440.0) - sunset_utc
+        else:
+            _, eqt_next = self.sun_position(jd0 + 1.0)
+            noon_next = 720.0 - 4.0 * longitude - eqt_next
+            sunrise_next = self._refine_angle(lat_rad, jd0 + 1.0, noon_next, SUN_ZENITH, -1)
+            if sunrise_next is None:
+                return {"Midnight": None, "Firstthird": None, "Lastthird": None}
+            night = (sunrise_next + 1440.0) - sunset_utc
+
+        return {
+            "Midnight": sunset_utc + night / 2.0,
+            "Firstthird": sunset_utc + night / 3.0,
+            "Lastthird": sunset_utc + 2.0 * night / 3.0,
+        }
 
     def compute_month(self, year: int, month: int, lat: float, lon: float):
-        """Compute prayer times for a month.
-        Args:
-            year (_type_): _description_
-            month (_type_): _description_
-            lat (_type_): _description_
-            lon (_type_): _description_
-        Returns:
-            _type_: _description_
-        """
-        from calendar import monthrange
-        results = []
-        for d in range(1, monthrange(year, month)[1] + 1):
-            day = date(year, month, d)
-            results.append((day.isoformat(), self.compute(day, lat, lon)))
-        return results
-    def compute_year(self, year, lat, lon):
+        """Compute prayer times for every day of a month (list of (iso_date, times))."""
+        return [
+            (date(year, month, d).isoformat(), self.compute(date(year, month, d), lat, lon))
+            for d in range(1, calendar.monthrange(year, month)[1] + 1)
+        ]
+
+    def compute_year(self, year: int, lat: float, lon: float):
+        """Compute prayer times for a whole year, in parallel."""
         with ThreadPoolExecutor() as ex:
-            futures = [ex.submit(self.compute, date(year, m, d), lat, lon)
-                    for m in range(1, 13)
-                    for d in range(1, calendar.monthrange(year, m)[1] + 1)]
-            results = [f.result() for f in futures]
-        return results
+            futures = [
+                ex.submit(self.compute, date(year, m, d), lat, lon)
+                for m in range(1, 13)
+                for d in range(1, calendar.monthrange(year, m)[1] + 1)
+            ]
+            return [f.result() for f in futures]

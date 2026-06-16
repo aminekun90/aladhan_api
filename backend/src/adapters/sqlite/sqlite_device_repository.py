@@ -5,6 +5,9 @@ from src.adapters.base import SQLRepositoryBase
 from src.domain import DeviceRepository
 from src.domain.models import Device
 from src.adapters.models import DeviceTable
+from src.schemas.log_config import LogConfig
+
+logger = LogConfig.get_logger()
 
 
 class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
@@ -72,6 +75,7 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                     name=device.name,
                     ip=device.ip,
                     raw_data=json.loads(device.raw_data) if isinstance(device.raw_data, str) else device.raw_data,
+                    type=device.type,
                 )
         return None
 
@@ -85,6 +89,7 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                     name=device.name,
                     ip=device.ip,
                     raw_data=json.loads(device.raw_data) if isinstance(device.raw_data, str) else device.raw_data,
+                    type=device.type,
                 )
         return None
 
@@ -119,17 +124,16 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                     existing_device.name = device.name
                     existing_device.raw_data = device.raw_data
                     existing_device.type = device.type
-                    print(f"Update existing device: {device.name} ({device.ip}:{device.type})")
+                    logger.info(f"Update existing device: {device.name} ({device.ip}:{device.type})")
                     
                 else:
-                    print(f"Adding new device: {device.name} ({device.ip}:{device.type})")
+                    logger.info(f"Adding new device: {device.name} ({device.ip}:{device.type})")
                     session.add(
                         DeviceTable(
                             name=device.name,
                             ip=device.ip,
-                            raw_data=json.dumps(device.raw_data)
-                            if isinstance(device.raw_data, dict)
-                            else device.raw_data,
+                            # Column is JSON — store the dict directly (no double-encoding).
+                            raw_data=device.raw_data,
                             type=device.type
                         )
                     )

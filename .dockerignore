@@ -1,0 +1,29 @@
+# Keep the build context small and the image lean.
+
+# Raw GeoNames source (only needed offline to rebuild cities.db)
+backend/src/data/allCountries.txt
+backend/src/data/allCountries.zip
+backend/src/data/*.txt
+backend/src/data/*.zip
+
+# Python
+**/__pycache__/
+**/*.pyc
+backend/.venv/
+backend/.pytest_cache/
+backend/logs/*.log
+data_tools/.venv/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.yarn/cache/
+
+# VCS / editor / OS
+.git/
+.github/
+.idea/
+.vscode/
+**/.DS_Store
+.claude/
+*.code-workspace

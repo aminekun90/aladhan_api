@@ -1,5 +1,7 @@
 import { allTimings } from "@/api/apiPrayer";
-import { DialogPdfGrid } from "@/components/DialogPdfGrid";
+import { CalendarPdfSheet } from "@/components/CalendarPdfSheet";
+import { exportElementToPdf } from "@/utils/exportPdf";
+import { logger } from "@/utils/logger";
 import { Timing } from "@/models/Timing";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
@@ -7,9 +9,11 @@ import {
     capitalize,
     Card,
     Chip,
+    CircularProgress,
     Grid,
     IconButton,
     Stack,
+    Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
@@ -23,16 +27,20 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useQuery } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/fr";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type TimingKey = "Imsak" | "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 
 export function DateCalendarComponent({
   coord,
-}: Readonly<{ coord: { lat?: number; lon?: number } }>) {
+  locationLabel,
+}: Readonly<{ coord: { lat?: number; lon?: number }; locationLabel?: string }>) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
-  const [openPdfModal, setOpenPdfModal] = useState<boolean>(false);
+  const [exporting, setExporting] = useState<boolean>(false);
+  const pdfSheetRef = useRef<HTMLDivElement>(null);
 
   // Fetch events for the current month
   const {
@@ -104,49 +112,44 @@ export function DateCalendarComponent({
 
       return ""; // Fallback for safety
     } catch (error) {
-      console.error("Failed to parse Hijri date:", error);
+      logger.error("Failed to parse Hijri date:", error);
       return ""; // Return an empty string on error
     }
   }, [events]);
 
   // --- END OF useMemo SOLUTION ---
 
-  const handleDayClick = (value:any) => setSelectedDate(value);
+  const handleDayClick = (value: Dayjs | null) => {
+    if (value) setSelectedDate(value);
+  };
+
+  const handleExportPdf = async () => {
+    if (!events?.length || !pdfSheetRef.current) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(pdfSheetRef.current, `aladhan-${selectedDate.format("YYYY-MM")}`);
+    } catch (error) {
+      logger.error("PDF export failed:", error);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
-    <Grid container sx={{ flexGrow: 1, justifyContent: "center", padding: 2 }}>
+    <Grid container sx={{ flexGrow: 1, justifyContent: "center", px: { xs: 0, sm: 2 } }}>
       <Card
         sx={{
-          padding: 2,
-          minWidth: 300,
+          p: { xs: 1.5, sm: 2 },
+          width: "100%",
+          maxWidth: 420,
           borderRadius: "1.5rem",
-          background: "rgba(255, 255, 255, 0.15)",
-          backdropFilter: "blur(2px) saturate(180%)",
-          border: "0.0625rem solid rgba(255, 255, 255, 0.4)",
-          boxShadow:
-            "0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255,255,255,0.3)",
-          transition: "all 0.25s ease",
+          background: "var(--surface)",
+          backdropFilter: "blur(10px)",
+          border: "1px solid var(--line)",
+          transition: "border-color .25s ease, box-shadow .25s ease",
           "&:hover": {
-            boxShadow:
-              "0 10px 40px rgba(31, 38, 135, 0.25), inset 0 6px 24px rgba(255,255,255,0.4)",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(255, 255, 255, 0.1)",
-            borderRadius: "1.5rem",
-            backdropFilter: "blur(1px)",
-            boxShadow:
-              "inset -10px -8px 0px -11px rgba(255,255,255,1), inset 0px -9px 0px -8px rgba(255,255,255,1)",
-            opacity: 0.6,
-            zIndex: -1,
-            filter:
-              "blur(1px) drop-shadow(5px 2px 4px rgba(0,0,0,0.3)) brightness(115%)",
-            pointerEvents: "none",
+            borderColor: "rgba(212,173,95,0.35)",
+            boxShadow: "0 14px 44px rgba(212,173,95,0.12)",
           },
         }}
       >
@@ -154,17 +157,18 @@ export function DateCalendarComponent({
           container
           component="div"
           justifyContent="flex-end"
-          sx={{ display: "flex", alignItems: "center", height: 60 }}
+          sx={{ display: "flex", alignItems: "center" }}
         >
-          <IconButton
-            sx={{ color: "white", height: 60, width: 60 }}
-            onClick={() => setOpenPdfModal(true)}
-          >
-            <PictureAsPdfIcon />
-          </IconButton>
+          <Tooltip title={t('calendar.exportPdf')}>
+            <span>
+              <IconButton onClick={handleExportPdf} disabled={exporting || !events?.length}>
+                {exporting ? <CircularProgress size={20} sx={{ color: "var(--brass)" }} /> : <PictureAsPdfIcon />}
+              </IconButton>
+            </span>
+          </Tooltip>
         </Grid>
 
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr-FR">
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={i18n.resolvedLanguage}>
           <DateCalendar
             loading={isLoading}
             onChange={handleDayClick}
@@ -174,59 +178,62 @@ export function DateCalendarComponent({
 
         <Box sx={{ marginTop: 2, textAlign: "center" }}>
           <Typography variant="h6">
-            Les prières du {selectedDate.format("DD/MM/YYYY")}
+            {t('calendar.prayersOf', { date: selectedDate.format("DD/MM/YYYY") })}
           </Typography>
           {eventsForSelectedDay.length > 0 ? (
             eventsForSelectedDay.map((event: Timing, index) => (
-              <Stack
-                direction="column"
-                spacing={1}
-                key={`${event.date}-${index}`}
-              >
-                <Typography dir="rtl" key={event.hijri_date}>
+              <Stack spacing={1.5} key={`${event.date}-${index}`} sx={{ mt: 1 }}>
+                <Typography dir="rtl" sx={{ fontFamily: "var(--font-arabic)", fontSize: "1.1rem", color: "var(--brass-bright)" }}>
                   {event.hijri_date}
                 </Typography>
-                {(
-                  [
-                    "Imsak",
-                    "Fajr",
-                    "Dhuhr",
-                    "Asr",
-                    "Maghrib",
-                    "Isha",
-                  ] as TimingKey[]
-                ).map((key) => (
-                  <Chip
-                    key={`${index}-${key}`}
-                    label={`${key}: ${event.times[key]}`}
-                    sx={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      backdropFilter: "blur(2px)",
-                      color: theme.palette.text.primary,
-                      fontWeight: 600,
-                    }}
-                  />
-                ))}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
+                  {(
+                    [
+                      "Imsak",
+                      "Fajr",
+                      "Dhuhr",
+                      "Asr",
+                      "Maghrib",
+                      "Isha",
+                    ] as TimingKey[]
+                  ).map((key) => (
+                    <Chip
+                      key={`${index}-${key}`}
+                      size="small"
+                      label={`${key} ${event.times[key]}`}
+                      sx={{
+                        backgroundColor: "rgba(212,173,95,0.1)",
+                        border: "1px solid var(--line)",
+                        color: theme.palette.text.primary,
+                        fontWeight: 500,
+                        fontFamily: "var(--font-ui)",
+                      }}
+                    />
+                  ))}
+                </Box>
               </Stack>
             ))
           ) : (
-            <Typography>Aucune prière trouvée.</Typography>
+            <Typography>{t('calendar.noPrayers')}</Typography>
           )}
           {isError && (
-            <Typography>Erreur lors de la récupération des prières</Typography>
+            <Typography>{t('calendar.error')}</Typography>
           )}
         </Box>
       </Card>
 
-      {events && (
-        <DialogPdfGrid
-          events={events}
-          openDialog={openPdfModal}
-          onClose={() => setOpenPdfModal(false)}
-          // remove from hijri date the day and date keep year and month for example الإثنين 5 جمادى الأولى 1447
-          // becomes جمادى الأولى 1447
-          title={`${capitalize(selectedDate.format("MMMM YYYY"))} - ${hijriMonthYear}`}
-        />
+      {/* Off-screen branded sheet rasterized into the PDF on export. */}
+      {!!events?.length && (
+        <Box sx={{ position: "absolute", left: -10000, top: 0, pointerEvents: "none" }} aria-hidden>
+          <CalendarPdfSheet
+            ref={pdfSheetRef}
+            events={events}
+            monthLabel={capitalize(selectedDate.format("MMMM YYYY"))}
+            hijriLabel={hijriMonthYear}
+            location={locationLabel ?? `${(coord.lat ?? 0).toFixed(3)}, ${(coord.lon ?? 0).toFixed(3)}`}
+            method={events[0]?.method ?? "—"}
+          />
+        </Box>
       )}
     </Grid>
   );

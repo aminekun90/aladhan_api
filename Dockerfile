@@ -63,6 +63,8 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2 libxslt1.1 libffi8 curl \
+    mpg123 alsa-utils \
+    bluez \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend-build /app/.venv /app/.venv

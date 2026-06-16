@@ -41,3 +41,24 @@ class AudioService:
     def get_audio_by_id(self,audio_id:int)->Optional[Audio]:
         """Retrieve an audio file by its ID."""
         return self.audio_repo.get_audio_by_id(audio_id)
+
+    def save_uploaded_audio(self, filename: str, content: bytes) -> Audio:
+        """Persist an uploaded MP3 to disk (for local/Bluetooth playback) and to
+        the database (for the streamed /audio/{name} URL used by Sonos/Freebox)."""
+        safe_name = os.path.basename(filename).strip()
+        if not safe_name.lower().endswith(".mp3"):
+            safe_name = f"{safe_name}.mp3"
+        os.makedirs(self.data_path, exist_ok=True)
+        with open(os.path.join(self.data_path, safe_name), "wb") as f:
+            f.write(content)
+        self.audio_repo.add_audio(Audio(name=safe_name, blob=content))
+        logger.info(f"Saved uploaded audio: {safe_name} ({len(content)} bytes)")
+        return self.audio_repo.get_audio_by_name(safe_name) or Audio(name=safe_name, blob=content)
+
+    def delete_audio(self, name: str) -> None:
+        """Remove an audio from the database and disk."""
+        self.audio_repo.delete_audio(name)
+        path = os.path.join(self.data_path, os.path.basename(name))
+        if os.path.exists(path):
+            os.remove(path)
+        logger.info(f"Deleted audio: {name}")

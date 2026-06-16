@@ -6,6 +6,7 @@ from soco import SoCo, discover
 
 from src.domain.models import Device
 from src.schemas.log_config import LogConfig
+from src.schemas.player import PlayerAction, PlayerState
 
 logger = LogConfig.get_logger()
 
@@ -78,10 +79,60 @@ class SoCoService:
         """Convert list of device dicts to list of Device domain models."""
         return [Device(id=None,ip=d["ip_address"], name=d["name"], raw_data=d, type="sonos_player") for d in devices] if devices else []
 
-    def play_audio(self, device: Device, url: str,volume: int) -> None:
+    def play_audio(self, device: Device, url: str, volume: int) -> None:
         soco_device = SoCo(device.ip)
         if not soco_device:
-            logger.info(f"🔇 Device with ip {device.ip} not available in network")
+            logger.warning(f"Device with ip {device.ip} not available in network")
             return
         soco_device.volume = volume
         soco_device.play_uri(url)
+
+    # ------------------------------
+    # Transport controls
+    # ------------------------------
+    def control(self, device: Device, action: PlayerAction) -> PlayerState:
+        """Apply a transport action and return the resulting normalized state."""
+        soco_device = SoCo(device.ip)
+        if action == PlayerAction.PLAY:
+            soco_device.play()
+        elif action == PlayerAction.PAUSE:
+            soco_device.pause()
+        elif action == PlayerAction.STOP:
+            soco_device.stop()
+        elif action == PlayerAction.NEXT:
+            soco_device.next()
+        elif action == PlayerAction.PREVIOUS:
+            soco_device.previous()
+        elif action == PlayerAction.MUTE:
+            soco_device.mute = True
+        elif action == PlayerAction.UNMUTE:
+            soco_device.mute = False
+        return self._state(device, soco_device)
+
+    def set_volume(self, device: Device, volume: int) -> PlayerState:
+        soco_device = SoCo(device.ip)
+        soco_device.volume = max(0, min(100, volume))
+        return self._state(device, soco_device)
+
+    def get_state(self, device: Device) -> PlayerState:
+        return self._state(device, SoCo(device.ip))
+
+    def _state(self, device: Device, soco_device: SoCo) -> PlayerState:
+        try:
+            transport = soco_device.get_current_transport_info() or {}
+            track = soco_device.get_current_track_info() or {}
+            return PlayerState(
+                device_id=device.id,
+                name=device.name or soco_device.player_name,
+                ip=device.ip,
+                type="sonos_player",
+                transport_state=transport.get("current_transport_state", "UNKNOWN"),
+                volume=soco_device.volume,
+                muted=bool(soco_device.mute),
+                track_title=track.get("title") or None,
+                online=True,
+            )
+        except Exception as exc:  # network hiccup / device offline
+            logger.warning(f"Sonos device {device.ip} offline: {exc}")
+            return PlayerState(device_id=device.id, name=device.name, ip=device.ip,
+                               type="sonos_player", online=False)

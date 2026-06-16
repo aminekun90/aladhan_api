@@ -208,10 +208,12 @@ __marimo__/
 
 # data_tools generated data
 src/data/**/**.db
-# Any audio file
+# Any audio file (user uploads stay local)...
 src/data/**/**.mp3
 src/data/**/**.m4a
 src/data/**/**.wave
+# ...except the bundled default adhan, shipped with the image.
+!src/data/audio/lameques.mp3
 src/data/**/**.txt
 src/data/**/**.zip
 .DS_Store

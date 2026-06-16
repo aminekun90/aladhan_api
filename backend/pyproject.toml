@@ -1,6 +1,6 @@
 [project]
 name = "adhan-api"
-version = "0.1.0"
+version = "0.1.1"
 description = "Prayer times API implemented from scratch"
 authors = [
   { name="Amine Bouzahar", email="mohamed.amine.bouzahar@gmail.com" }
@@ -15,7 +15,9 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "pytest>=8.4.2",
     "python-dotenv>=1.1.1",
+    "python-multipart>=0.0.32",
     "soco>=0.30.12",
     "sqlalchemy>=2.0.44",
     "uvicorn[standard]>=0.37.0",
+    "zeroconf>=0.149.16",
 ]

@@ -1,25 +1,27 @@
+import packageJson from '../../package.json';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Link, Typography } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Link, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean, onClose?: () => void }>) {
+    const { t } = useTranslation();
     return (
         <Dialog open={open} onClose={onClose} aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description">
-            <DialogTitle>About Aladhan-pi beta 0.1.0</DialogTitle>
             <DialogContent>
-                <DialogContentText>
-                    <Typography variant='body1' >
-                        Aladhan-pi is an open-source Python / React project that provides accurate Islamic prayer times and Qibla* direction using data from the Aladhan API.
-                        It is designed to be lightweight and easy to use, making it ideal for personal use or integration into other applications.
-                        The project is maintained by a community of developers and is available on GitHub for anyone to Contribute/Donate or Report issues.
+                <DialogContentText component="div">
+                    <Typography variant="h6" gutterBottom>
+                        {t('about.title', { version: packageJson.version })}
                     </Typography>
-
-                    <Link title='' href="https://github.com/aminekun90/aladhan_api" sx={{ color: "inherit" }}><GitHubIcon /></Link>
-
+                    <Typography variant="body1">{t('about.body')}</Typography>
+                    <Link title="GitHub" href="https://github.com/aminekun90/aladhan_api" sx={{ color: "inherit" }}>
+                        <GitHubIcon />
+                    </Link>
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
                 <Button variant="contained" color="primary" onClick={onClose} autoFocus>
-                    Close
+                    {t('about.close')}
                 </Button>
             </DialogActions>
         </Dialog>

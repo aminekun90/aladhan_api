@@ -1,4 +1,49 @@
-import { Card, CardActionArea, CardContent, Tooltip, Typography } from "@mui/material";
+import { BRASS, BRASS_BRIGHT } from "@/components/ui";
+import { alpha, Card, CardActionArea, styled, Tooltip, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+
+/** Gilded prayer-time card; `next` highlights the upcoming prayer. */
+const PrayerRoot = styled(Card, {
+  shouldForwardProp: (prop) => prop !== "next",
+})<{ next?: boolean }>(({ next }) => ({
+  position: "relative",
+  overflow: "hidden",
+  borderRadius: "1.25rem",
+  backgroundColor: next ? alpha(BRASS, 0.12) : "var(--surface)",
+  backgroundImage: next
+    ? `radial-gradient(120% 90% at 50% 0%, ${alpha(BRASS, 0.28)}, transparent 65%)`
+    : "none",
+  border: `1px solid ${next ? alpha(BRASS, 0.55) : "var(--line)"}`,
+  boxShadow: next ? `0 10px 40px ${alpha(BRASS, 0.25)}` : "none",
+  backdropFilter: "blur(8px)",
+  transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease",
+  "&:hover": {
+    transform: "translateY(-4px)",
+    borderColor: alpha(BRASS, 0.5),
+    boxShadow: `0 14px 44px ${alpha(BRASS, next ? 0.32 : 0.14)}`,
+  },
+  // gilded hairline at the very top — the mihrab arch's keystone
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: next ? "70%" : "34%",
+    height: "2px",
+    borderRadius: "2px",
+    background: `linear-gradient(90deg, transparent, ${next ? BRASS_BRIGHT : BRASS}, transparent)`,
+    transition: "width .25s ease",
+  },
+}));
+
+const TimeText = styled("span")({
+  fontFamily: "var(--font-display)",
+  fontWeight: 400,
+  lineHeight: 1.05,
+  color: "var(--parchment)",
+  fontVariantNumeric: "tabular-nums",
+});
 
 export function PrayerCard(props: {
   readonly selectedCard?: string;
@@ -9,83 +54,31 @@ export function PrayerCard(props: {
   readonly setSelectedCard: (id: string) => void;
   readonly isNext?: boolean;
 }) {
+  const { t, i18n } = useTranslation();
   const isActive = props.selectedCard === props.id;
+  const next = !!props.isNext;
+
+  const time = Intl.DateTimeFormat(i18n.resolvedLanguage, { hour: "2-digit", minute: "2-digit" }).format(props.date);
 
   return (
-    <Tooltip title={props.title + " in " + props.timezone}>
-      <Card
-        sx={{
-          width: "100%",
-          position: "relative",
-          borderRadius: "1.5rem",
-          padding: "0.5rem",
-          background: "rgba(255,255,255,0.15)",
-          backdropFilter: "blur(2px) saturate(180%)",
-          border: "0.0625rem solid rgba(255,255,255,0.4)",
-          boxShadow:
-            "0 8px 32px rgba(31, 38, 135, 0.2), inset 0 4px 20px rgba(255,255,255,0.3)",
-          transition: "all 0.25s ease",
-          "&:hover": {
-            boxShadow:
-              "0 10px 40px rgba(31, 38, 135, 0.25), inset 0 6px 24px rgba(255,255,255,0.4)",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(255,255,255,0.1)",
-            borderRadius: "1.5rem",
-            backdropFilter: "blur(1px)",
-            boxShadow:
-              "inset -10px -8px 0px -11px rgba(255,255,255,1), inset 0px -9px 0px -8px rgba(255,255,255,1)",
-            opacity: 0.6,
-            zIndex: -1,
-            filter: "blur(1px) drop-shadow(5px 2px 4px rgba(0,0,0,0.3)) brightness(115%)",
-            pointerEvents: "none",
-          },
-        }}
-      >
+    <Tooltip title={`${props.title} · ${props.timezone}`} arrow>
+      <PrayerRoot next={next}>
         <CardActionArea
-          key={props.id}
           onClick={() => props.setSelectedCard(props.id)}
           data-active={isActive ? "" : undefined}
-          data-next={props.isNext ? "" : undefined}
-          sx={{
-            height: "100%",
-            borderRadius: "1.5rem",
-            transition: "all 0.25s ease",
-            "&[data-active]": {
-              backgroundColor: "rgba(100, 180, 255, 0.3)", // soft blue for active
-              "&:hover": {
-                backgroundColor: "rgba(100, 180, 255, 0.4)",
-              },
-            },
-            "&[data-next]": {
-              backgroundColor: "rgba(243, 112, 33, 0.5)", // soft orange for next
-              color: "rgba(255, 255, 255, 1)",
-              "&:hover": {
-                backgroundColor: "rgba(243, 112, 33, 0.9)",
-              },
-            },
-          }}
+          sx={{ px: 1.5, py: 2.25, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.75 }}
         >
-          <CardContent>
-            <Typography component={"div"} fontWeight={600}>
-              {props.title}
+          {next && (
+            <Typography sx={{ position: "absolute", top: 8, right: 10, fontSize: "0.55rem", letterSpacing: "0.25em", fontWeight: 700, color: BRASS_BRIGHT }}>
+              {t('prayers.next')}
             </Typography>
-            <Typography color="text.secondary">
-              {Intl.DateTimeFormat("fr-FR", {
-                hour: "numeric",
-                minute: "numeric",
-                // timeZone: props.timezone,
-              }).format(props.date)}
-            </Typography>
-          </CardContent>
+          )}
+          <Typography sx={{ textTransform: "uppercase", letterSpacing: "0.22em", fontSize: "0.66rem", fontWeight: 600, color: next ? BRASS_BRIGHT : "var(--mist)" }}>
+            {props.title}
+          </Typography>
+          <TimeText sx={{ fontSize: { xs: "1.7rem", md: "2rem" } }}>{time}</TimeText>
         </CardActionArea>
-      </Card>
+      </PrayerRoot>
     </Tooltip>
   );
 }

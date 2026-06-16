@@ -1,0 +1,20 @@
+{
+  "app": { "version": "نسخة تجريبية {{version}}" },
+  "nav": { "sync": "مزامنة الصلوات", "scanBluetooth": "البحث عن مكبرات صوت بلوتوث", "about": "حول", "language": "اللغة" },
+  "location": { "useMyLocation": "استخدام موقعي", "denied": "تم رفض تحديد الموقع", "myPosition": "موقعي", "default": "الموقع الافتراضي" },
+  "sections": { "prayerTimes": "أوقات الصلاة", "devices": "الأجهزة", "calendar": "التقويم" },
+  "prayers": { "loading": "جارٍ التحميل…", "error": "خطأ في جلب أوقات الصلاة", "next": "التالية" },
+  "devices": { "errorFetching": "خطأ في جلب الأجهزة", "searching": "جارٍ البحث عن مكبرات الصوت…", "offline": "غير متصل", "settings": "إعدادات الجهاز" },
+  "deviceTypes": { "local_player": "هذا الجهاز", "sonos_player": "Sonos", "freebox_player": "Freebox", "bluetooth_speaker": "بلوتوث" },
+  "settings": { "title": "الإعدادات", "city": "المدينة", "coordinates": "الإحداثيات", "method": "طريقة الحساب", "audio": "صوت الأذان", "date": "التاريخ", "enableScheduler": "تفعيل الأذان", "save": "حفظ", "saving": "جارٍ الحفظ…", "importMp3": "استيراد ملف MP3", "deleteAudio": "حذف هذا الصوت" },
+  "calendar": { "exportPdf": "تصدير إلى PDF", "prayersOf": "صلوات يوم {{date}}", "noPrayers": "لم يتم العثور على صلوات.", "error": "خطأ في جلب أوقات الصلاة" },
+  "pdf": { "title": "أوقات الصلاة", "date": "التاريخ", "hijri": "الهجري", "method": "الطريقة", "generatedOn": "تم الإنشاء في {{date}}" },
+  "bluetooth": { "found": "تم العثور على {{count}} مكبر صوت", "noneFound": "لم يتم العثور على أي مكبر صوت. تأكد من أن المكبر في وضع الاقتران وأن البلوتوث مُفعّل على الخادم.", "scanFailed": "فشل البحث عن البلوتوث (البلوتوث غير متوفر على الخادم؟)." },
+  "toast": {
+    "synced": { "title": "مزامنة الصلوات", "message": "تمت مزامنة الصلوات!" },
+    "scheduled": { "title": "تمت برمجة الأجهزة", "message": "تمت برمجة جميع الأجهزة!" },
+    "audioAdded": { "title": "تمت إضافة الصوت" },
+    "bluetooth": "بلوتوث"
+  },
+  "about": { "title": "حول Aladhan-pi · v{{version}}", "body": "Aladhan-pi مشروع مفتوح المصدر بلغتي Python / React يوفّر أوقات صلاة دقيقة. تتم صيانته من قبل المجتمع على GitHub — ساهم أو تبرّع أو أبلغ عن مشكلة.", "close": "إغلاق" }
+}
