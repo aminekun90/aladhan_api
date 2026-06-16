@@ -1,6 +1,7 @@
 import { controlDevice, PlayerAction } from "@/api/apiDevice";
 import freebox from "@/assets/freebox-devialet.png";
 import symfonisk from "@/assets/symfonisk.jpg";
+import { BRASS } from "@/components/ui";
 import { Device } from "@/models/device";
 import { logger } from "@/utils/logger";
 import BluetoothIcon from "@mui/icons-material/Bluetooth";
@@ -21,6 +22,7 @@ import {
     CardMedia,
     Chip,
     IconButton,
+    styled,
     Tooltip,
     Typography,
     useTheme,
@@ -29,7 +31,29 @@ import { useMutation } from "@tanstack/react-query";
 import { MouseEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const BRASS = "#d4ad5f";
+/** Selectable gilded device card. `selected` glows; `available` dims when offline. */
+const DeviceRoot = styled(Card, {
+    shouldForwardProp: (prop) => prop !== "selected" && prop !== "available",
+})<{ selected?: boolean; available?: boolean }>(({ selected, available }) => ({
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    padding: "1.1rem",
+    cursor: "pointer",
+    opacity: available ? 1 : 0.55,
+    borderRadius: "1.5rem",
+    background: selected ? alpha(BRASS, 0.12) : "var(--surface)",
+    backdropFilter: "blur(10px)",
+    border: `${selected ? 2 : 1}px solid ${selected ? BRASS : "var(--line)"}`,
+    transform: selected ? "translateY(-4px)" : "none",
+    boxShadow: selected ? `0 16px 48px ${alpha(BRASS, 0.3)}` : "none",
+    transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease",
+    "&:hover": {
+        transform: "translateY(-4px)",
+        borderColor: alpha(BRASS, selected ? 1 : 0.5),
+        boxShadow: `0 14px 44px ${alpha(BRASS, selected ? 0.3 : 0.16)}`,
+    },
+}));
 
 export default function DeviceCard({
     device,
@@ -77,33 +101,15 @@ export default function DeviceCard({
     }
 
     return (
-        <Card
+        <DeviceRoot
+            selected={selected}
+            available={available}
             onClick={onClick}
             role="button"
             aria-pressed={selected}
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
-            sx={{
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                width: { xs: 150, sm: 180, md: 200 },
-                p: "1.1rem",
-                cursor: "pointer",
-                opacity: available ? 1 : 0.55,
-                borderRadius: "1.5rem",
-                background: selected ? alpha(BRASS, 0.12) : "var(--surface)",
-                backdropFilter: "blur(10px)",
-                border: `${selected ? 2 : 1}px solid ${selected ? BRASS : "var(--line)"}`,
-                transform: selected ? "translateY(-4px)" : "none",
-                boxShadow: selected ? `0 16px 48px ${alpha(BRASS, 0.3)}` : "none",
-                transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease",
-                "&:hover": {
-                    transform: "translateY(-4px)",
-                    borderColor: alpha(BRASS, selected ? 1 : 0.5),
-                    boxShadow: `0 14px 44px ${alpha(BRASS, selected ? 0.3 : 0.16)}`,
-                },
-            }}
+            sx={{ width: { xs: 150, sm: 180, md: 200 } }}
         >
             {/* Selected indicator + per-device settings */}
             {selected && (
@@ -196,6 +202,6 @@ export default function DeviceCard({
                     </IconButton>
                 </Box>
             </Box>
-        </Card>
+        </DeviceRoot>
     );
 }

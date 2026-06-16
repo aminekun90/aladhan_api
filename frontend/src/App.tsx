@@ -3,7 +3,9 @@ import { DateCalendarComponent } from '@/components/Calendar';
 import { DateClock } from "@/components/Clock";
 import { DevicesComponent } from "@/components/DevicesComponent";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { MihrabArch } from "@/components/MihrabArch";
 import { PrayersComponent } from "@/components/PrayersComponent";
+import { SectionHeading } from "@/components/SectionHeading";
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { DEFAULT_COORD } from "@/const";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -16,62 +18,13 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import SyncIcon from '@mui/icons-material/Sync';
 import { Box, CircularProgress, CssBaseline, IconButton, Stack, ThemeProvider, Tooltip, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import packageJson from '../package.json';
 import { createDeviceSettings, getConnectedBluetooth, getDevices, getSoCoDevices, scanBluetooth, scheduleAllDevices } from "./api/apiDevice";
 import { AboutDialog } from "./components/about";
 import { Settings } from "./models/Settings";
 import { Device } from "./models/device";
-
-/** Decorative pointed (ogival) arch — the mihrab motif framing the hero. */
-function MihrabArch() {
-  return (
-    <Box
-      component="svg"
-      viewBox="0 0 200 280"
-      aria-hidden
-      sx={{
-        position: "absolute",
-        top: { xs: -28, md: -48 },
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: { xs: 300, sm: 380, md: 460 },
-        height: "auto",
-        zIndex: 0,
-        pointerEvents: "none",
-        opacity: 0.45,
-      }}
-    >
-      <defs>
-        <linearGradient id="archStroke" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ecca7e" stopOpacity="0.9" />
-          <stop offset="55%" stopColor="#d4ad5f" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#d4ad5f" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M28 280 L28 130 A 86 116 0 0 1 100 14 A 86 116 0 0 1 172 130 L172 280"
-        fill="none"
-        stroke="url(#archStroke)"
-        strokeWidth="1.5"
-      />
-      <circle cx="100" cy="30" r="2.5" fill="#ecca7e" opacity="0.8" />
-    </Box>
-  );
-}
-
-function SectionHeading({ children }: Readonly<{ children: ReactNode }>) {
-  return (
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ width: "100%", maxWidth: 900, mx: "auto", mb: 3 }}>
-      <Box sx={{ flex: 1, height: "1px", background: "linear-gradient(90deg, transparent, var(--line))" }} />
-      <Typography variant="overline" sx={{ color: "var(--brass)", fontSize: "0.72rem", whiteSpace: "nowrap" }}>
-        {children}
-      </Typography>
-      <Box sx={{ flex: 1, height: "1px", background: "linear-gradient(90deg, var(--line), transparent)" }} />
-    </Stack>
-  );
-}
 
 function App() {
   const { t } = useTranslation();
@@ -245,7 +198,7 @@ function App() {
         </Stack>
 
         {/* Hero */}
-        <Box sx={{ position: "relative", textAlign: "center", px: 2, pt: { xs: 6, md: 9 }, pb: { xs: 4, md: 6 } }}>
+        <Box sx={{ position: "relative", textAlign: "center", px: 2, pt: { xs: 8, md: 11 }, pb: { xs: 4, md: 6 } }}>
           <MihrabArch />
           <Box sx={{ position: "relative", zIndex: 1, animation: "rise .8s ease both" }}>
             <DateClock />
