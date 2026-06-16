@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/fr";
 import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type TimingKey = "Imsak" | "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
 
@@ -35,6 +36,7 @@ export function DateCalendarComponent({
   coord,
   locationLabel,
 }: Readonly<{ coord: { lat?: number; lon?: number }; locationLabel?: string }>) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [exporting, setExporting] = useState<boolean>(false);
@@ -157,7 +159,7 @@ export function DateCalendarComponent({
           justifyContent="flex-end"
           sx={{ display: "flex", alignItems: "center" }}
         >
-          <Tooltip title="Exporter en PDF">
+          <Tooltip title={t('calendar.exportPdf')}>
             <span>
               <IconButton onClick={handleExportPdf} disabled={exporting || !events?.length}>
                 {exporting ? <CircularProgress size={20} sx={{ color: "var(--brass)" }} /> : <PictureAsPdfIcon />}
@@ -166,7 +168,7 @@ export function DateCalendarComponent({
           </Tooltip>
         </Grid>
 
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr-FR">
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={i18n.resolvedLanguage}>
           <DateCalendar
             loading={isLoading}
             onChange={handleDayClick}
@@ -176,7 +178,7 @@ export function DateCalendarComponent({
 
         <Box sx={{ marginTop: 2, textAlign: "center" }}>
           <Typography variant="h6">
-            Les prières du {selectedDate.format("DD/MM/YYYY")}
+            {t('calendar.prayersOf', { date: selectedDate.format("DD/MM/YYYY") })}
           </Typography>
           {eventsForSelectedDay.length > 0 ? (
             eventsForSelectedDay.map((event: Timing, index) => (
@@ -212,10 +214,10 @@ export function DateCalendarComponent({
               </Stack>
             ))
           ) : (
-            <Typography>Aucune prière trouvée.</Typography>
+            <Typography>{t('calendar.noPrayers')}</Typography>
           )}
           {isError && (
-            <Typography>Erreur lors de la récupération des prières</Typography>
+            <Typography>{t('calendar.error')}</Typography>
           )}
         </Box>
       </Card>

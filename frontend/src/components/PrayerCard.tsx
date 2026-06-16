@@ -1,4 +1,5 @@
 import { alpha, Box, Card, CardActionArea, Tooltip, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 const BRASS = "#d4ad5f";
 const BRASS_BRIGHT = "#ecca7e";
@@ -12,10 +13,11 @@ export function PrayerCard(props: {
   readonly setSelectedCard: (id: string) => void;
   readonly isNext?: boolean;
 }) {
+  const { t, i18n } = useTranslation();
   const isActive = props.selectedCard === props.id;
   const next = !!props.isNext;
 
-  const time = Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(props.date);
+  const time = Intl.DateTimeFormat(i18n.resolvedLanguage, { hour: "2-digit", minute: "2-digit" }).format(props.date);
 
   return (
     <Tooltip title={`${props.title} · ${props.timezone}`} arrow>
@@ -76,7 +78,7 @@ export function PrayerCard(props: {
                 color: BRASS_BRIGHT,
               }}
             >
-              SUIVANTE
+              {t('prayers.next')}
             </Typography>
           )}
           <Typography

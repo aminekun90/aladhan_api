@@ -27,15 +27,9 @@ import {
 } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { MouseEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const BRASS = "#d4ad5f";
-
-const TYPE_LABELS: Record<string, string> = {
-    sonos_player: "Sonos",
-    freebox_player: "Freebox",
-    bluetooth_speaker: "Bluetooth",
-    local_player: "Cet appareil",
-};
 
 export default function DeviceCard({
     device,
@@ -51,6 +45,7 @@ export default function DeviceCard({
     onOpenSettings?: () => void;
 }>) {
     const theme = useTheme();
+    const { t } = useTranslation();
     const [isPlaying, setIsPlaying] = useState(false);
 
     const controlMutation = useMutation({
@@ -115,7 +110,7 @@ export default function DeviceCard({
                 <CheckCircleIcon sx={{ position: "absolute", top: 10, left: 12, fontSize: 20, color: BRASS }} />
             )}
             {selected && (
-                <Tooltip title="Réglages de cet appareil">
+                <Tooltip title={t('devices.settings')}>
                     <IconButton
                         size="small"
                         aria-label="device settings"
@@ -132,13 +127,13 @@ export default function DeviceCard({
                     <Chip
                         size="small"
                         icon={isBluetooth ? <BluetoothIcon /> : undefined}
-                        label={TYPE_LABELS[device.type] ?? device.type}
+                        label={t(`deviceTypes.${device.type}`, { defaultValue: device.type })}
                         color={selected || available ? "primary" : "default"}
                         variant={selected ? "filled" : "outlined"}
                     />
                 )}
                 {!available && (
-                    <Chip size="small" label="Hors ligne" color="default" variant="outlined"
+                    <Chip size="small" label={t('devices.offline')} color="default" variant="outlined"
                         sx={{ color: "var(--mist)", borderColor: "var(--line)" }} />
                 )}
                 {isFreeboxPlayer && available && <LockOpenIcon fontSize="small" sx={{ color: "var(--mist)" }} />}

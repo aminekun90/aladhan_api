@@ -1,12 +1,13 @@
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /**
- * Hero time display. Large optical-serif clock with a tracked date overline.
- * The `variation` prop is kept for backward compatibility but the layout is
- * fixed and responsive.
+ * Hero time display. Large optical-serif clock with a tracked date overline,
+ * formatted in the active language.
  */
 export function DateClock() {
+    const { i18n } = useTranslation();
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
@@ -14,9 +15,10 @@ export function DateClock() {
         return () => clearInterval(interval);
     }, []);
 
-    const time = Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(now);
-    const seconds = Intl.DateTimeFormat("fr-FR", { second: "2-digit" }).format(now);
-    const date = Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now);
+    const locale = i18n.resolvedLanguage;
+    const time = Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(now);
+    const seconds = Intl.DateTimeFormat(locale, { second: "2-digit" }).format(now);
+    const date = Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now);
 
     return (
         <Box sx={{ textAlign: "center" }}>

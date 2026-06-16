@@ -1,0 +1,20 @@
+{
+  "app": { "version": "Version bêta {{version}}" },
+  "nav": { "sync": "Synchroniser les prières", "scanBluetooth": "Rechercher des enceintes Bluetooth", "about": "À propos", "language": "Langue" },
+  "location": { "useMyLocation": "Utiliser ma position", "denied": "Localisation refusée", "myPosition": "Ma position", "default": "Localisation par défaut" },
+  "sections": { "prayerTimes": "Heures de prière", "devices": "Appareils", "calendar": "Calendrier" },
+  "prayers": { "loading": "Chargement…", "error": "Erreur lors de la récupération des prières", "next": "SUIVANTE" },
+  "devices": { "errorFetching": "Erreur lors de la récupération des appareils", "searching": "Recherche des enceintes…", "offline": "Hors ligne", "settings": "Réglages de cet appareil" },
+  "deviceTypes": { "local_player": "Cet appareil", "sonos_player": "Sonos", "freebox_player": "Freebox", "bluetooth_speaker": "Bluetooth" },
+  "settings": { "title": "Paramètres", "city": "Ville", "coordinates": "Coordonnées", "method": "Méthode de calcul", "audio": "Audio d'appel à la prière", "date": "Date", "enableScheduler": "Activer l'appel à la prière", "save": "Enregistrer", "saving": "Enregistrement…", "importMp3": "Importer un MP3", "deleteAudio": "Supprimer cet audio" },
+  "calendar": { "exportPdf": "Exporter en PDF", "prayersOf": "Les prières du {{date}}", "noPrayers": "Aucune prière trouvée.", "error": "Erreur lors de la récupération des prières" },
+  "pdf": { "title": "Horaires de prière", "date": "Date", "hijri": "Hégire", "method": "Méthode", "generatedOn": "Généré le {{date}}" },
+  "bluetooth": { "found": "{{count}} enceinte(s) trouvée(s)", "noneFound": "Aucune enceinte trouvée. Vérifiez que l'enceinte est en mode appairage et que le Bluetooth est actif sur le serveur.", "scanFailed": "Le scan Bluetooth a échoué (Bluetooth indisponible sur le serveur ?)." },
+  "toast": {
+    "synced": { "title": "Synchronisation des prières", "message": "Les prières ont été synchronisées !" },
+    "scheduled": { "title": "Appareils programmés", "message": "Tous les appareils ont été programmés !" },
+    "audioAdded": { "title": "Audio ajouté" },
+    "bluetooth": "Bluetooth"
+  },
+  "about": { "title": "À propos d'Aladhan-pi · v{{version}}", "body": "Aladhan-pi est un projet open-source Python / React qui fournit des horaires de prière précis. Maintenu par la communauté sur GitHub — contribuez, faites un don ou signalez un problème.", "close": "Fermer" }
+}

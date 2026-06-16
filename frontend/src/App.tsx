@@ -2,6 +2,7 @@ import { getNearestCity, getSettings } from "@/api/apiPrayer";
 import { DateCalendarComponent } from '@/components/Calendar';
 import { DateClock } from "@/components/Clock";
 import { DevicesComponent } from "@/components/DevicesComponent";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { PrayersComponent } from "@/components/PrayersComponent";
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { DEFAULT_COORD } from "@/const";
@@ -16,6 +17,7 @@ import SyncIcon from '@mui/icons-material/Sync';
 import { Box, CircularProgress, CssBaseline, IconButton, Stack, ThemeProvider, Tooltip, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import packageJson from '../package.json';
 import { createDeviceSettings, getConnectedBluetooth, getDevices, getSoCoDevices, scanBluetooth, scheduleAllDevices } from "./api/apiDevice";
 import { AboutDialog } from "./components/about";
@@ -72,6 +74,7 @@ function SectionHeading({ children }: Readonly<{ children: ReactNode }>) {
 }
 
 function App() {
+  const { t } = useTranslation();
   const { show } = useToast();
   const queryClient = useQueryClient();
 
@@ -105,10 +108,10 @@ function App() {
 
   const scheduleAllDevicesMutation = useMutation({
     mutationFn: () => scheduleAllDevices(),
-    onSuccess: () => notifySuccess('Devices Scheduled', 'All devices have been scheduled !'),
+    onSuccess: () => notifySuccess(t('toast.scheduled.title'), t('toast.scheduled.message')),
   });
   const syncPrayers = () => {
-    notifySuccess('Syncing Prayers', 'Prayers have been synced !');
+    notifySuccess(t('toast.synced.title'), t('toast.synced.message'));
     scheduleAllDevicesMutation.mutate();
   };
 
@@ -116,20 +119,18 @@ function App() {
     mutationFn: () => scanBluetooth(),
     onSuccess: (found) => {
       if (found.length > 0) {
-        notifySuccess('Bluetooth', `${found.length} enceinte(s) trouvée(s)`);
+        notifySuccess(t('toast.bluetooth'), t('bluetooth.found', { count: found.length }));
         queryClient.invalidateQueries({ queryKey: ["devices"] });
       } else {
         show({
-          type: 'info', title: 'Bluetooth',
-          message: "Aucune enceinte trouvée. Vérifiez que l'enceinte est en mode appairage et que le Bluetooth est actif sur le serveur.",
+          type: 'info', title: t('toast.bluetooth'), message: t('bluetooth.noneFound'),
           position: 'top-right', duration: 5000, progressBar: true,
         });
       }
     },
     onError: () => {
       show({
-        type: 'error', title: 'Bluetooth',
-        message: "Le scan Bluetooth a échoué (Bluetooth indisponible sur le serveur ?).",
+        type: 'error', title: t('toast.bluetooth'), message: t('bluetooth.scanFailed'),
         position: 'top-right', duration: 5000, progressBar: true,
       });
     },
@@ -184,10 +185,10 @@ function App() {
     ? { lat: currentSetting!.city!.lat, lon: currentSetting!.city!.lon }
     : (geoCoords ?? DEFAULT_COORD);
   const locationLabel = hasCity
-    ? `${currentSetting?.city?.name ?? "Not set"} · ${currentSetting?.city?.country ?? ""}`
+    ? `${currentSetting?.city?.name ?? ""} · ${currentSetting?.city?.country ?? ""}`
     : geoCoords
-      ? (nearestCity ? `${nearestCity.name} · ${nearestCity.country}` : "Ma position")
-      : "Localisation par défaut";
+      ? (nearestCity ? `${nearestCity.name} · ${nearestCity.country}` : t('location.myPosition'))
+      : t('location.default');
 
   const selectDevice = (device: Device) => {
     // Toggle: clicking the selected device again deselects it.
@@ -229,16 +230,17 @@ function App() {
 
           <Stack direction="row" spacing={0.5}>
             {!deviceLoading && !!devices?.length && (
-              <Tooltip title="Sync prayers"><IconButton onClick={syncPrayers}><SyncIcon /></IconButton></Tooltip>
+              <Tooltip title={t('nav.sync')}><IconButton onClick={syncPrayers}><SyncIcon /></IconButton></Tooltip>
             )}
-            <Tooltip title="Scan Bluetooth speakers">
+            <Tooltip title={t('nav.scanBluetooth')}>
               <span>
                 <IconButton onClick={() => scanBluetoothMutation.mutate()} disabled={scanBluetoothMutation.isPending}>
                   <BluetoothSearchingIcon />
                 </IconButton>
               </span>
             </Tooltip>
-            <Tooltip title="About"><IconButton onClick={() => setIsAboutOpen(true)}><InfoIcon /></IconButton></Tooltip>
+            <LanguageSwitcher />
+            <Tooltip title={t('nav.about')}><IconButton onClick={() => setIsAboutOpen(true)}><InfoIcon /></IconButton></Tooltip>
           </Stack>
         </Stack>
 
@@ -258,7 +260,7 @@ function App() {
             <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mt: 1.5, color: "var(--mist)" }}>
               <PlaceOutlinedIcon sx={{ fontSize: "1rem" }} />
               <Typography sx={{ fontSize: "0.85rem", letterSpacing: "0.04em" }}>{locationLabel}</Typography>
-              <Tooltip title={geoStatus === "denied" ? "Localisation refusée" : "Utiliser ma position"}>
+              <Tooltip title={geoStatus === "denied" ? t('location.denied') : t('location.useMyLocation')}>
                 <IconButton size="small" onClick={requestLocation} sx={{ ml: 0.5 }}>
                   <MyLocationIcon sx={{ fontSize: "1rem", color: geoCoords ? "var(--brass)" : "inherit" }} />
                 </IconButton>
@@ -272,16 +274,16 @@ function App() {
           {settingsLoading && <Box sx={{ textAlign: "center" }}><CircularProgress sx={{ color: "var(--brass)" }} /></Box>}
 
           <Box component="section">
-            <SectionHeading>Heures de prière</SectionHeading>
+            <SectionHeading>{t('sections.prayerTimes')}</SectionHeading>
             <PrayersComponent coord={coord} updateDate={setCurrentHijirDate} />
           </Box>
 
           <Box component="section">
-            <SectionHeading>Appareils</SectionHeading>
+            <SectionHeading>{t('sections.devices')}</SectionHeading>
             {deviceLoading ? (
               <Box sx={{ textAlign: "center" }}><CircularProgress sx={{ color: "var(--brass)" }} /></Box>
             ) : deviceError ? (
-              <Typography sx={{ textAlign: "center", color: "var(--mist)" }}>Error fetching devices</Typography>
+              <Typography sx={{ textAlign: "center", color: "var(--mist)" }}>{t('devices.errorFetching')}</Typography>
             ) : (
               <>
                 {/* Render DB devices (incl. 'Cet appareil') immediately; Sonos
@@ -297,7 +299,7 @@ function App() {
                 {socoLoading && !socoDevicesError && (
                   <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ mt: 2, color: "var(--mist)" }}>
                     <CircularProgress size={14} sx={{ color: "var(--brass)" }} />
-                    <Typography sx={{ fontSize: "0.8rem", letterSpacing: "0.04em" }}>Recherche des enceintes…</Typography>
+                    <Typography sx={{ fontSize: "0.8rem", letterSpacing: "0.04em" }}>{t('devices.searching')}</Typography>
                   </Stack>
                 )}
               </>
@@ -305,13 +307,13 @@ function App() {
           </Box>
 
           <Box component="section">
-            <SectionHeading>Calendrier</SectionHeading>
+            <SectionHeading>{t('sections.calendar')}</SectionHeading>
             <DateCalendarComponent coord={coord} locationLabel={locationLabel} />
           </Box>
         </Stack>
 
         <Typography sx={{ textAlign: "center", color: "var(--mist)", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", pb: 4 }}>
-          Version beta {packageJson.version}
+          {t('app.version', { version: packageJson.version })}
         </Typography>
       </Box>
 

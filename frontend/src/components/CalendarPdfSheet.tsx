@@ -1,7 +1,7 @@
 import { Timing } from "@/models/Timing";
 import dayjs from "dayjs";
-import "dayjs/locale/fr";
 import { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 
 const PRAYER_COLUMNS = ["Imsak", "Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
@@ -12,8 +12,9 @@ function hhmm(value?: string): string {
   return time.slice(0, 5);
 }
 
+/** Gregorian day in the active locale (the global dayjs locale is set by i18n). */
 function gregorianDay(iso: string): string {
-  const d = dayjs(iso).locale("fr").format("ddd DD");
+  const d = dayjs(iso).format("ddd DD");
   return d.charAt(0).toUpperCase() + d.slice(1);
 }
 
@@ -44,6 +45,7 @@ interface CalendarPdfSheetProps {
 /** Off-screen, print-styled calendar sheet rasterized into the PDF. */
 export const CalendarPdfSheet = forwardRef<HTMLDivElement, CalendarPdfSheetProps>(
   ({ events, monthLabel, hijriLabel, location, method }, ref) => {
+    const { t } = useTranslation();
     return (
       <div ref={ref} className="pdf-sheet">
         <header className="pdf-header">
@@ -57,9 +59,9 @@ export const CalendarPdfSheet = forwardRef<HTMLDivElement, CalendarPdfSheetProps
             <circle cx="24" cy="9" r="2" fill="#b3893f" />
           </svg>
           <h1 className="pdf-wordmark">Aladhan</h1>
-          <p className="pdf-title">Horaires de prière · {monthLabel}</p>
+          <p className="pdf-title">{t('pdf.title')} · {monthLabel}</p>
           {hijriLabel && <p className="pdf-hijri-head">{hijriLabel}</p>}
-          <p className="pdf-meta">{location} · Méthode {method}</p>
+          <p className="pdf-meta">{location} · {t('pdf.method')} {method}</p>
         </header>
 
         <div className="pdf-rule" />
@@ -67,8 +69,8 @@ export const CalendarPdfSheet = forwardRef<HTMLDivElement, CalendarPdfSheetProps
         <table className="pdf-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Hégire</th>
+              <th>{t('pdf.date')}</th>
+              <th>{t('pdf.hijri')}</th>
               {PRAYER_COLUMNS.map((p) => (
                 <th key={p}>{p}</th>
               ))}
@@ -91,7 +93,7 @@ export const CalendarPdfSheet = forwardRef<HTMLDivElement, CalendarPdfSheetProps
 
         <footer className="pdf-footer">
           <span>github.com/aminekun90/aladhan_api</span>
-          <span>Généré le {dayjs().locale("fr").format("DD/MM/YYYY")}</span>
+          <span>{t('pdf.generatedOn', { date: dayjs().format("DD/MM/YYYY") })}</span>
         </footer>
       </div>
     );
