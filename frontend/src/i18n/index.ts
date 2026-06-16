@@ -37,7 +37,15 @@ export const LANGUAGES: LanguageDef[] = [
   { code: "ar", label: "العربية", flag: "🇸🇦", dir: "rtl", dayjsLocale: "ar" },
 ];
 
-const resources = { en, fr, de, es, nl, ar } as const;
+// Each language wrapped in the default "translation" namespace.
+const resources = {
+  en: { translation: en },
+  fr: { translation: fr },
+  de: { translation: de },
+  es: { translation: es },
+  nl: { translation: nl },
+  ar: { translation: ar },
+} as const;
 
 export function dirFor(code: string): "ltr" | "rtl" {
   return LANGUAGES.find((l) => l.code === code)?.dir ?? "ltr";
