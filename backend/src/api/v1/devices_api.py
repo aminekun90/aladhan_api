@@ -69,7 +69,7 @@ def list_soco_devices():
     try:
         # Only try to get players if we have a token or can login silently.
         # We assume explicit auth is done via /freebox/auth first to avoid hanging this request.
-        if freebox_service._load_token(): 
+        if freebox_service._load_token():
             freebox_service.login()
             players = freebox_service.get_players()
             if players:
@@ -77,6 +77,12 @@ def list_soco_devices():
                 freebox_devices_objs = freebox_service.from_list(players)
             else:
                 logger.warning("No Freebox players found")
+            # AirMedia receivers (AirPlay-like) become controllable devices too.
+            try:
+                receivers = freebox_service.get_airmedia_receivers()
+                freebox_devices_objs.extend(freebox_service.airmedia_from_list(receivers))
+            except Exception as e:
+                logger.warning(f"Could not fetch Freebox AirMedia receivers: {e}")
         else:
             logger.warning("Freebox token not found; skipping Freebox device scan")
     except Exception as e:

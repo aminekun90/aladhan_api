@@ -403,3 +403,10 @@ class FreeboxService:
         if not players:
             return []
         return [Device(id=None, ip=str(p["id"]), name=p["device_name"], raw_data=p, type="freebox_player") for p in players]
+
+    def airmedia_from_list(self, receivers: list[dict] | None) -> list[Device]:
+        """Map AirMedia receivers to Device objects (identified by their name)."""
+        if not receivers:
+            return []
+        return [Device(id=None, ip=r["name"], name=r["name"], raw_data=r, type="freebox_airmedia")
+                for r in receivers]

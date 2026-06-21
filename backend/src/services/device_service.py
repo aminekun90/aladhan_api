@@ -24,6 +24,8 @@ AUDIO_DIR = "src/data/audio"
 LOCAL_DEVICE_IP = "127.0.0.1"
 LOCAL_DEVICE_TYPE = "local_player"
 LOCAL_DEVICE_NAME = "Cet appareil"
+# Freebox AirMedia receiver (AirPlay-like). device.ip holds the receiver name.
+FREEBOX_AIRMEDIA_TYPE = "freebox_airmedia"
 # Default location (Nantes, France) used until the user picks a city.
 DEFAULT_LAT = 47.23999925644779
 DEFAULT_LON = -1.5304936560937061
@@ -167,18 +169,24 @@ class DeviceService:
 
         # Trigger playback
         try:
-            if device.type == "freebox_player":
-                self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=settings.volume)
-            elif device.type == "sonos_player":
-                self.soco_service.play_audio(device=device, url=url, volume=settings.volume)
-            elif device.type == "bluetooth_speaker":
-                self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
-            elif device.type == LOCAL_DEVICE_TYPE:
-                self.local_player.play_file(os.path.join(AUDIO_DIR, audio_name))
-            else:
-                logger.warning(f"Unknown device type '{device.type}' for device {device.id}")
+            self._play_on_device(device, url, audio_name, settings.volume or 50)
         except Exception as e:
             logger.warning(f"Failed to play audio for device name:{device.name} id:{device.id}: {e}")
+
+    def _play_on_device(self, device: Device, url: str, audio_name: str, volume: int) -> None:
+        """Dispatch playback to the right backend based on the device type."""
+        if device.type == "freebox_player":
+            self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=volume)
+        elif device.type == FREEBOX_AIRMEDIA_TYPE:
+            self.freebox_service.play_airmedia(device.ip, url)
+        elif device.type == "sonos_player":
+            self.soco_service.play_audio(device=device, url=url, volume=volume)
+        elif device.type == "bluetooth_speaker":
+            self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
+        elif device.type == LOCAL_DEVICE_TYPE:
+            self.local_player.play_file(os.path.join(AUDIO_DIR, audio_name))
+        else:
+            logger.warning(f"Unknown device type '{device.type}' for device {device.id}")
 
 
     # ------------------------------
@@ -430,14 +438,7 @@ class DeviceService:
         port_part = f":{self.api_port}" if getattr(self, "api_port", None) else ""
         url = f"http://{self.host_ip}{port_part}/api/v1/audio/{audio_name}"
 
-        if device.type == "freebox_player":
-            self.freebox_service.play_media(player_id=device.ip, media_url=url, volume=settings.volume)
-        elif device.type == "bluetooth_speaker":
-            self.bluetooth_service.play_file(os.path.join(AUDIO_DIR, audio_name), mac=device.ip)
-        elif device.type == LOCAL_DEVICE_TYPE:
-            self.local_player.play_file(os.path.join(AUDIO_DIR, audio_name))
-        else:
-            self.soco_service.play_audio(device, url=url, volume=settings.volume)
+        self._play_on_device(device, url, audio_name, settings.volume or 50)
 
         return {"status": "success", "message": f"Audio played successfully for device {device_id}"}
 
@@ -458,6 +459,12 @@ class DeviceService:
                 else:
                     ok = self.freebox_service.control(device.ip, action.value)
                 return ControlResult(status="success" if ok else "error", message=f"{action.value} sent")
+            if device.type == FREEBOX_AIRMEDIA_TYPE:
+                # AirMedia is push-only: it can be stopped, not paused/seeked.
+                if action == PlayerAction.STOP:
+                    ok = self.freebox_service.stop_airmedia(device.ip)
+                    return ControlResult(status="success" if ok else "error", message="stop sent")
+                return ControlResult(status="error", message="AirMedia supports stop only")
             return ControlResult(status="error", message=f"Unsupported device type: {device.type}")
         except Exception as exc:
             logger.warning(f"Control {action.value} failed for device {device_id}: {exc}")
@@ -474,6 +481,8 @@ class DeviceService:
             if device.type == "freebox_player":
                 ok = self.freebox_service.set_volume(device.ip, max(0, min(100, volume)))
                 return ControlResult(status="success" if ok else "error", message="volume set")
+            if device.type == FREEBOX_AIRMEDIA_TYPE:
+                return ControlResult(status="error", message="AirMedia has no volume control")
             return ControlResult(status="error", message=f"Unsupported device type: {device.type}")
         except Exception as exc:
             logger.warning(f"Set volume failed for device {device_id}: {exc}")
@@ -485,6 +494,9 @@ class DeviceService:
             return None
         if device.type == "sonos_player":
             return self.soco_service.get_state(device)
+        if device.type == FREEBOX_AIRMEDIA_TYPE:
+            # AirMedia exposes no status endpoint; report a minimal online state.
+            return PlayerState(device_id=device.id, name=device.name, ip=device.ip, type=device.type)
         # Freebox: best-effort normalized state.
         state = PlayerState(device_id=device.id, name=device.name, ip=device.ip, type=device.type)
         try:
