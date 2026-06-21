@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.core.repository_factory import RepositoryContainer
 from src.domain.models import Device
+from src.schemas.airmedia import AirMediaPlayRequest, AirMediaReceiver, AirMediaResult
 from src.schemas.log_config import LogConfig
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
 
@@ -68,7 +69,7 @@ def list_soco_devices():
     try:
         # Only try to get players if we have a token or can login silently.
         # We assume explicit auth is done via /freebox/auth first to avoid hanging this request.
-        if freebox_service._load_token(): 
+        if freebox_service._load_token():
             freebox_service.login()
             players = freebox_service.get_players()
             if players:
@@ -76,6 +77,12 @@ def list_soco_devices():
                 freebox_devices_objs = freebox_service.from_list(players)
             else:
                 logger.warning("No Freebox players found")
+            # AirMedia receivers (AirPlay-like) become controllable devices too.
+            try:
+                receivers = freebox_service.get_airmedia_receivers()
+                freebox_devices_objs.extend(freebox_service.airmedia_from_list(receivers))
+            except Exception as e:
+                logger.warning(f"Could not fetch Freebox AirMedia receivers: {e}")
         else:
             logger.warning("Freebox token not found; skipping Freebox device scan")
     except Exception as e:
@@ -127,6 +134,41 @@ def play_media_on_freebox_device(device_id: str, media_url: str, volume: int = 1
          raise HTTPException(status_code=400, detail="Device ID must be an integer for Freebox")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------------
+# Freebox AirMedia (AirPlay-like push to a receiver)
+# ------------------------------
+@router.get("/freebox/airmedia/receivers", response_model=List[AirMediaReceiver],
+            description="List Freebox AirMedia receivers")
+def list_airmedia_receivers() -> List[AirMediaReceiver]:
+    try:
+        return freebox_service.get_airmedia_receivers()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/freebox/airmedia/{receiver_name}/play", response_model=AirMediaResult,
+             description="Push a media URL to an AirMedia receiver")
+def airmedia_play(receiver_name: str, body: AirMediaPlayRequest) -> AirMediaResult:
+    try:
+        ok = freebox_service.play_airmedia(receiver_name, body.media_url, password=body.password)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    if not ok:
+        raise HTTPException(status_code=500, detail="Freebox returned failure")
+    return AirMediaResult(status="success", message=f"Playing on {receiver_name}")
+
+
+@router.post("/freebox/airmedia/{receiver_name}/stop", response_model=AirMediaResult,
+             description="Stop AirMedia playback on a receiver")
+def airmedia_stop(receiver_name: str, password: str | None = None) -> AirMediaResult:
+    try:
+        ok = freebox_service.stop_airmedia(receiver_name, password=password)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return AirMediaResult(status="success" if ok else "error",
+                          message=f"Stopped on {receiver_name}")
+
 
 @router.get("/devices", response_model=List[Device], description="List all devices stored in the database")
 def list_devices_db():

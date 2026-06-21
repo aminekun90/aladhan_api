@@ -5,13 +5,13 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@aminekun90/react-toast@npm:^1.0.11":
-  version: 1.0.11
-  resolution: "@aminekun90/react-toast@npm:1.0.11"
+"@aminekun90/react-toast@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@aminekun90/react-toast@npm:1.2.0"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
-  checksum: 10c0/004ab5441b49f4cecd0f4163c2981a27be864b7dad1ed5200e41ea0bc8385c039feae4bc93784e98efdee3764721f200b305e8e5555f1e3b099e0cbd33f204b9
+  checksum: 10c0/9637f73e31cad0465494f63ff8341f5a9ed837cd90eac31970f59e26f1c03d58f29c7cb495aeb83f9bb86ef1f8dc1e8da9df17ad6313967014a793d7b5305ca9
   languageName: node
   linkType: hard
 
@@ -4350,7 +4350,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "web@workspace:."
   dependencies:
-    "@aminekun90/react-toast": "npm:^1.0.11"
+    "@aminekun90/react-toast": "npm:^1.2.0"
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.1"
     "@eslint/js": "npm:^10.0.1"

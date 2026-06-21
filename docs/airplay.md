@@ -1,8 +1,13 @@
 # Feature to explore: AirPlay output
 
-Status: **not implemented** — planned. Lets the adhan play on AirPlay receivers
-(HomePod, Apple TV, AirPlay-2 speakers) alongside Sonos / Freebox / Bluetooth /
-local.
+Status: **not implemented** — planned. Lets the adhan play on **AirPlay-only**
+receivers (HomePod, Apple TV) alongside Sonos / Freebox / Bluetooth / local.
+
+> **Scope note:** this is *only* for receivers that have no other control path.
+> **Sonos is already handled via UPnP/SoCo** (full playback + volume + transport
+> + state), so AirPlay is **not** used for Sonos — it would be redundant and give
+> less control. The Freebox is handled via its Player API + AirMedia fallback.
+> See [speakers.md](./speakers.md) for the full backend matrix.
 
 ## Approach — `pyatv`
 
