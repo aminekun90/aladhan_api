@@ -208,3 +208,20 @@ a:hover { color: var(--brass-bright); }
   letter-spacing: 0.06em;
   color: var(--pdf-muted);
 }
+
+/* ============================================================
+   ngx-toast — aligned to the "Mihrab at Dawn" palette.
+   The app is permanently dark (<html class="ngx-toast-dark">).
+   ============================================================ */
+:root {
+  --ngx-toast-radius: 18px;
+  --ngx-toast-font: "Bricolage Grotesque", system-ui, sans-serif;
+  --ngx-toast-shadow: 0 10px 30px rgba(8, 11, 20, 0.6);
+}
+.ngx-toast-dark .toast-item {
+  --ngx-toast-bg: rgba(13, 20, 38, 0.92);
+  --ngx-toast-fg: #ece6d6;
+  --ngx-toast-close: #9aa1b6;
+  --ngx-toast-close-hover: #ecca7e;
+  backdrop-filter: blur(12px);
+}
