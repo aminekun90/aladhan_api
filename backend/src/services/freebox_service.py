@@ -5,6 +5,7 @@ import os
 import socket
 import time
 from typing import Any, Dict, Optional
+from urllib.parse import quote
 
 import requests
 from zeroconf import ServiceBrowser, Zeroconf
@@ -77,6 +78,15 @@ class FreeboxService:
         self.session_token = None
         self.track_id = None
 
+        # Box API version, discovered from /api_version (don't hardcode v8 —
+        # it changes across Freebox OS releases). Defaults are a safe fallback.
+        self.api_base = "/api/"
+        self.api_major = "8"
+        # Per-player embedded API version (the inner /api/v6/ path), cached from
+        # the player list, and player_id -> device_name for the AirMedia fallback.
+        self._player_api_major: Dict[str, str] = {}
+        self._player_names: Dict[str, str] = {}
+
     # ------------------------------
     # Host discovery
     # ------------------------------
@@ -98,9 +108,28 @@ class FreeboxService:
     def _probe(self, base_url: str) -> bool:
         try:
             r = self.session.get(f"{base_url}/api_version", timeout=2)
-            return r.status_code == 200
+            if r.status_code != 200:
+                return False
+            data = r.json()
+            # e.g. api_base_url="/api/", api_version="8.0" -> /api/v8/
+            self.api_base = data.get("api_base_url", self.api_base)
+            self.api_major = str(data.get("api_version", f"{self.api_major}.0")).split(".")[0]
+            return True
         except requests.exceptions.RequestException:
             return False
+
+    # ------------------------------
+    # URL builders (version-aware)
+    # ------------------------------
+    def _box_url(self, path: str) -> str:
+        """Build a box API URL from the discovered api_base_url + major version."""
+        base = self.api_base if self.api_base.endswith("/") else self.api_base + "/"
+        return f"{self.base_url}{base}v{self.api_major}/{path.lstrip('/')}"
+
+    def _player_url(self, player_id, path: str) -> str:
+        """Build a player media-API URL using the player's own embedded version."""
+        major = self._player_api_major.get(str(player_id), "6")
+        return self._box_url(f"player/{player_id}/api/v{major}/{path.lstrip('/')}")
 
     # ------------------------------
     # Token persistence
@@ -154,7 +183,7 @@ class FreeboxService:
             "permissions": {"player": True, "settings": True, "tv": True},
         }
         try:
-            r = self.session.post(f"{self.base_url}/api/v8/login/authorize/", json=payload, timeout=10)
+            r = self.session.post(self._box_url("login/authorize/"), json=payload, timeout=10)
             r.raise_for_status()
         except requests.exceptions.RequestException as exc:
             raise AuthException(f"Failed to contact Freebox for registration: {exc}")
@@ -174,7 +203,7 @@ class FreeboxService:
         if track is None:
             raise AuthException("No pairing in progress; call start_registration first")
         try:
-            r = self.session.get(f"{self.base_url}/api/v8/login/authorize/{track}", timeout=10)
+            r = self.session.get(self._box_url(f"login/authorize/{track}"), timeout=10)
             status = r.json().get("result", {}).get("status", "unknown")
         except requests.exceptions.RequestException as exc:
             logger.warning(f"Freebox pairing poll failed: {exc}")
@@ -195,7 +224,7 @@ class FreeboxService:
             raise AuthException("No Freebox token found; complete pairing via start_registration first")
 
         try:
-            r = self.session.get(f"{self.base_url}/api/v8/login/", timeout=10)
+            r = self.session.get(self._box_url("login/"), timeout=10)
             r.raise_for_status()
         except Exception as exc:
             raise AuthException(f"Failed to connect to Freebox for login: {exc}")
@@ -205,7 +234,7 @@ class FreeboxService:
             raise AuthException("Login failed: missing token or challenge")
 
         password = hmac.new(self.app_token.encode("utf-8"), challenge.encode("utf-8"), hashlib.sha1).hexdigest()
-        r = self.session.post(f"{self.base_url}/api/v8/login/session/",
+        r = self.session.post(self._box_url("login/session/"),
                               json={"app_id": self.app_id, "password": password}, timeout=10)
 
         if r.status_code == 403:
@@ -230,34 +259,114 @@ class FreeboxService:
     # ------------------------------
     def get_players(self) -> Optional[list]:
         self._ensure_session()
-        url = f"{self.base_url}/api/v8/player"
+        url = self._box_url("player")
         r = self.session.get(url, headers=self._get_headers())
         if r.status_code in (401, 403):
             self.login()
             r = self.session.get(url, headers=self._get_headers())
         r.raise_for_status()
-        return r.json().get("result") or None
+        players = r.json().get("result") or None
+        # Cache each player's embedded API version and display name (used by the
+        # version-aware URL builder and the AirMedia fallback).
+        for p in players or []:
+            pid = str(p.get("id"))
+            if "api_version" in p:
+                self._player_api_major[pid] = str(p["api_version"]).split(".")[0]
+            if p.get("device_name"):
+                self._player_names[pid] = p["device_name"]
+        return players
 
     def set_volume(self, player_id, volume) -> bool:
         return self._player_request(player_id, "put", "control/volume", {"volume": volume})
 
     def play_media(self, player_id, media_url, content_type="audio/mpeg", volume=15) -> bool:
+        """Play a media on a Freebox Player, falling back to AirMedia on failure.
+
+        Primary path is the Player media API (control/open). If the player is
+        unreachable or rejects the command (e.g. the Player app isn't in the
+        foreground), we push the same URL via AirMedia instead.
+        """
         self._ensure_session()
         safe_vol = volume if isinstance(volume, int) and 0 <= volume <= 100 else 15
-        self.set_volume(player_id, safe_vol)
+        final_url = self._downgrade_local_https(media_url)
 
-        # Players reject HTTPS on local IPs (self-signed certs). Downgrade for any private host.
-        final_url = media_url
+        try:
+            self.set_volume(player_id, safe_vol)
+            logger.info(f"Freebox player play: {final_url}")
+            if self._player_request(player_id, "post", "control/open", {
+                "url": final_url,
+                "content_type": content_type,
+                "metadata": {"title": "Aladhan Prayer", "type": "audio"},
+            }):
+                return True
+            logger.warning("Freebox player control/open returned no success; trying AirMedia")
+        except requests.exceptions.RequestException as exc:
+            logger.warning(f"Freebox player play failed ({exc}); trying AirMedia")
+
+        receiver = self._receiver_name_for(player_id)
+        if receiver:
+            return self.play_airmedia(receiver, final_url)
+        logger.error("Freebox playback failed and no AirMedia receiver resolved")
+        return False
+
+    def _downgrade_local_https(self, media_url: str) -> str:
+        """Players reject HTTPS on local IPs (self-signed certs) — use HTTP there."""
         if media_url.startswith("https://") and any(p in media_url for p in PRIVATE_PREFIXES):
             logger.info("Downgrading HTTPS to HTTP for Freebox local playback")
-            final_url = "http://" + media_url[len("https://"):]
+            return "http://" + media_url[len("https://"):]
+        return media_url
 
-        logger.info(f"Freebox play command: {final_url}")
-        return self._player_request(player_id, "post", "control/open", {
-            "url": final_url,
-            "content_type": content_type,
-            "metadata": {"title": "Aladhan Prayer", "type": "audio"},
-        })
+    def _receiver_name_for(self, player_id) -> Optional[str]:
+        """Resolve the AirMedia receiver name (= player device_name) for a player."""
+        name = self._player_names.get(str(player_id))
+        if name:
+            return name
+        try:
+            self.get_players()  # populate the cache if play came before listing
+        except requests.exceptions.RequestException:
+            return None
+        return self._player_names.get(str(player_id))
+
+    # ------------------------------
+    # AirMedia (AirPlay-like push)
+    # ------------------------------
+    def get_airmedia_receivers(self) -> list:
+        """List AirMedia receivers (name, password_protected, capabilities)."""
+        self._ensure_session()
+        url = self._box_url("airmedia/receivers/")
+        r = self.session.get(url, headers=self._get_headers())
+        if r.status_code in (401, 403):
+            self.login()
+            r = self.session.get(url, headers=self._get_headers())
+        r.raise_for_status()
+        return r.json().get("result") or []
+
+    def play_airmedia(self, receiver_name: str, media_url: str, password: Optional[str] = None) -> bool:
+        """Push a media to an AirMedia receiver. AirMedia exposes only photo/video
+        media types, so audio streams are sent as 'video'."""
+        logger.info(f"Freebox AirMedia play on '{receiver_name}': {media_url}")
+        return self._airmedia(receiver_name, "start",
+                              media_url=self._downgrade_local_https(media_url), password=password)
+
+    def stop_airmedia(self, receiver_name: str, password: Optional[str] = None) -> bool:
+        return self._airmedia(receiver_name, "stop", password=password)
+
+    def _airmedia(self, receiver_name: str, action: str, media_url: Optional[str] = None,
+                  password: Optional[str] = None, media_type: str = "video") -> bool:
+        self._ensure_session()
+        payload: Dict[str, Any] = {"action": action, "media_type": media_type}
+        if media_url:
+            payload["media"] = media_url
+        if password:
+            payload["password"] = password
+        url = self._box_url(f"airmedia/receivers/{quote(receiver_name, safe='')}/")
+        send = lambda: self.session.post(url, json=payload, headers=self._get_headers())
+        r = send()
+        if r.status_code in (401, 403):
+            self.login()
+            r = send()
+        r.raise_for_status()
+        return r.json().get("success", False)
 
     def control(self, player_id, action: str) -> bool:
         """Send a transport command (play, pause, stop, next, prev) to a player."""
@@ -270,7 +379,7 @@ class FreeboxService:
     def get_status(self, player_id) -> Dict[str, Any]:
         """Return the raw player status payload (foreground app, player state)."""
         self._ensure_session()
-        url = f"{self.base_url}/api/v8/player/{player_id}/api/v6/player_status"
+        url = self._player_url(player_id, "player_status")
         r = self.session.get(url, headers=self._get_headers())
         if r.status_code in (401, 403):
             self.login()
@@ -281,7 +390,7 @@ class FreeboxService:
     def _player_request(self, player_id, method: str, path: str, payload: dict | None = None) -> bool:
         """Issue an authenticated player control request, retrying once on auth expiry."""
         self._ensure_session()
-        url = f"{self.base_url}/api/v8/player/{player_id}/api/v6/{path}"
+        url = self._player_url(player_id, path)
         send = lambda: getattr(self.session, method)(url, json=payload, headers=self._get_headers())
         r = send()
         if r.status_code in (401, 403):
@@ -294,3 +403,10 @@ class FreeboxService:
         if not players:
             return []
         return [Device(id=None, ip=str(p["id"]), name=p["device_name"], raw_data=p, type="freebox_player") for p in players]
+
+    def airmedia_from_list(self, receivers: list[dict] | None) -> list[Device]:
+        """Map AirMedia receivers to Device objects (identified by their name)."""
+        if not receivers:
+            return []
+        return [Device(id=None, ip=r["name"], name=r["name"], raw_data=r, type="freebox_airmedia")
+                for r in receivers]
