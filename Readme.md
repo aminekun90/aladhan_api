@@ -10,6 +10,13 @@ The Api can also be used for other apps (a feature to disable front will be adde
 
 TBD (check api docs)
 
+## Playback & speakers
+
+The adhan can play on Sonos, Freebox (Player + AirMedia), Bluetooth speakers and
+the host itself. See [docs/speakers.md](./docs/speakers.md) for the backend
+matrix and the design decisions (Sonos → UPnP, Freebox → Player API + AirMedia
+fallback, AirPlay reserved for AirPlay-only receivers).
+
 ## Install the app
 
 Make sure you have [uv](https://docs.astral.sh/uv/guides/install-python/)
