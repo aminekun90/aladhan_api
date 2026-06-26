@@ -1,6 +1,6 @@
 [project]
 name = "adhan-api"
-version = "0.1.1"
+version = "0.1.2"
 description = "Prayer times API implemented from scratch"
 authors = [
   { name="Amine Bouzahar", email="mohamed.amine.bouzahar@gmail.com" }
