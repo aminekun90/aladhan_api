@@ -95,6 +95,7 @@ class DeviceService:
         if existing and existing.id:
             return existing
         device = Device(id=None, name=LOCAL_DEVICE_NAME, ip=LOCAL_DEVICE_IP,
+                        uid=f"local-{LOCAL_DEVICE_IP}",
                         type=LOCAL_DEVICE_TYPE, raw_data={"virtual": True})
         self.device_repository.upsert_devices_bulk([device])
         logger.info("Ensured virtual local device is available")
@@ -502,6 +503,9 @@ class DeviceService:
         try:
             status = self.freebox_service.get_status(device.ip)
             state.transport_state = (status.get("player_state") or "UNKNOWN").upper()
+            # power_state is "standby" when the player is off with the remote but
+            # still reachable — playback then routes through AirMedia.
+            state.standby = (status.get("power_state") or "").lower() == "standby"
         except Exception as exc:
             logger.warning(f"Freebox status failed for device {device_id}: {exc}")
             state.online = False

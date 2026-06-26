@@ -31,7 +31,11 @@ class DeviceRepository(ABC):
     @abstractmethod
     def get_device_by_ip(self, ip: str) -> Optional[Device]:
         ...
-    
+
+    @abstractmethod
+    def get_device_by_uid(self, uid: str) -> Optional[Device]:
+        ...
+
     @abstractmethod
     def get_device_by_id(self, device_id: int) -> Optional[Device]:
         ...

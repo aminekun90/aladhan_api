@@ -58,6 +58,9 @@ export interface PlayerState {
     muted?: boolean;
     track_title?: string;
     online: boolean;
+    // Reachable but in standby (e.g. Freebox player off with the remote);
+    // playback falls back to AirMedia.
+    standby?: boolean;
 }
 
 export interface ControlResult {

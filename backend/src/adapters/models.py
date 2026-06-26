@@ -40,6 +40,9 @@ class DeviceTable(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     ip: Mapped[str] = mapped_column(String, nullable=False)
+    # Stable identifier used to match a device across IP changes. Nullable for
+    # backward compatibility with legacy rows created before this column existed.
+    uid: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
     raw_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     type: Mapped[str | None] = mapped_column(String, nullable=True)
 
@@ -58,6 +61,7 @@ class DeviceTable(Base):
             "id": self.id,
             "name": self.name,
             "ip": self.ip,
+            "uid": self.uid,
             "raw_data": raw,
             "type": self.type,
         }

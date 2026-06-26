@@ -154,7 +154,7 @@ class BluetoothService:
             match = _DEVICE_LINE.search(line)
             if match:
                 mac, name = match.group(1), match.group(2).strip()
-                devices.append(Device(id=None, ip=mac, name=name,
+                devices.append(Device(id=None, ip=mac, uid=f"bluetooth-{mac}", name=name,
                                       raw_data={"mac": mac}, type="bluetooth_speaker"))
         return devices
 

@@ -26,6 +26,9 @@ class PlayerState(BaseModel):
     muted: Optional[bool] = None
     track_title: Optional[str] = None
     online: bool = True
+    # True when the device is reachable but in standby (e.g. Freebox player turned
+    # off with the remote). Playback then falls back to AirMedia.
+    standby: Optional[bool] = None
 
 
 class ControlResult(BaseModel):

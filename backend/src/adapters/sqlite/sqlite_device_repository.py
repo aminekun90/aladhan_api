@@ -36,16 +36,18 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
         """List all devices."""
         with self.session_maker() as session:
             devices = session.query(DeviceTable).all()
-            return [
-                Device(
-                    id=d.id,
-                    name=d.name,
-                    ip=d.ip,
-                    raw_data=json.loads(d.raw_data) if isinstance(d.raw_data, str) else d.raw_data,
-                    type=d.type
-                )
-                for d in devices
-            ]
+            return [self._to_domain(d) for d in devices]
+
+    @staticmethod
+    def _to_domain(d: DeviceTable) -> Device:
+        return Device(
+            id=d.id,
+            name=d.name,
+            ip=d.ip,
+            uid=d.uid,
+            raw_data=json.loads(d.raw_data) if isinstance(d.raw_data, str) else d.raw_data,
+            type=d.type,
+        )
 
     def search_devices(self, name: str) -> list[Device]:
         """Search for devices by name."""
@@ -55,43 +57,25 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
                 .filter(DeviceTable.name.ilike(f"%{name}%"))
                 .all()
             )
-            return [
-                Device(
-                    id=d.id,
-                    name=d.name,
-                    ip=d.ip,
-                    raw_data=json.loads(d.raw_data) if isinstance(d.raw_data, str) else d.raw_data,
-                )
-                for d in devices
-            ]
+            return [self._to_domain(d) for d in devices]
 
     def get_device_by_ip(self, ip: str) -> Optional[Device]:
         """Get a device by its IP."""
         with self.session_maker() as session:
             device = session.query(DeviceTable).filter(DeviceTable.ip == ip).first()
-            if device:
-                return Device(
-                    id=device.id,
-                    name=device.name,
-                    ip=device.ip,
-                    raw_data=json.loads(device.raw_data) if isinstance(device.raw_data, str) else device.raw_data,
-                    type=device.type,
-                )
-        return None
+            return self._to_domain(device) if device else None
+
+    def get_device_by_uid(self, uid: str) -> Optional[Device]:
+        """Get a device by its stable identifier."""
+        with self.session_maker() as session:
+            device = session.query(DeviceTable).filter(DeviceTable.uid == uid).first()
+            return self._to_domain(device) if device else None
 
     def get_device_by_id(self, device_id: int) -> Optional[Device]:
         """Get a device by its ID."""
         with self.session_maker() as session:
             device = session.query(DeviceTable).filter(DeviceTable.id == device_id).first()
-            if device:
-                return Device(
-                    id=device.id,
-                    name=device.name,
-                    ip=device.ip,
-                    raw_data=json.loads(device.raw_data) if isinstance(device.raw_data, str) else device.raw_data,
-                    type=device.type,
-                )
-        return None
+            return self._to_domain(device) if device else None
 
     def get_device(self, device_id: int) -> Optional[Device]:
         """Alias for get_device_by_id."""
@@ -114,24 +98,36 @@ class SQLiteDeviceRepository(SQLRepositoryBase, DeviceRepository):
     def upsert_devices_bulk(self, devices: list[Device]) -> None:
         """
         Insert or update multiple devices.
-        - If IP already exists → update
-        - Otherwise → create new entry
+
+        Matching priority:
+        1. By stable ``uid`` when present → the same device is updated even if its
+           IP changed (DHCP renewal), keeping the row id and its linked settings.
+        2. Fallback to ``ip`` for legacy rows that have no uid yet (back-fills uid).
         """
         with self.session_maker() as session:
             for device in devices:
-                existing_device = session.query(DeviceTable).filter(DeviceTable.ip == device.ip).first()
+                existing_device = None
+                if device.uid:
+                    existing_device = session.query(DeviceTable).filter(DeviceTable.uid == device.uid).first()
+                if existing_device is None:
+                    existing_device = session.query(DeviceTable).filter(DeviceTable.ip == device.ip).first()
+
                 if existing_device:
+                    if existing_device.ip != device.ip:
+                        logger.info(f"Device IP changed: {device.name} {existing_device.ip} -> {device.ip}")
                     existing_device.name = device.name
+                    existing_device.ip = device.ip
+                    existing_device.uid = device.uid or existing_device.uid
                     existing_device.raw_data = device.raw_data
                     existing_device.type = device.type
                     logger.info(f"Update existing device: {device.name} ({device.ip}:{device.type})")
-                    
                 else:
                     logger.info(f"Adding new device: {device.name} ({device.ip}:{device.type})")
                     session.add(
                         DeviceTable(
                             name=device.name,
                             ip=device.ip,
+                            uid=device.uid,
                             # Column is JSON — store the dict directly (no double-encoding).
                             raw_data=device.raw_data,
                             type=device.type

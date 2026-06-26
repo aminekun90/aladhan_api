@@ -4,7 +4,7 @@
   "location": { "useMyLocation": "Use my location", "denied": "Location denied", "myPosition": "My position", "default": "Default location" },
   "sections": { "prayerTimes": "Prayer times", "devices": "Devices", "calendar": "Calendar" },
   "prayers": { "loading": "Loading…", "error": "Error fetching prayers", "next": "NEXT" },
-  "devices": { "errorFetching": "Error fetching devices", "searching": "Searching for speakers…", "offline": "Offline", "settings": "Device settings" },
+  "devices": { "errorFetching": "Error fetching devices", "searching": "Searching for speakers…", "offline": "Offline", "standby": "Standby", "standbyHint": "Player off with the remote — playback uses AirMedia", "settings": "Device settings" },
   "deviceTypes": { "local_player": "This device", "sonos_player": "Sonos", "freebox_player": "Freebox", "bluetooth_speaker": "Bluetooth" },
   "settings": { "title": "Settings", "city": "City", "coordinates": "Coordinates", "method": "Calculation method", "audio": "Adhan audio", "date": "Date", "enableScheduler": "Enable the call to prayer", "save": "Save", "saving": "Saving…", "importMp3": "Import an MP3", "deleteAudio": "Delete this audio" },
   "calendar": { "exportPdf": "Export to PDF", "prayersOf": "Prayers of {{date}}", "noPrayers": "No prayer found.", "error": "Error fetching prayers" },

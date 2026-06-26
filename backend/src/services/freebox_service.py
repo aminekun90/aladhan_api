@@ -402,11 +402,22 @@ class FreeboxService:
     def from_list(self, players: list[dict] | None) -> list[Device]:
         if not players:
             return []
-        return [Device(id=None, ip=str(p["id"]), name=p["device_name"], raw_data=p, type="freebox_player") for p in players]
+        # device.ip holds the player id: control/playback are routed through the
+        # box API (/player/<id>/...), never the player's LAN IP — so a player IP
+        # change has no effect. uid keys on the player's MAC (physically attached
+        # to the hardware) when present, falling back to the box-assigned id.
+        return [Device(id=None, ip=str(p["id"]), uid=self._player_uid(p),
+                       name=p["device_name"], raw_data=p, type="freebox_player") for p in players]
+
+    @staticmethod
+    def _player_uid(player: dict) -> str:
+        mac = player.get("mac")
+        return f"freebox-player-mac-{mac.lower()}" if mac else f"freebox-player-{player['id']}"
 
     def airmedia_from_list(self, receivers: list[dict] | None) -> list[Device]:
         """Map AirMedia receivers to Device objects (identified by their name)."""
         if not receivers:
             return []
-        return [Device(id=None, ip=r["name"], name=r["name"], raw_data=r, type="freebox_airmedia")
+        return [Device(id=None, ip=r["name"], uid=f"freebox-airmedia-{r['name']}",
+                       name=r["name"], raw_data=r, type="freebox_airmedia")
                 for r in receivers]

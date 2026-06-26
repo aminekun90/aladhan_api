@@ -4,7 +4,7 @@
   "location": { "useMyLocation": "Meinen Standort verwenden", "denied": "Standort abgelehnt", "myPosition": "Mein Standort", "default": "Standardstandort" },
   "sections": { "prayerTimes": "Gebetszeiten", "devices": "Geräte", "calendar": "Kalender" },
   "prayers": { "loading": "Wird geladen…", "error": "Fehler beim Abrufen der Gebetszeiten", "next": "NÄCHSTE" },
-  "devices": { "errorFetching": "Fehler beim Abrufen der Geräte", "searching": "Suche nach Lautsprechern…", "offline": "Offline", "settings": "Geräteeinstellungen" },
+  "devices": { "errorFetching": "Fehler beim Abrufen der Geräte", "searching": "Suche nach Lautsprechern…", "offline": "Offline", "standby": "Standby", "standbyHint": "Player mit der Fernbedienung ausgeschaltet — Wiedergabe über AirMedia", "settings": "Geräteeinstellungen" },
   "deviceTypes": { "local_player": "Dieses Gerät", "sonos_player": "Sonos", "freebox_player": "Freebox", "bluetooth_speaker": "Bluetooth" },
   "settings": { "title": "Einstellungen", "city": "Stadt", "coordinates": "Koordinaten", "method": "Berechnungsmethode", "audio": "Adhan-Audio", "date": "Datum", "enableScheduler": "Gebetsruf aktivieren", "save": "Speichern", "saving": "Wird gespeichert…", "importMp3": "MP3 importieren", "deleteAudio": "Dieses Audio löschen" },
   "calendar": { "exportPdf": "Als PDF exportieren", "prayersOf": "Gebete vom {{date}}", "noPrayers": "Keine Gebete gefunden.", "error": "Fehler beim Abrufen der Gebetszeiten" },

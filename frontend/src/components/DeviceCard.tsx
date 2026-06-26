@@ -1,4 +1,4 @@
-import { controlDevice, PlayerAction } from "@/api/apiDevice";
+import { controlDevice, getDeviceState, PlayerAction } from "@/api/apiDevice";
 import freebox from "@/assets/freebox-devialet.png";
 import symfonisk from "@/assets/symfonisk.jpg";
 import { BRASS } from "@/components/ui";
@@ -27,7 +27,7 @@ import {
     Typography,
     useTheme,
 } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { MouseEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -90,6 +90,18 @@ export default function DeviceCard({
 
     const isFreeboxPlayer = device.type === "freebox_player";
     const isBluetooth = device.type === "bluetooth_speaker";
+
+    // Freebox players stay reachable when turned off with the remote (standby);
+    // playback then routes through AirMedia. Surface that so the card doesn't look
+    // broken. Only polled while the player is reachable.
+    const deviceId = device.getId();
+    const { data: liveState } = useQuery({
+        queryKey: ["deviceState", deviceId],
+        queryFn: () => getDeviceState(deviceId as number),
+        enabled: isFreeboxPlayer && available && !!deviceId,
+        refetchInterval: 30_000,
+    });
+    const isStandby = liveState?.standby === true;
     const isLocal = device.type === "local_player";
     const iconOnly = isBluetooth || isLocal; // no product photo for these
     // Transport controls only make sense for a reachable network player.
@@ -141,6 +153,11 @@ export default function DeviceCard({
                 {!available && (
                     <Chip size="small" label={t('devices.offline')} color="default" variant="outlined"
                         sx={{ color: "var(--mist)", borderColor: "var(--line)" }} />
+                )}
+                {isStandby && (
+                    <Tooltip title={t('devices.standbyHint')}>
+                        <Chip size="small" label={t('devices.standby')} color="warning" variant="outlined" />
+                    </Tooltip>
                 )}
                 {isFreeboxPlayer && available && <LockOpenIcon fontSize="small" sx={{ color: "var(--mist)" }} />}
             </Box>

@@ -22,6 +22,10 @@ class Device:
     ip: str = ""
     type: Optional[str] = None
     raw_data: Optional[dict] = None
+    # Stable identifier (Sonos UID, Freebox player id, Bluetooth MAC, ...). Used
+    # to match a device across IP changes so a DHCP renewal doesn't create a
+    # duplicate row and orphan the linked settings/schedule.
+    uid: Optional[str] = None
 
     def get_dict(self) -> dict:
         return asdict(self)
