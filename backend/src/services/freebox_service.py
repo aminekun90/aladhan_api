@@ -330,6 +330,50 @@ class FreeboxService:
     # ------------------------------
     # AirMedia (AirPlay-like push)
     # ------------------------------
+    def get_lan_host(self, mac: Optional[str]) -> Dict[str, Any]:
+        """Best-effort LAN lookup of a host by MAC via the Freebox LAN browser.
+
+        Returns {"ipv4": [...], "ipv6": [...], "hostname": str|None, "reachable": bool|None}.
+        Used only to enrich the device-info modal; never required for control.
+        """
+        empty: Dict[str, Any] = {"ipv4": [], "ipv6": [], "hostname": None, "reachable": None}
+        if not mac:
+            return empty
+        try:
+            self._ensure_session()
+            url = self._box_url("lan/browser/pub/")
+            r = self.session.get(url, headers=self._get_headers(), timeout=8)
+            if r.status_code in (401, 403):
+                self.login()
+                r = self.session.get(url, headers=self._get_headers(), timeout=8)
+            r.raise_for_status()
+            hosts = r.json().get("result") or []
+        except Exception as e:
+            logger.warning(f"Freebox LAN browse failed: {e}")
+            return empty
+
+        target = mac.lower()
+        for host in hosts:
+            l2 = (host.get("l2ident") or {}).get("id", "")
+            if str(l2).lower() != target:
+                continue
+            ipv4, ipv6 = [], []
+            for c in host.get("l3connectivities") or []:
+                if not c.get("active", False):
+                    continue
+                af, addr = c.get("af"), c.get("addr")
+                if af == "ipv4" and addr:
+                    ipv4.append(addr)
+                elif af == "ipv6" and addr:
+                    ipv6.append(addr)
+            return {
+                "ipv4": ipv4,
+                "ipv6": ipv6,
+                "hostname": host.get("primary_name") or None,
+                "reachable": bool(host.get("active", False)),
+            }
+        return empty
+
     def get_airmedia_receivers(self) -> list:
         """List AirMedia receivers (name, password_protected, capabilities)."""
         self._ensure_session()

@@ -1,5 +1,7 @@
 import os
+import platform
 import socket
+import uuid
 from datetime import date, datetime, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -9,6 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from src.calculations.adhan_calc import SCHEDULABLE_KEYS
 from src.domain import DeviceRepository, SettingsRepository
 from src.domain.models import Audio, City, Device, Settings
+from src.schemas.device_info import DeviceInfo, NetAddress
 from src.schemas.log_config import LogConfig
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
 from src.services.adhan_service import get_prayer_datetimes
@@ -82,6 +85,96 @@ class DeviceService:
             s.close()
         return ip
     
+    # ------------------------------
+    # 🔎 Device info (network details for the UI modal)
+    # ------------------------------
+    def _host_network(self) -> dict:
+        """Host (this machine) network info using stdlib only — IPv4/IPv6/MAC."""
+        hostname = socket.gethostname()
+        ipv4: list[str] = []
+        ipv6: list[str] = []
+        try:
+            primary = self.get_local_ip()
+            if primary and primary != "127.0.0.1":
+                ipv4.append(primary)
+        except Exception:
+            pass
+        try:
+            for fam, _, _, _, sockaddr in socket.getaddrinfo(hostname, None):
+                addr = sockaddr[0]
+                if fam == socket.AF_INET and addr not in ipv4 and not addr.startswith("127."):
+                    ipv4.append(addr)
+                elif fam == socket.AF_INET6:
+                    a = addr.split("%")[0]
+                    if a not in ipv6 and a != "::1":
+                        ipv6.append(a)
+        except Exception:
+            pass
+        node = uuid.getnode()
+        mac = ":".join(f"{(node >> i) & 0xFF:02x}" for i in range(40, -1, -8)).upper()
+        # uuid.getnode() sets the multicast bit when it cannot read a real MAC.
+        mac_reliable = not (node >> 40) & 0x01
+        return {"hostname": hostname, "ipv4": ipv4, "ipv6": ipv6,
+                "mac": mac if mac_reliable else None}
+
+    def get_device_info(self, device_id: int) -> Optional[DeviceInfo]:
+        """Build the normalized info (identity + network) for the device modal."""
+        device = self.get_device_by_id(device_id)
+        if not device:
+            return None
+        raw = device.raw_data or {}
+        info = DeviceInfo(device_id=device.id, name=device.name, type=device.type, uid=device.uid)
+        info.model = raw.get("device_model") or raw.get("model")
+
+        # Live reachability/volume — best-effort, never fatal.
+        try:
+            st = self.get_device_state(device_id)
+            if st:
+                info.online, info.standby, info.volume = st.online, st.standby, st.volume
+        except Exception:
+            pass
+
+        if device.type == LOCAL_DEVICE_TYPE:
+            info.vendor = platform.system()
+            info.model = platform.platform()
+            net = self._host_network()
+            info.hostname, info.ipv4, info.ipv6, info.mac = (
+                net["hostname"], net["ipv4"], net["ipv6"], net["mac"])
+            info.control_channel = "host"
+        elif device.type == "sonos_player":
+            info.vendor = "Sonos"
+            ip = raw.get("ip_address") or (str(device.ip) if device.ip else None)
+            info.ipv4 = [ip] if ip else []
+            info.mac = raw.get("mac_address")
+            info.control_channel = "direct"
+        elif device.type == "freebox_player":
+            info.vendor = "Freebox SAS"
+            info.mac = raw.get("mac")
+            info.control_channel = "box_api"
+            info.note = "Contrôle routé via l'API Freebox (player id), pas l'IP du player."
+            lan = self.freebox_service.get_lan_host(info.mac)
+            info.ipv4, info.ipv6, info.hostname = lan["ipv4"], lan["ipv6"], lan["hostname"]
+            if lan["reachable"] is False and info.standby is None:
+                info.standby = True
+        elif device.type == FREEBOX_AIRMEDIA_TYPE:
+            info.vendor = "Freebox SAS"
+            info.note = "Récepteur AirMedia (push AirPlay-like)."
+            info.control_channel = "airmedia"
+        elif device.type == "bluetooth_speaker":
+            info.vendor = "Bluetooth"
+            info.mac = str(device.ip) if device.ip else None  # BT MAC stored in ip
+            info.control_channel = "bluetooth"
+        else:
+            ip = str(device.ip) if device.ip else None
+            info.ipv4 = [ip] if ip else []
+
+        info.addresses = (
+            [NetAddress(family="ipv4", address=a) for a in info.ipv4]
+            + [NetAddress(family="ipv6", address=a) for a in info.ipv6]
+            + ([NetAddress(family="mac", address=info.mac)] if info.mac else [])
+        )
+        return info
+
     # ------------------------------
     # 🖥️ Virtual local device
     # ------------------------------

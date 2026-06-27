@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from src.core.repository_factory import RepositoryContainer
 from src.domain.models import Device
 from src.schemas.airmedia import AirMediaPlayRequest, AirMediaReceiver, AirMediaResult
+from src.schemas.device_info import DeviceInfo
 from src.schemas.log_config import LogConfig
 from src.schemas.player import ControlResult, PlayerAction, PlayerState
 
@@ -223,6 +224,15 @@ def get_device_state(device_id: int) -> PlayerState:
     if state is None:
         raise HTTPException(status_code=404, detail="Device not found")
     return state
+
+
+@router.get("/device/{device_id}/info", response_model=DeviceInfo,
+            description="Network + identity details for a device (IPv4/IPv6/MAC, model, reachability)")
+def get_device_info(device_id: int) -> DeviceInfo:
+    info = device_service.get_device_info(device_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return info
 
 
 # ------------------------------

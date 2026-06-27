@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import soco
 from fastapi.encoders import jsonable_encoder
@@ -11,6 +11,16 @@ from src.schemas.player import PlayerAction, PlayerState
 logger = LogConfig.get_logger()
 
 class SoCoService:
+    @staticmethod
+    def _mac_from_uid(uid: Optional[str]) -> Optional[str]:
+        """Derive the speaker MAC from a Sonos UID (e.g. RINCON_000E58ABCDEF01400)."""
+        if not uid:
+            return None
+        hexpart = uid.split("_", 1)[-1][:12]
+        if len(hexpart) != 12 or not all(c in "0123456789abcdefABCDEF" for c in hexpart):
+            return None
+        return ":".join(hexpart[i:i + 2] for i in range(0, 12, 2)).upper()
+
     def _serialize_device(self, device: SoCo) -> Dict[str, Any]:
         """Convert SoCo device object into a fully JSON-serializable dict."""
         def safe(value):
@@ -28,6 +38,7 @@ class SoCoService:
             "track_info": {k: safe(v) for k, v in track_info.items()},
             "current_transport_state": transport_info.get("current_transport_state", ""),
             "ip_address": safe(device.ip_address),
+            "mac_address": self._mac_from_uid(safe(device.uid)),
             "volume": safe(device.volume),
             "uid": safe(device.uid),
             "household_id": safe(device.household_id),
