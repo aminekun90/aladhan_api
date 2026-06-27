@@ -106,11 +106,24 @@ def list_soco_devices():
     if all_devices_to_save:
         device_service.upsert_devices_bulk(all_devices_to_save)
 
-    # 4. Return combined list for the API response
-    # 'devices' is already a list of dicts (from soco)
-    combined_list = devices if devices else []
-    # Append Freebox devices as dicts
-    return combined_list + freebox_devices_objs
+    # 4. Return combined list for the API response.
+    # 'devices' (Sonos) are already flat dicts. Freebox entries are Device
+    # objects → convert to the same flat shape so the response validates and the
+    # frontend's availability match (by ip_address) works. ip_address carries the
+    # player id (players) or the receiver name (AirMedia), matching the DB device.
+    combined_list = list(devices) if devices else []
+    for d in freebox_devices_objs:
+        flat: Dict[str, Any] = dict(d.raw_data or {})
+        flat.update({
+            "name": d.name,
+            "ip_address": d.ip,
+            "type": d.type,
+            "uid": d.uid,
+        })
+        flat.setdefault("track_info", {})
+        flat.setdefault("volume", 0)
+        combined_list.append(flat)
+    return combined_list
 
 @router.post("/freebox/device/{device_id}/volume/{volume}", description="Set volume for a Freebox device")
 def set_freebox_device_volume(device_id: str, volume: int):
