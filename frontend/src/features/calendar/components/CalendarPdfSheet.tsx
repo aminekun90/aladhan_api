@@ -1,4 +1,4 @@
-import { Timing } from "@/models/Timing";
+import { Timing } from "@/features/prayers/types/Timing";
 import dayjs from "dayjs";
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";

@@ -2,10 +2,10 @@
 import api from "@/api/apiConfig";
 import { CONFIG, DEFAULT_COORD } from "@/const";
 import { City } from "@/models/City";
-import { Device, ResponseDevice } from "@/models/device";
-import { Prayer } from "@/models/prayer";
+import { Device, ResponseDevice } from "@/features/devices/types/device";
+import { Prayer } from "@/features/prayers/types/prayer";
 import { AudioFile, Settings } from "@/models/Settings";
-import { Timing } from "@/models/Timing";
+import { Timing } from "@/features/prayers/types/Timing";
 
 export async function getAzanList(): Promise<AudioFile[]> {
     const azanList = await api.get<AudioFile[]>(`${CONFIG.getAzanList}`, {

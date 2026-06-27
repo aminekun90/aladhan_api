@@ -5,7 +5,7 @@ import {
     getMethods,
     saveSetting,
     uploadAudio,
-} from "@/api/apiPrayer";
+} from "@/features/prayers/api/apiPrayer";
 import { logger } from "@/utils/logger";
 import { City } from "@/models/City";
 import { AudioFile, Settings } from "@/models/Settings";

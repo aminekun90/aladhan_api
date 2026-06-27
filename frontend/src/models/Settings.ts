@@ -1,4 +1,4 @@
-import { Device } from "./device";
+import { Device } from '@/features/devices/types/device';
 
 export type Settings = {
     id: number,

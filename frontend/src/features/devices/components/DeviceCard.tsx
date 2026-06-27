@@ -1,12 +1,13 @@
-import { controlDevice, getDeviceState, PlayerAction } from "@/api/apiDevice";
+import { controlDevice, getDeviceState, PlayerAction } from "@/features/devices/api/apiDevice";
 import freebox from "@/assets/freebox-devialet.png";
 import symfonisk from "@/assets/symfonisk.jpg";
 import { BRASS } from "@/components/ui";
-import { Device } from "@/models/device";
+import { Device } from "@/features/devices/types/device";
 import { logger } from "@/utils/logger";
 import BluetoothIcon from "@mui/icons-material/Bluetooth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import GraphicEqIcon from "@mui/icons-material/GraphicEq";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LaptopMacIcon from "@mui/icons-material/LaptopMac";
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PauseIcon from "@mui/icons-material/Pause";
@@ -61,12 +62,14 @@ export default function DeviceCard({
     selected = false,
     onClick,
     onOpenSettings,
+    onOpenInfo,
 }: Readonly<{
     device: Device;
     available?: boolean;
     selected?: boolean;
     onClick?: () => void;
     onOpenSettings?: () => void;
+    onOpenInfo?: () => void;
 }>) {
     const theme = useTheme();
     const { t } = useTranslation();
@@ -205,6 +208,12 @@ export default function DeviceCard({
                 </CardContent>
 
                 <Box sx={{ display: "flex", alignItems: "center", pb: 1 }}>
+                    <Tooltip title={t('devices.info', { defaultValue: 'Infos & réseau' })}>
+                        <IconButton aria-label="device info"
+                            onClick={(e) => { e.stopPropagation(); onOpenInfo?.(); }}>
+                            <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                     <IconButton aria-label="previous" disabled={!controllable} onClick={sendControl("previous")}>
                         {theme.direction === "rtl" ? <SkipNextIcon /> : <SkipPreviousIcon />}
                     </IconButton>

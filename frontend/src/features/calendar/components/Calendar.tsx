@@ -1,8 +1,8 @@
-import { allTimings } from "@/api/apiPrayer";
-import { CalendarPdfSheet } from "@/components/CalendarPdfSheet";
+import { allTimings } from "@/features/prayers/api/apiPrayer";
+import { CalendarPdfSheet } from "@/features/calendar/components/CalendarPdfSheet";
 import { exportElementToPdf } from "@/utils/exportPdf";
 import { logger } from "@/utils/logger";
-import { Timing } from "@/models/Timing";
+import { Timing } from "@/features/prayers/types/Timing";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
     Box,

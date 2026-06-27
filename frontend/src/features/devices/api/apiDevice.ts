@@ -1,6 +1,6 @@
 import * as api from "@/api/apiConfig";
 import { CONFIG } from "@/const";
-import { Device, RawData, ResponseDevice } from "@/models/device";
+import { Device, RawData, ResponseDevice } from "@/features/devices/types/device";
 import { Settings } from "@/models/Settings";
 
 
@@ -79,6 +79,35 @@ export async function setDeviceVolume(deviceId: number, volume: number): Promise
 
 export async function getDeviceState(deviceId: number): Promise<PlayerState> {
     return api.get<PlayerState>(`device/${deviceId}/state`, JSON_HEADERS);
+}
+
+export interface NetAddress {
+    family: "ipv4" | "ipv6" | "mac";
+    address: string;
+    interface?: string;
+}
+
+export interface DeviceInfo {
+    device_id?: number;
+    name: string;
+    type?: string;
+    uid?: string;
+    model?: string;
+    vendor?: string;
+    hostname?: string;
+    ipv4: string[];
+    ipv6: string[];
+    mac?: string;
+    addresses: NetAddress[];
+    online: boolean;
+    standby?: boolean;
+    volume?: number;
+    control_channel?: string;
+    note?: string;
+}
+
+export async function getDeviceInfo(deviceId: number): Promise<DeviceInfo> {
+    return api.get<DeviceInfo>(`device/${deviceId}/info`, JSON_HEADERS);
 }
 
 export async function playDeviceAzan(deviceId: number): Promise<{ status: string; message: string }> {

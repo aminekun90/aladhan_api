@@ -1,11 +1,12 @@
-import DeviceCard from "@/components/DeviceCard";
-import { Device } from "@/models/device";
+import DeviceCard from "@/features/devices/components/DeviceCard";
+import { Device } from "@/features/devices/types/device";
 import { Stack, } from "@mui/material";
 import { Grid } from '@mui/system';
-export function DevicesComponent({ devices, onClick, onOpenSettings, soCoDevices, selectedIp, connectedBtMacs }: Readonly<{
+export function DevicesComponent({ devices, onClick, onOpenSettings, onOpenInfo, soCoDevices, selectedIp, connectedBtMacs }: Readonly<{
     devices: Device[],
     onClick?: (device: Device) => void,
     onOpenSettings?: (device: Device) => void,
+    onOpenInfo?: (device: Device) => void,
     soCoDevices?: Device[],
     selectedIp?: string | number | null,
     connectedBtMacs?: string[],
@@ -31,6 +32,7 @@ export function DevicesComponent({ devices, onClick, onOpenSettings, soCoDevices
                         selected={selectedIp != null && device.getIp() === selectedIp}
                         onClick={() => onClick?.(device)}
                         onOpenSettings={() => onOpenSettings?.(device)}
+                        onOpenInfo={() => onOpenInfo?.(device)}
                     />;
                 })}
             </Grid>
