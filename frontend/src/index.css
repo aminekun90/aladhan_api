@@ -16,9 +16,9 @@
   --brass-dim: rgba(212, 173, 95, 0.16);
   --parchment: #ece6d6;     /* primary text */
   --mist: #9aa1b6;          /* secondary text */
-  --line: rgba(236, 230, 214, 0.1);
-  --surface: rgba(236, 230, 214, 0.035);
-  --surface-hi: rgba(236, 230, 214, 0.06);
+  --line: rgba(236, 230, 214, 0.12);
+  --surface: rgba(236, 230, 214, 0.05);
+  --surface-hi: rgba(236, 230, 214, 0.085);
 
   /* Type */
   --font-display: "Fraunces", Georgia, serif;
