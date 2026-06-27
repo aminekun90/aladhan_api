@@ -72,13 +72,17 @@ def list_soco_devices():
         # We assume explicit auth is done via /freebox/auth first to avoid hanging this request.
         if freebox_service._load_token():
             freebox_service.login()
-            players = freebox_service.get_players()
-            if players:
-                # Returns list of Device objects
-                freebox_devices_objs = freebox_service.from_list(players)
-            else:
-                logger.warning("No Freebox players found")
-            # AirMedia receivers (AirPlay-like) become controllable devices too.
+            # Players need the "Player" permission on the Freebox. A 403/error here
+            # must NOT abort the AirMedia fallback below (which works without it).
+            try:
+                players = freebox_service.get_players()
+                if players:
+                    freebox_devices_objs = freebox_service.from_list(players)
+                else:
+                    logger.warning("No Freebox players found")
+            except Exception as e:
+                logger.warning(f"Could not fetch Freebox players (grant the 'Player' permission to the app?): {e}")
+            # AirMedia receivers (AirPlay-like) — available even without the player permission.
             try:
                 receivers = freebox_service.get_airmedia_receivers()
                 freebox_devices_objs.extend(freebox_service.airmedia_from_list(receivers))
