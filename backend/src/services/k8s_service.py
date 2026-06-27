@@ -1,12 +1,14 @@
-"""Minimal in-cluster Kubernetes client to force a redeploy of this app.
+"""In-cluster Kubernetes client to force this app onto the newest image.
 
-Used by the "force update" button: with the image on a mutable tag (`:latest`,
-`pullPolicy: Always`), a rollout restart re-pulls the newest image. We patch the
-Deployment's pod template `restartedAt` annotation — the same thing
-`kubectl rollout restart` does — using the pod's own ServiceAccount.
+Used by the "force update" button. `imagePullPolicy: Always` + a rollout restart
+does NOT reliably re-pull a moving `:latest` tag on k3s/containerd (the local
+`:latest` digest is reused). So instead we resolve the current `:latest` digest
+from the registry and patch the Deployment to `repo@sha256:<digest>` — the image
+ref changes, so the kubelet pulls the new image and rolls out. Same trick Keel
+uses. Argo CD ignores this image field (see the adhan Application).
 """
 
-from datetime import datetime, timezone
+import platform
 from pathlib import Path
 
 import requests
@@ -14,7 +16,7 @@ import requests
 from src.services.env_service import EnvService
 
 _SA_DIR = Path("/var/run/secrets/kubernetes.io/serviceaccount")
-_TIMEOUT = 5
+_TIMEOUT = 8
 
 
 class NotInClusterError(RuntimeError):
@@ -25,30 +27,57 @@ def is_in_cluster() -> bool:
     return (_SA_DIR / "token").exists()
 
 
-def restart_self() -> str:
-    """Trigger a rollout restart of this app's Deployment. Returns the new image tag note."""
-    if not is_in_cluster():
-        raise NotInClusterError("No in-cluster ServiceAccount — cannot trigger a restart.")
+def _node_arch() -> str:
+    machine = platform.machine().lower()
+    return {"aarch64": "arm64", "arm64": "arm64", "x86_64": "amd64", "amd64": "amd64"}.get(machine, "amd64")
 
+
+def _latest_digest(repo: str) -> str:
+    """Resolve the current :latest image digest for this node's architecture."""
+    response = requests.get(f"https://hub.docker.com/v2/repositories/{repo}/tags/latest", timeout=_TIMEOUT)
+    response.raise_for_status()
+    arch = _node_arch()
+    for image in response.json().get("images", []):
+        if image.get("architecture") == arch and image.get("digest"):
+            return image["digest"]
+    raise RuntimeError(f"No {arch} image found for {repo}:latest")
+
+
+def _k8s(method: str, path: str, json: dict | None = None, content_type: str | None = None) -> requests.Response:
     namespace = (_SA_DIR / "namespace").read_text().strip()
     token = (_SA_DIR / "token").read_text().strip()
-    deployment = EnvService.get("KUBE_DEPLOYMENT", "adhan-api")
     host = EnvService.get("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
     port = EnvService.get("KUBERNETES_SERVICE_PORT", "443")
-
-    url = f"https://{host}:{port}/apis/apps/v1/namespaces/{namespace}/deployments/{deployment}"
-    now = datetime.now(timezone.utc).isoformat()
-    patch = {"spec": {"template": {"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": now}}}}}
-
-    response = requests.patch(
-        url,
-        json=patch,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/strategic-merge-patch+json",
-        },
-        verify=str(_SA_DIR / "ca.crt"),
-        timeout=_TIMEOUT,
-    )
+    headers = {"Authorization": f"Bearer {token}"}
+    if content_type:
+        headers["Content-Type"] = content_type
+    url = f"https://{host}:{port}/apis/apps/v1/namespaces/{namespace}{path}"
+    response = requests.request(method, url, json=json, headers=headers, verify=str(_SA_DIR / "ca.crt"), timeout=_TIMEOUT)
     response.raise_for_status()
-    return now
+    return response
+
+
+def force_pull_latest() -> dict:
+    """Pin the Deployment to the current :latest digest so the kubelet pulls it.
+
+    Returns {"updated": bool, "image": str} — updated is False if already current.
+    """
+    if not is_in_cluster():
+        raise NotInClusterError("No in-cluster ServiceAccount — cannot trigger an update.")
+
+    deployment = EnvService.get("KUBE_DEPLOYMENT", "adhan-api")
+    container = EnvService.get("KUBE_CONTAINER", "adhan-api")
+    repo = EnvService.get("KUBE_IMAGE_REPO", "aminekun90/adhan-api")
+
+    digest = _latest_digest(repo)
+    target = f"{repo}@{digest}"
+
+    current = _k8s("GET", f"/deployments/{deployment}").json()
+    running = current["spec"]["template"]["spec"]["containers"][0].get("image", "")
+    if running == target:
+        return {"updated": False, "image": target}
+
+    patch = {"spec": {"template": {"spec": {"containers": [{"name": container, "image": target}]}}}}
+    _k8s("PATCH", f"/deployments/{deployment}", json=patch,
+         content_type="application/strategic-merge-patch+json")
+    return {"updated": True, "image": target}

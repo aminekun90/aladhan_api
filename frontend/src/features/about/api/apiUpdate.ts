@@ -31,7 +31,7 @@ export async function approveUpdate(): Promise<ApproveResult> {
 }
 
 export interface ForceResult {
-    restarted: boolean;
+    updated: boolean;
     detail: string;
 }
 
@@ -39,5 +39,5 @@ export async function forceUpdate(): Promise<ForceResult> {
     const result = await api.post<ForceResult>(CONFIG.forceUpdate, {}, {
         headers: { "Content-Type": "application/json" },
     });
-    return result ?? { restarted: false, detail: "" };
+    return result ?? { updated: false, detail: "" };
 }

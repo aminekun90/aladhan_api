@@ -21,7 +21,7 @@ class ApproveResult(BaseModel):
 
 
 class ForceResult(BaseModel):
-    restarted: bool
+    updated: bool
     detail: str = ""
 
 
@@ -53,11 +53,13 @@ def update_approve():
 
 @router.post("/update/force", response_model=ForceResult)
 def update_force():
-    """Force a rollout restart so the app re-pulls the latest image."""
+    """Pin the Deployment to the current :latest digest so the app pulls it."""
     try:
-        k8s_service.restart_self()
+        result = k8s_service.force_pull_latest()
     except k8s_service.NotInClusterError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Kubernetes API error: {exc}") from exc
-    return ForceResult(restarted=True, detail="Rollout restarted — pulling the latest image.")
+        raise HTTPException(status_code=502, detail=f"Update failed: {exc}") from exc
+    if not result["updated"]:
+        return ForceResult(updated=False, detail="Already on the latest image.")
+    return ForceResult(updated=True, detail="Pulling the latest image and restarting.")

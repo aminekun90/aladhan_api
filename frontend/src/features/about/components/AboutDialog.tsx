@@ -45,7 +45,7 @@ function Eyebrow({ children }: Readonly<{ children: ReactNode }>) {
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose?: () => void }>) {
     const { t } = useTranslation();
     const { changelog, isLoading, frontendVersion, backendVersion, isUnseen } = useChangelog();
-    const { status, approve, isApproving, isApproved, force, isForcing, isForced } = useUpdateStatus({ enabled: open });
+    const { status, approve, isApproving, isApproved, force, isForcing, isForced, forceResult } = useUpdateStatus({ enabled: open });
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper" PaperProps={{ sx: PAPER_SX }}>
@@ -129,7 +129,9 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                 {/* Manual fallback: force a redeploy to pull the newest image. */}
                 <Box sx={{ mt: 3.5, pt: 2, borderTop: "1px solid var(--line)" }}>
                     {isForced ? (
-                        <Alert severity="success" variant="outlined">{t("about.update.deploying")}</Alert>
+                        <Alert severity="success" variant="outlined">
+                            {forceResult?.updated === false ? t("about.update.upToDate") : t("about.update.deploying")}
+                        </Alert>
                     ) : (
                         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
                             <Typography variant="caption" sx={{ color: "var(--mist)" }}>{t("about.update.forceHint")}</Typography>

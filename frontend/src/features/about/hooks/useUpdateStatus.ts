@@ -28,6 +28,7 @@ export function useUpdateStatus({ enabled }: { enabled: boolean }) {
         force: forceMutation.mutate,
         isForcing: forceMutation.isPending,
         isForced: forceMutation.isSuccess,
+        forceResult: forceMutation.data,
         forceError: forceMutation.isError,
     };
 }
