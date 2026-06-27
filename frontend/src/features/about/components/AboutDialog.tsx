@@ -1,8 +1,9 @@
 import { useChangelog } from "@/features/about/hooks/useChangelog";
+import { useUpdateStatus } from "@/features/about/hooks/useUpdateStatus";
 import { ChangelogVersion, ChangeType, Component, RoadmapStatus } from "@/features/about/types/changelog";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import {
-    Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
+    Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
     Divider, Link, Stack, Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -26,6 +27,7 @@ const COMPONENTS: Component[] = ["frontend", "backend"];
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose?: () => void }>) {
     const { t } = useTranslation();
     const { changelog, isLoading, frontendVersion, backendVersion, isUnseen } = useChangelog();
+    const { status, approve, isApproving, isApproved } = useUpdateStatus({ enabled: open });
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
@@ -45,6 +47,22 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                 <Typography variant="body2" sx={{ mt: 1.5, color: "text.secondary" }}>
                     {t("about.body")}
                 </Typography>
+
+                {isApproved ? (
+                    <Alert severity="success" sx={{ mt: 2 }}>{t("about.update.deploying")}</Alert>
+                ) : status?.pending && (
+                    <Alert
+                        severity="info"
+                        sx={{ mt: 2 }}
+                        action={
+                            <Button color="inherit" size="small" onClick={() => approve()} disabled={isApproving}>
+                                {isApproving ? t("about.update.approving") : t("about.update.approve")}
+                            </Button>
+                        }
+                    >
+                        {t("about.update.available", { version: status.newVersion })}
+                    </Alert>
+                )}
 
                 <Divider sx={{ my: 2 }} />
 

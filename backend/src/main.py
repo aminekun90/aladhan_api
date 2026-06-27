@@ -14,6 +14,7 @@ from src.api.v1 import (
     health_router,
     prayer_times_router,
     settings_router,
+    update_router,
 )
 from src.core.repository_factory import RepositoryContainer
 from src.schemas.log_config import LogConfig
@@ -74,6 +75,7 @@ app.include_router(cities_router, prefix=PREFIX, tags=["Cities"])
 app.include_router(settings_router, prefix=PREFIX, tags=["Settings"])
 app.include_router(audio_router, prefix=PREFIX, tags=["Audio"])
 app.include_router(health_router, prefix=PREFIX, tags=["Health"])
+app.include_router(update_router, prefix=PREFIX, tags=["Update"])
 
 # === Frontend static serving ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

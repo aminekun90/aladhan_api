@@ -4,3 +4,4 @@ from .prayer_times_api import router as prayer_times_router
 from .devices_api import router as devices_router
 from .audio_api import router as audio_router
 from .health_api import router as health_router
+from .update_api import router as update_router

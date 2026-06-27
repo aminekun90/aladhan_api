@@ -21,6 +21,8 @@ export const CONFIG = {
   scheduleAllDevices: "devices/schedule",
   getChangelog: "changelog",
   getBackendVersion: "version",
+  getUpdateStatus: "update/status",
+  approveUpdate: "update/approve",
 }
 
 /** localStorage key tracking the last changelog version the user has seen. */
