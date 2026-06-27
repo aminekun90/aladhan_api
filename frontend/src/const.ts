@@ -19,4 +19,9 @@ export const CONFIG = {
   getCitiesByName: "cities",
   createDeviceSettings: "settings/create_settings_of_device",
   scheduleAllDevices: "devices/schedule",
+  getChangelog: "changelog",
+  getBackendVersion: "version",
 }
+
+/** localStorage key tracking the last changelog version the user has seen. */
+export const LAST_SEEN_VERSION_KEY = "aladhan:lastSeenVersion";

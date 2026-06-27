@@ -1,4 +1,5 @@
-import { AboutDialog } from "@/components/about";
+import { AboutDialog } from "@/features/about/components/AboutDialog";
+import { useChangelog } from "@/features/about/hooks/useChangelog";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MihrabArch } from "@/components/MihrabArch";
 import { CalendarSection } from "@/features/calendar/CalendarSection";
@@ -17,7 +18,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SyncIcon from "@mui/icons-material/Sync";
-import { Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Badge, Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,6 +35,8 @@ export function HomePage() {
         devicesQuery.data, settings, devicesQuery.isLoading, settingsLoading,
     );
     const { coord, locationLabel, geoCoords, geoStatus, requestLocation } = usePrayerLocation(currentSetting);
+
+    const { hasUnseen: hasUnseenChangelog, markSeen: markChangelogSeen } = useChangelog();
 
     const [currentHijirDate, setCurrentHijirDate] = useState<string>("");
     const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
@@ -81,7 +84,11 @@ export function HomePage() {
                             </span>
                         </Tooltip>
                         <LanguageSwitcher />
-                        <Tooltip title={t("nav.about")}><IconButton onClick={() => setIsAboutOpen(true)}><InfoIcon /></IconButton></Tooltip>
+                        <Tooltip title={t("nav.about")}>
+                            <IconButton onClick={() => { markChangelogSeen(); setIsAboutOpen(true); }}>
+                                <Badge color="error" variant="dot" invisible={!hasUnseenChangelog}><InfoIcon /></Badge>
+                            </IconButton>
+                        </Tooltip>
                     </Stack>
                 </Stack>
 

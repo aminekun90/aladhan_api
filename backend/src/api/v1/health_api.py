@@ -1,13 +1,17 @@
 import json
 import os
 from datetime import date, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Response
 
 from src.core.repository_factory import RepositoryContainer
+from src.utils.version import get_version
 
 router = APIRouter()
 repos = RepositoryContainer()
+
+_CHANGELOG_PATH = Path(__file__).resolve().parents[2] / "data" / "changelog.json"
 
 
 @router.get("/health")
@@ -22,7 +26,7 @@ def today():
             {
                 "date": date.today().strftime("%Y-%m-%d"),
                 "datetime": datetime.today().strftime("%Y-%m-%d %H:%M:%S"),
-                "version": "0.1.0",
+                "version": get_version(),
                 "status": "OK",
             }
         ),
@@ -32,7 +36,15 @@ def today():
 
 @router.get("/version")
 def version():
-    return Response(content="0.1.0", status_code=200)
+    return Response(content=get_version(), status_code=200)
+
+
+@router.get("/changelog")
+def changelog():
+    """Return the generated changelog (front + back changes, grouped by version)."""
+    if not _CHANGELOG_PATH.exists():
+        return Response(content=json.dumps({"versions": [], "roadmap": []}), media_type="application/json")
+    return Response(content=_CHANGELOG_PATH.read_text(encoding="utf-8"), media_type="application/json")
 
 
 @router.get("/logs")

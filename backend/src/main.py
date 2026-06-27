@@ -19,6 +19,7 @@ from src.core.repository_factory import RepositoryContainer
 from src.schemas.log_config import LogConfig
 from src.services.device_service import DeviceService
 from src.services.env_service import EnvService
+from src.utils.version import get_version
 
 # === Repositories & Services ===
 repos = RepositoryContainer()
@@ -50,7 +51,7 @@ async def lifespan(app: FastAPI):
 # === Create FastAPI app with lifespan ===
 app = FastAPI(
     title="Adhan API",
-    version="1.0.0",
+    version=get_version(),
     description="Prayer times calculation API (Python FastAPI implementation)",
     lifespan=lifespan,
 )

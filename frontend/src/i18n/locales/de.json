@@ -16,5 +16,5 @@
     "audioAdded": { "title": "Audio hinzugefügt" },
     "bluetooth": "Bluetooth"
   },
-  "about": { "title": "Über Aladhan-pi · v{{version}}", "body": "Aladhan-pi ist ein quelloffenes Python-/React-Projekt für präzise islamische Gebetszeiten. Von der Community auf GitHub gepflegt — mitwirken, spenden oder Fehler melden.", "close": "Schließen" }
+  "about": { "titleShort": "Über Aladhan-pi", "body": "Aladhan-pi ist ein quelloffenes Python-/React-Projekt für präzise islamische Gebetszeiten. Von der Community auf GitHub gepflegt — mitwirken, spenden oder Fehler melden.", "close": "Schließen", "frontend": "Frontend", "backend": "Backend", "whatsNew": "Neuigkeiten", "roadmapTitle": "Roadmap", "new": "Neu", "noChanges": "Noch keine Änderungen erfasst.", "types": { "feat": "Funktion", "fix": "Fehlerbehebung", "refactor": "Refactor", "perf": "Performance" }, "roadmapStatus": { "planned": "Geplant", "in-progress": "In Arbeit", "idea": "Idee", "done": "Erledigt" }, "roadmap": { "dnsResilience": "App gegen nicht erreichbaren .home-Namen absichern", "auth": "Benutzeranmeldung und Mehrbenutzer-Unterstützung", "notifications": "Push-Benachrichtigungen für Gebetszeiten" } }
 }

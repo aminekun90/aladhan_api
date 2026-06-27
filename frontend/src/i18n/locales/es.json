@@ -16,5 +16,5 @@
     "audioAdded": { "title": "Audio añadido" },
     "bluetooth": "Bluetooth"
   },
-  "about": { "title": "Acerca de Aladhan-pi · v{{version}}", "body": "Aladhan-pi es un proyecto de código abierto en Python / React que ofrece horarios de oración precisos. Mantenido por la comunidad en GitHub — contribuye, dona o informa de problemas.", "close": "Cerrar" }
+  "about": { "titleShort": "Acerca de Aladhan-pi", "body": "Aladhan-pi es un proyecto de código abierto en Python / React que ofrece horarios de oración precisos. Mantenido por la comunidad en GitHub — contribuye, dona o informa de problemas.", "close": "Cerrar", "frontend": "Frontend", "backend": "Backend", "whatsNew": "Novedades", "roadmapTitle": "Hoja de ruta", "new": "Nuevo", "noChanges": "Aún no hay cambios registrados.", "types": { "feat": "Función", "fix": "Corrección", "refactor": "Refactor", "perf": "Rendimiento" }, "roadmapStatus": { "planned": "Planificado", "in-progress": "En curso", "idea": "Idea", "done": "Hecho" }, "roadmap": { "dnsResilience": "Hacer la app resistente a que el nombre .home no sea accesible", "auth": "Autenticación de usuario y soporte multiusuario", "notifications": "Notificaciones push para los horarios de oración" } }
 }

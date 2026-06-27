@@ -1,0 +1,359 @@
+{
+  "generatedAt": "2026-06-27T14:57:07+00:00",
+  "currentVersion": "0.1.2",
+  "versions": [
+    {
+      "version": "0.1.2",
+      "date": "2026-06-27",
+      "changes": [
+        {
+          "type": "fix",
+          "scope": "freebox",
+          "component": "backend",
+          "summary": "dedup devices — native wins over AirMedia, heal DB"
+        },
+        {
+          "type": "fix",
+          "scope": "freebox",
+          "component": "backend",
+          "summary": "handle players without 'id' (Freebox v8/Ultra)"
+        },
+        {
+          "type": "fix",
+          "scope": "freebox",
+          "component": "backend",
+          "summary": "return flat dicts for Freebox devices in /soco/devices"
+        },
+        {
+          "type": "fix",
+          "scope": "freebox",
+          "component": "backend",
+          "summary": "a Player 403 must not abort the AirMedia scan"
+        },
+        {
+          "type": "refactor",
+          "scope": "frontend",
+          "component": "frontend",
+          "summary": "feature-based structure + device info modal"
+        },
+        {
+          "type": "feat",
+          "scope": "devices",
+          "component": "backend",
+          "summary": "device info endpoint with network details (IPv4/IPv6/MAC) per device"
+        },
+        {
+          "type": "feat",
+          "scope": "devices",
+          "component": "backend",
+          "summary": "match devices by stable uid across IP changes"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "also month and year should be computed every call"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "prayers api date not correct day after reboot"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "toast not showing"
+        }
+      ]
+    },
+    {
+      "version": "0.1.1",
+      "date": "2026-03-11",
+      "changes": [
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add toast"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "use nvmrc"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "add DST (daylight saving time) awareness"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "missing device id in schedule_prayers_for_device when refresh interval reached"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add some readme logs"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "in case device is not available do not try to play audio"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "more logs"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add health api end points"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "Wrong URL to get audio"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "major issue with audio/audio_name api"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "bg on small screen not displaing properly"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add some stuff to readme to explain how to run"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "some logs"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "pdf Dialog will take fullscreen now"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "Only one Device Service instance on app"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "play audio after schedule"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "use glass css"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add audio feature to front"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "backend and front fixes"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "start developping settings for device"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "add libpq-dev, gcc, python3-dev for compilation"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "implement sql repository for device and settings"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "enhance css"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": ".python-version not found"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "remove building cities.db from github"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "build docker"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "build docker"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "front typing"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "dockerfile not found"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "data_tools not using args, other stuff"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "missing requests package"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "trying to fix the workflow"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "trying to fix the workflow"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "uv doesn't have a -r"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "Use uv instead of pip in data_tools"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "Mono repo and db of cities and other stuff"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "use uv instead of pip"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "add timeout"
+        },
+        {
+          "type": "fix",
+          "scope": null,
+          "component": "backend",
+          "summary": "the outdir is not set when building with yarn"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add frontend"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "rename dockerfile in cmd"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "setting up github workflow"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add sonos speaker discovery feature"
+        },
+        {
+          "type": "feat",
+          "scope": null,
+          "component": "backend",
+          "summary": "add year and month times routes"
+        }
+      ]
+    }
+  ],
+  "roadmap": [
+    {
+      "id": "dns-resilience",
+      "title": "about.roadmap.dnsResilience",
+      "status": "planned"
+    },
+    {
+      "id": "auth",
+      "title": "about.roadmap.auth",
+      "status": "planned"
+    },
+    {
+      "id": "notifications",
+      "title": "about.roadmap.notifications",
+      "status": "idea"
+    }
+  ]
+}
