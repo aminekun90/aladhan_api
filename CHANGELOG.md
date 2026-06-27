@@ -8,6 +8,10 @@ All notable changes to this project are documented here.
 - **About / changelog**: in-app About dialog showing front + back versions, a
   git-generated changelog grouped by version and component, and a curated
   roadmap. A badge highlights versions not seen yet (tracked in `localStorage`).
+- **Version pill**: the header now shows a clickable `vX.Y.Z` chip (with a dot
+  when there's something new) that opens the changelog — the version is always
+  visible and the changelog is one obvious click away. The About modal was
+  redesigned (branded header, timeline changelog, roadmap, update banner).
 - **OTA updates**: when a new image is pushed, [Keel](https://keel.sh) holds it
   as a pending approval; the About dialog surfaces it with an **Approve** button
   that triggers the rollout (backend proxies the Keel admin API).
