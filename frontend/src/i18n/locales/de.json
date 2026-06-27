@@ -14,7 +14,8 @@
     "synced": { "title": "Gebete werden synchronisiert", "message": "Die Gebete wurden synchronisiert!" },
     "scheduled": { "title": "Geräte geplant", "message": "Alle Geräte wurden geplant!" },
     "audioAdded": { "title": "Audio hinzugefügt" },
-    "bluetooth": "Bluetooth"
+    "bluetooth": "Bluetooth",
+    "control": { "title": "Wiedergabe", "play": "Wiedergabe gestartet", "pause": "Wiedergabe pausiert", "next": "Nächster Titel", "previous": "Vorheriger Titel", "error": "Befehl auf {{device}} fehlgeschlagen" }
   },
   "about": { "titleShort": "Über Aladhan-pi", "body": "Aladhan-pi ist ein quelloffenes Python-/React-Projekt für präzise islamische Gebetszeiten. Von der Community auf GitHub gepflegt — mitwirken, spenden oder Fehler melden.", "close": "Schließen", "frontend": "Frontend", "backend": "Backend", "whatsNew": "Neuigkeiten", "roadmapTitle": "Roadmap", "new": "Neu", "noChanges": "Noch keine Änderungen erfasst.", "update": { "available": "Update verfügbar — v{{version}}", "approve": "Jetzt aktualisieren", "approving": "Wird aktualisiert…", "deploying": "Update gestartet — wird ausgerollt…" }, "types": { "feat": "Funktion", "fix": "Fehlerbehebung", "refactor": "Refactor", "perf": "Performance" }, "roadmapStatus": { "planned": "Geplant", "in-progress": "In Arbeit", "idea": "Idee", "done": "Erledigt" }, "roadmap": { "dnsResilience": "App gegen nicht erreichbaren .home-Namen absichern", "auth": "Benutzeranmeldung und Mehrbenutzer-Unterstützung", "notifications": "Push-Benachrichtigungen für Gebetszeiten" } }
 }

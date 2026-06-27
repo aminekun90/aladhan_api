@@ -22,12 +22,14 @@ import {
     CardContent,
     CardMedia,
     Chip,
+    CircularProgress,
     IconButton,
     styled,
     Tooltip,
     Typography,
     useTheme,
 } from "@mui/material";
+import { useToast } from "@aminekun90/react-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MouseEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -73,7 +75,11 @@ export default function DeviceCard({
 }>) {
     const theme = useTheme();
     const { t } = useTranslation();
+    const { show } = useToast();
     const [isPlaying, setIsPlaying] = useState(false);
+
+    const notify = (type: "success" | "error", message: string) =>
+        show({ type, title: t("toast.control.title"), message, position: "top-right", duration: 3000, progressBar: true });
 
     const controlMutation = useMutation({
         mutationFn: (action: PlayerAction) => {
@@ -81,8 +87,17 @@ export default function DeviceCard({
             if (!id) return Promise.reject(new Error("Device has no id"));
             return controlDevice(id, action);
         },
-        onError: (error) => logger.error("Device control failed:", error),
+        onSuccess: (_result, action) => notify("success", t(`toast.control.${action}`)),
+        onError: (error, action) => {
+            logger.error("Device control failed:", error);
+            // Revert the optimistic play/pause toggle.
+            if (action === "play") setIsPlaying(false);
+            if (action === "pause") setIsPlaying(true);
+            notify("error", t("toast.control.error", { device: device.getName() }));
+        },
     });
+
+    const pendingAction = controlMutation.isPending ? controlMutation.variables : undefined;
 
     const sendControl = (action: PlayerAction) => (event: MouseEvent) => {
         event.stopPropagation(); // don't trigger card selection
@@ -214,17 +229,23 @@ export default function DeviceCard({
                             <InfoOutlinedIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
-                    <IconButton aria-label="previous" disabled={!controllable} onClick={sendControl("previous")}>
-                        {theme.direction === "rtl" ? <SkipNextIcon /> : <SkipPreviousIcon />}
+                    <IconButton aria-label="previous" disabled={!controllable || controlMutation.isPending} onClick={sendControl("previous")}>
+                        {pendingAction === "previous"
+                            ? <CircularProgress size={20} />
+                            : theme.direction === "rtl" ? <SkipNextIcon /> : <SkipPreviousIcon />}
                     </IconButton>
-                    <IconButton aria-label="play/pause" disabled={!controllable}
+                    <IconButton aria-label="play/pause" disabled={!controllable || controlMutation.isPending}
                         onClick={sendControl(isPlaying ? "pause" : "play")}>
-                        {isPlaying
-                            ? <PauseIcon sx={{ height: 38, width: 38 }} />
-                            : <PlayArrowIcon sx={{ height: 38, width: 38 }} />}
+                        {pendingAction === "play" || pendingAction === "pause"
+                            ? <CircularProgress size={32} />
+                            : isPlaying
+                                ? <PauseIcon sx={{ height: 38, width: 38 }} />
+                                : <PlayArrowIcon sx={{ height: 38, width: 38 }} />}
                     </IconButton>
-                    <IconButton aria-label="next" disabled={!controllable} onClick={sendControl("next")}>
-                        {theme.direction === "rtl" ? <SkipPreviousIcon /> : <SkipNextIcon />}
+                    <IconButton aria-label="next" disabled={!controllable || controlMutation.isPending} onClick={sendControl("next")}>
+                        {pendingAction === "next"
+                            ? <CircularProgress size={20} />
+                            : theme.direction === "rtl" ? <SkipPreviousIcon /> : <SkipNextIcon />}
                     </IconButton>
                 </Box>
             </Box>

@@ -14,7 +14,8 @@
     "synced": { "title": "Gebeden synchroniseren", "message": "De gebeden zijn gesynchroniseerd!" },
     "scheduled": { "title": "Apparaten gepland", "message": "Alle apparaten zijn gepland!" },
     "audioAdded": { "title": "Audio toegevoegd" },
-    "bluetooth": "Bluetooth"
+    "bluetooth": "Bluetooth",
+    "control": { "title": "Afspelen", "play": "Afspelen gestart", "pause": "Afspelen gepauzeerd", "next": "Volgende track", "previous": "Vorige track", "error": "Opdracht mislukt op {{device}}" }
   },
   "about": { "titleShort": "Over Aladhan-pi", "body": "Aladhan-pi is een open-source Python-/React-project dat nauwkeurige islamitische gebedstijden levert. Onderhouden door de community op GitHub — draag bij, doneer of meld problemen.", "close": "Sluiten", "frontend": "Frontend", "backend": "Backend", "whatsNew": "Wat is er nieuw", "roadmapTitle": "Roadmap", "new": "Nieuw", "noChanges": "Nog geen wijzigingen vastgelegd.", "update": { "available": "Update beschikbaar — v{{version}}", "approve": "Nu bijwerken", "approving": "Bijwerken…", "deploying": "Update gestart — uitrollen…" }, "types": { "feat": "Functie", "fix": "Fix", "refactor": "Refactor", "perf": "Prestatie" }, "roadmapStatus": { "planned": "Gepland", "in-progress": "Bezig", "idea": "Idee", "done": "Klaar" }, "roadmap": { "dnsResilience": "De app bestand maken tegen een onbereikbare .home-naam", "auth": "Gebruikersauthenticatie en ondersteuning voor meerdere gebruikers", "notifications": "Pushmeldingen voor gebedstijden" } }
 }

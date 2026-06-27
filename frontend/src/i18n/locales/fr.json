@@ -14,7 +14,8 @@
     "synced": { "title": "Synchronisation des prières", "message": "Les prières ont été synchronisées !" },
     "scheduled": { "title": "Appareils programmés", "message": "Tous les appareils ont été programmés !" },
     "audioAdded": { "title": "Audio ajouté" },
-    "bluetooth": "Bluetooth"
+    "bluetooth": "Bluetooth",
+    "control": { "title": "Lecture", "play": "Lecture lancée", "pause": "Lecture en pause", "next": "Piste suivante", "previous": "Piste précédente", "error": "Commande échouée sur {{device}}" }
   },
   "about": { "titleShort": "À propos d'Aladhan-pi", "body": "Aladhan-pi est un projet open-source Python / React qui fournit des horaires de prière précis. Maintenu par la communauté sur GitHub — contribuez, faites un don ou signalez un problème.", "close": "Fermer", "frontend": "Frontend", "backend": "Backend", "whatsNew": "Nouveautés", "roadmapTitle": "Feuille de route", "new": "Nouveau", "noChanges": "Aucun changement enregistré pour le moment.", "update": { "available": "Mise à jour disponible — v{{version}}", "approve": "Mettre à jour", "approving": "Mise à jour…", "deploying": "Mise à jour lancée — déploiement…" }, "types": { "feat": "Fonctionnalité", "fix": "Correctif", "refactor": "Refactor", "perf": "Perf" }, "roadmapStatus": { "planned": "Prévu", "in-progress": "En cours", "idea": "Idée", "done": "Fait" }, "roadmap": { "dnsResilience": "Rendre l'app résiliente au nom .home injoignable", "auth": "Authentification et support multi-utilisateurs", "notifications": "Notifications push pour les horaires de prière" } }
 }

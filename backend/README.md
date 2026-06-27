@@ -107,6 +107,35 @@ presets['CustomMethod'] = {'fajr': 16.0, 'isha': ('mins', 90)}
 
 ```
 
+## Versioning, changelog & OTA updates
+
+Version is resolved from a single source (`src/utils/version.py` → installed
+package metadata, falling back to `pyproject.toml`). Endpoints:
+
+```
+GET  /api/v1/version          # plain-text backend version
+GET  /api/v1/changelog        # generated changelog (front + back, by version) + roadmap
+GET  /api/v1/update/status    # is a new image waiting for approval? (via Keel)
+POST /api/v1/update/approve   # approve the pending update so Keel rolls it out
+```
+
+The changelog JSON is generated from the git history at release time and
+committed (no `git` at runtime, so it works inside the Docker image):
+
+```bash
+uv run python scripts/gen_changelog.py   # writes src/data/changelog.json
+```
+
+The `/update/*` endpoints proxy the [Keel](https://keel.sh) admin API so the
+frontend can approve OTA updates without talking to the cluster directly.
+Configure via env:
+
+| Var | Default | Purpose |
+|-|-|-|
+| `KEEL_URL` | `http://keel.keel.svc.cluster.local:9300` | Keel admin API |
+| `KEEL_USER` / `KEEL_PASSWORD` | _(empty)_ | optional Keel basic auth |
+| `KEEL_RESOURCE` | `adhan-api` | deployment name to match in approvals |
+
 ## Testing
 
 ```bash

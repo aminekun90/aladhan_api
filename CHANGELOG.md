@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Added
+- **About / changelog**: in-app About dialog showing front + back versions, a
+  git-generated changelog grouped by version and component, and a curated
+  roadmap. A badge highlights versions not seen yet (tracked in `localStorage`).
+- **OTA updates**: when a new image is pushed, [Keel](https://keel.sh) holds it
+  as a pending approval; the About dialog surfaces it with an **Approve** button
+  that triggers the rollout (backend proxies the Keel admin API).
+- **Player feedback**: device transport controls (play/pause/next/previous) now
+  show a loading spinner while in flight and a success/error toast.
+
+### Changed
+- Unified the backend version source (`/version`, `/today`, OpenAPI) — no more
+  hardcoded versions. Frontend aligned to `0.1.2`.
+
 ## [0.1.1] — 2026-06-16
 
 Major overhaul: calculation engine, adhan scheduling, multi-backend players,
