@@ -155,8 +155,12 @@ export function SettingsDialog({
                             onInputChange={(_, newInputValue) => {
                                 setCityName(newInputValue);
                                 if (newInputValue.length > 2) {
-                                    const name = newInputValue.split(",").shift()?.trim();
-                                    const country = newInputValue.split(",").pop()?.trim();
+                                    // "City" -> name only; "City, FR" -> name + country.
+                                    // Only treat the part after a comma as a country, otherwise
+                                    // we'd send the city name itself as the country and match nothing.
+                                    const parts = newInputValue.split(",");
+                                    const name = parts[0]?.trim();
+                                    const country = parts.length > 1 ? parts[parts.length - 1]?.trim() || undefined : undefined;
                                     if (name) {
                                         handleSearchCity(name, country);
                                     }

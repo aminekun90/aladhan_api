@@ -45,7 +45,7 @@ function Eyebrow({ children }: Readonly<{ children: ReactNode }>) {
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose?: () => void }>) {
     const { t } = useTranslation();
     const { changelog, isLoading, frontendVersion, backendVersion, isUnseen } = useChangelog();
-    const { status, approve, isApproving, isApproved } = useUpdateStatus({ enabled: open });
+    const { status, approve, isApproving, isApproved, force, isForcing, isForced } = useUpdateStatus({ enabled: open });
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper" PaperProps={{ sx: PAPER_SX }}>
@@ -69,6 +69,9 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                         <GitHubIcon fontSize="small" />
                     </Link>
                 </Stack>
+                <Typography variant="body2" sx={{ mt: 1.75, color: "var(--mist)", lineHeight: 1.6 }}>
+                    {t("about.body")}
+                </Typography>
             </Box>
 
             <DialogContent sx={{ px: 3, py: 2.5 }}>
@@ -122,6 +125,26 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                         </Stack>
                     </Box>
                 )}
+
+                {/* Manual fallback: force a redeploy to pull the newest image. */}
+                <Box sx={{ mt: 3.5, pt: 2, borderTop: "1px solid var(--line)" }}>
+                    {isForced ? (
+                        <Alert severity="success" variant="outlined">{t("about.update.deploying")}</Alert>
+                    ) : (
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+                            <Typography variant="caption" sx={{ color: "var(--mist)" }}>{t("about.update.forceHint")}</Typography>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => force()}
+                                disabled={isForcing}
+                                sx={{ flexShrink: 0, borderColor: "var(--line)", color: "var(--parchment)", "&:hover": { borderColor: "var(--brass)" } }}
+                            >
+                                {isForcing ? t("about.update.forcing") : t("about.update.force")}
+                            </Button>
+                        </Stack>
+                    )}
+                </Box>
             </DialogContent>
         </Dialog>
     );

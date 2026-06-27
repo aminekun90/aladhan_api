@@ -23,6 +23,7 @@ export const CONFIG = {
   getBackendVersion: "version",
   getUpdateStatus: "update/status",
   approveUpdate: "update/approve",
+  forceUpdate: "update/force",
 }
 
 /** localStorage key tracking the last changelog version the user has seen. */

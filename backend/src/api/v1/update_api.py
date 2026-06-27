@@ -2,7 +2,7 @@ import requests
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from src.services import keel_service
+from src.services import k8s_service, keel_service
 
 router = APIRouter()
 
@@ -18,6 +18,11 @@ class UpdateStatus(BaseModel):
 class ApproveResult(BaseModel):
     approved: bool
     newVersion: str = ""
+
+
+class ForceResult(BaseModel):
+    restarted: bool
+    detail: str = ""
 
 
 @router.get("/update/status", response_model=UpdateStatus)
@@ -44,3 +49,15 @@ def update_approve():
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Keel unreachable: {exc}") from exc
     return ApproveResult(approved=True, newVersion=update["newVersion"])
+
+
+@router.post("/update/force", response_model=ForceResult)
+def update_force():
+    """Force a rollout restart so the app re-pulls the latest image."""
+    try:
+        k8s_service.restart_self()
+    except k8s_service.NotInClusterError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Kubernetes API error: {exc}") from exc
+    return ForceResult(restarted=True, detail="Rollout restarted — pulling the latest image.")

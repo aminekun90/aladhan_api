@@ -29,3 +29,15 @@ export async function approveUpdate(): Promise<ApproveResult> {
     });
     return result ?? { approved: false, newVersion: "" };
 }
+
+export interface ForceResult {
+    restarted: boolean;
+    detail: string;
+}
+
+export async function forceUpdate(): Promise<ForceResult> {
+    const result = await api.post<ForceResult>(CONFIG.forceUpdate, {}, {
+        headers: { "Content-Type": "application/json" },
+    });
+    return result ?? { restarted: false, detail: "" };
+}

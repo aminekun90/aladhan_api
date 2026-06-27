@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-06-27",
+  "currentVersion": "0.2.0",
+  "versions": [
+    {
+      "version": "0.2.0",
+      "date": "2026-06-27",
+      "changes": [
+        { "type": "feat", "component": "frontend", "summary": "In-app changelog: a clickable version pill opens an About dialog showing what's new per version, with a roadmap" },
+        { "type": "feat", "component": "frontend", "summary": "Update the app in one click — approve a pending release or force an update from the About dialog" },
+        { "type": "feat", "component": "frontend", "summary": "Device controls (play, pause, next, previous) now show a loading spinner and a success or error toast" },
+        { "type": "feat", "component": "frontend", "summary": "Redesigned About dialog: branded header, timeline changelog and roadmap" },
+        { "type": "feat", "component": "backend", "summary": "Update API: report, approve and force over-the-air updates" },
+        { "type": "feat", "component": "backend", "summary": "Single source of truth for the version, exposed at /version and /changelog" },
+        { "type": "feat", "component": "backend", "summary": "GitOps deployment on Kubernetes (Argo CD) with Keel auto-updates" },
+        { "type": "fix", "component": "backend", "summary": "Reliable aladhan.home access at home: local and IPv6 DNS now both go through Pi-hole" },
+        { "type": "fix", "component": "frontend", "summary": "City search now works by name alone, instead of only matching when you typed the exact country code" }
+      ]
+    },
+    {
+      "version": "0.1.1",
+      "date": "2026-06-16",
+      "changes": [
+        { "type": "feat", "component": "backend", "summary": "Prayer engine aligned with the canonical algorithm (Maghrib, high-latitude fallback, method-aware midnight)" },
+        { "type": "feat", "component": "backend", "summary": "Multi-backend playback: Sonos, Freebox (Player + AirMedia), Bluetooth, and the host machine" },
+        { "type": "feat", "component": "frontend", "summary": "\"Mihrab at Dawn\" UI redesign, fully responsive, with per-device settings" },
+        { "type": "feat", "component": "frontend", "summary": "Year calendar with branded PDF export and authentic Arabic Hijri dates" },
+        { "type": "feat", "component": "frontend", "summary": "Six languages (EN, FR, DE, ES, NL, AR) with right-to-left support" },
+        { "type": "feat", "component": "backend", "summary": "Browser geolocation with reverse-geocoding to a city name" },
+        { "type": "fix", "component": "backend", "summary": "Scheduler is now a true singleton with datetime-based scheduling (fixes DST and post-reboot day errors)" },
+        { "type": "perf", "component": "backend", "summary": "Cities database slimmed from 1.5 GB to 12 MB" }
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-03-13",
+      "changes": [
+        { "type": "feat", "component": "backend", "summary": "First release: prayer times computed from scratch as a FastAPI service" },
+        { "type": "feat", "component": "backend", "summary": "Sonos speaker discovery and adhan playback" },
+        { "type": "feat", "component": "frontend", "summary": "React frontend with prayer times and a printable calendar" },
+        { "type": "feat", "component": "backend", "summary": "Dockerised multi-arch image (amd64 + arm64) for the Raspberry Pi" }
+      ]
+    }
+  ],
+  "roadmap": [
+    { "id": "dns-resilience", "title": "Harden local .home access and ad-filtering across every device", "status": "in-progress" },
+    { "id": "auth", "title": "User authentication and multi-user support", "status": "planned" },
+    { "id": "notifications", "title": "Push notifications for prayer times", "status": "idea" }
+  ]
+}

@@ -11,7 +11,9 @@ from src.utils.version import get_version
 router = APIRouter()
 repos = RepositoryContainer()
 
-_CHANGELOG_PATH = Path(__file__).resolve().parents[2] / "data" / "changelog.json"
+# Kept directly under src/ (NOT src/data/, which is a hostPath-mounted volume in
+# k8s that would shadow this file baked into the image).
+_CHANGELOG_PATH = Path(__file__).resolve().parents[2] / "changelog.json"
 
 
 @router.get("/health")

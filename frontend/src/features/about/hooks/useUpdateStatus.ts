@@ -1,4 +1,4 @@
-import { approveUpdate, getUpdateStatus } from "@/features/about/api/apiUpdate";
+import { approveUpdate, forceUpdate, getUpdateStatus } from "@/features/about/api/apiUpdate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /** Polls Keel (via the backend) for a pending OTA update and approves it. */
@@ -17,11 +17,17 @@ export function useUpdateStatus({ enabled }: { enabled: boolean }) {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["updateStatus"] }),
     });
 
+    const forceMutation = useMutation({ mutationFn: forceUpdate });
+
     return {
         status: statusQuery.data,
         isLoading: statusQuery.isLoading,
         approve: approveMutation.mutate,
         isApproving: approveMutation.isPending,
         isApproved: approveMutation.isSuccess,
+        force: forceMutation.mutate,
+        isForcing: forceMutation.isPending,
+        isForced: forceMutation.isSuccess,
+        forceError: forceMutation.isError,
     };
 }

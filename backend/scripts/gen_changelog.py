@@ -22,7 +22,7 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_DIR.parent
-OUTPUT = BACKEND_DIR / "src" / "data" / "changelog.json"
+OUTPUT = BACKEND_DIR / "src" / "changelog.json"
 
 KEPT_TYPES = {"feat", "fix", "refactor", "perf"}
 FRONTEND_SCOPES = {"frontend", "front", "ui", "web"}
