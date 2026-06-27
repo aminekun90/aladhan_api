@@ -43,6 +43,17 @@ const TimeText = styled("span")({
   lineHeight: 1.05,
   color: "var(--parchment)",
   fontVariantNumeric: "tabular-nums",
+  whiteSpace: "nowrap",
+  display: "inline-flex",
+  alignItems: "baseline",
+  gap: "0.28em",
+});
+
+const Meridiem = styled("span")({
+  fontSize: "0.42em",
+  fontWeight: 600,
+  letterSpacing: "0.08em",
+  color: "var(--mist)",
 });
 
 export function PrayerCard(props: {
@@ -58,7 +69,10 @@ export function PrayerCard(props: {
   const isActive = props.selectedCard === props.id;
   const next = !!props.isNext;
 
-  const time = Intl.DateTimeFormat(i18n.resolvedLanguage, { hour: "2-digit", minute: "2-digit" }).format(props.date);
+  const parts = Intl.DateTimeFormat(i18n.resolvedLanguage, { hour: "2-digit", minute: "2-digit" }).formatToParts(props.date);
+  const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+  const minute = parts.find((p) => p.type === "minute")?.value ?? "";
+  const meridiem = parts.find((p) => p.type === "dayPeriod")?.value;
 
   return (
     <Tooltip title={`${props.title} · ${props.timezone}`} arrow>
@@ -76,7 +90,10 @@ export function PrayerCard(props: {
           <Typography sx={{ textTransform: "uppercase", letterSpacing: "0.22em", fontSize: "0.66rem", fontWeight: 600, color: next ? BRASS_BRIGHT : "var(--mist)" }}>
             {props.title}
           </Typography>
-          <TimeText sx={{ fontSize: { xs: "1.7rem", md: "2rem" } }}>{time}</TimeText>
+          <TimeText sx={{ fontSize: { xs: "1.8rem", md: "2.15rem" } }}>
+            {hour}:{minute}
+            {meridiem && <Meridiem>{meridiem}</Meridiem>}
+          </TimeText>
         </CardActionArea>
       </PrayerRoot>
     </Tooltip>
