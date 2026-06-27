@@ -72,6 +72,20 @@ class DeviceService:
     def upsert_devices_bulk(self, devices: list[Device]) -> None:
         """ Add multiple devices to the database."""
         return self.device_repository.upsert_devices_bulk(devices=devices)
+
+    def remove_airmedia_duplicates(self, native_names: set[str]) -> int:
+        """Delete stored AirMedia receivers that duplicate a native device.
+
+        The Freebox advertises Sonos / its own Player as AirMedia receivers too;
+        keeping both creates duplicate cards. The native device wins, so any
+        ``freebox_airmedia`` row whose name matches a native device is removed.
+        """
+        stale = [d.id for d in self.list_devices()
+                 if d.type == FREEBOX_AIRMEDIA_TYPE and d.name in native_names and d.id]
+        if stale:
+            self.device_repository.delete_devices(stale)
+            logger.info(f"Removed {len(stale)} duplicate AirMedia device(s)")
+        return len(stale)
     def get_local_ip(self) -> str:
         """Get the LAN IP address of the current machine (reachable by Sonos)."""
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

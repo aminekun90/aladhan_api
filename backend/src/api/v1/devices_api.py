@@ -67,6 +67,10 @@ def list_soco_devices():
     
     # 2. Get Freebox Devices (Safely)
     freebox_devices_objs = []
+    # Names already represented as a native device (Sonos + Freebox players). An
+    # AirMedia receiver with the same name is the SAME physical device advertised
+    # over AirPlay — we keep only the native one to avoid duplicates in the DB.
+    native_names = {d.get("name") for d in (devices or []) if d.get("name")}
     try:
         # Only try to get players if we have a token or can login silently.
         # We assume explicit auth is done via /freebox/auth first to avoid hanging this request.
@@ -77,14 +81,18 @@ def list_soco_devices():
             try:
                 players = freebox_service.get_players()
                 if players:
-                    freebox_devices_objs = freebox_service.from_list(players)
+                    player_objs = freebox_service.from_list(players)
+                    freebox_devices_objs.extend(player_objs)
+                    native_names.update(d.name for d in player_objs)
                 else:
                     logger.warning("No Freebox players found")
             except Exception as e:
                 logger.warning(f"Could not fetch Freebox players (grant the 'Player' permission to the app?): {e}")
-            # AirMedia receivers (AirPlay-like) — available even without the player permission.
+            # AirMedia receivers — keep only those with NO native equivalent
+            # (dedup Sonos / Freebox players advertised over AirPlay).
             try:
-                receivers = freebox_service.get_airmedia_receivers()
+                receivers = freebox_service.get_airmedia_receivers() or []
+                receivers = [r for r in receivers if r.get("name") not in native_names]
                 freebox_devices_objs.extend(freebox_service.airmedia_from_list(receivers))
             except Exception as e:
                 logger.warning(f"Could not fetch Freebox AirMedia receivers: {e}")
@@ -105,6 +113,13 @@ def list_soco_devices():
     
     if all_devices_to_save:
         device_service.upsert_devices_bulk(all_devices_to_save)
+
+    # Heal the DB: drop any previously-stored AirMedia receiver that duplicates a
+    # native device (Sonos / Freebox player advertised over AirPlay).
+    try:
+        device_service.remove_airmedia_duplicates(native_names)
+    except Exception as e:
+        logger.warning(f"AirMedia dedup cleanup failed: {e}")
 
     # 4. Return combined list for the API response.
     # 'devices' (Sonos) are already flat dicts. Freebox entries are Device

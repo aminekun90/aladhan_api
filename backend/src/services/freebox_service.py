@@ -269,7 +269,9 @@ class FreeboxService:
         # Cache each player's embedded API version and display name (used by the
         # version-aware URL builder and the AirMedia fallback).
         for p in players or []:
-            pid = str(p.get("id"))
+            # v8/Ultra players omit "id" and key by "mac" — match the identifier
+            # used as device.ip in from_list so the AirMedia fallback resolves.
+            pid = str(p.get("id") or p.get("mac"))
             if "api_version" in p:
                 self._player_api_major[pid] = str(p["api_version"]).split(".")[0]
             if p.get("device_name"):
