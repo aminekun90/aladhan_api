@@ -3,26 +3,44 @@ import { useUpdateStatus } from "@/features/about/hooks/useUpdateStatus";
 import { ChangelogVersion, ChangeType, Component, RoadmapStatus } from "@/features/about/types/changelog";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import {
-    Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
-    Divider, Link, Stack, Typography,
+    Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent,
+    IconButton, Link, Stack, Typography,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 const TYPE_COLOR: Record<ChangeType, string> = {
-    feat: "#3a7d44",
-    fix: "#9c6b1f",
-    refactor: "#4a5d8a",
-    perf: "#6a4a8a",
+    feat: "#5a9e6f",
+    fix: "#c9962f",
+    refactor: "#6f86c4",
+    perf: "#9a78c4",
 };
 
 const STATUS_COLOR: Record<RoadmapStatus, string> = {
-    "planned": "#4a5d8a",
-    "in-progress": "#9c6b1f",
-    "idea": "#6b6b6b",
-    "done": "#3a7d44",
+    "planned": "#6f86c4",
+    "in-progress": "#c9962f",
+    "idea": "#8a8a8a",
+    "done": "#5a9e6f",
 };
 
 const COMPONENTS: Component[] = ["frontend", "backend"];
+
+const PAPER_SX = {
+    background: "linear-gradient(180deg, rgba(20,28,48,0.98), rgba(13,20,38,0.98))",
+    border: "1px solid var(--line)",
+    borderRadius: "1.25rem",
+    backdropFilter: "blur(12px)",
+    color: "var(--parchment)",
+} as const;
+
+function Eyebrow({ children }: Readonly<{ children: ReactNode }>) {
+    return (
+        <Typography sx={{ fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--brass)", mb: 1.25 }}>
+            {children}
+        </Typography>
+    );
+}
 
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose?: () => void }>) {
     const { t } = useTranslation();
@@ -30,32 +48,39 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
     const { status, approve, isApproving, isApproved } = useUpdateStatus({ enabled: open });
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
-            <DialogContent dividers>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                    <Typography variant="h6">{t("about.titleShort")}</Typography>
-                    <Link title="GitHub" href="https://github.com/aminekun90/aladhan_api" target="_blank" rel="noopener" sx={{ color: "inherit" }}>
-                        <GitHubIcon />
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper" PaperProps={{ sx: PAPER_SX }}>
+            {/* Branded header */}
+            <Box sx={{ position: "relative", px: 3, pt: 3, pb: 2.5, borderBottom: "1px solid var(--line)" }}>
+                <Box sx={{ position: "absolute", left: 0, bottom: -1, height: 2, width: "38%", background: "linear-gradient(90deg, var(--brass), transparent)" }} />
+                <IconButton aria-label={t("about.close")} onClick={onClose} sx={{ position: "absolute", top: 12, right: 12, color: "var(--mist)" }}>
+                    <CloseIcon fontSize="small" />
+                </IconButton>
+                <Stack direction="row" alignItems="center" spacing={1.25}>
+                    <Box sx={{ width: 12, height: 22, borderRadius: "50% 50% 0 0 / 70% 70% 0 0", border: "1.5px solid var(--brass)", borderBottom: "none" }} />
+                    <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", letterSpacing: "0.04em" }}>
+                        {t("about.titleShort")}
+                    </Typography>
+                </Stack>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.75 }}>
+                    <Chip size="small" label={`${t("about.frontend")} v${frontendVersion}`} sx={CHIP_SX} />
+                    {backendVersion && <Chip size="small" label={`${t("about.backend")} v${backendVersion}`} sx={CHIP_SX} />}
+                    <Box sx={{ flex: 1 }} />
+                    <Link title="GitHub" href="https://github.com/aminekun90/aladhan_api" target="_blank" rel="noopener" sx={{ color: "var(--mist)", "&:hover": { color: "var(--brass)" } }}>
+                        <GitHubIcon fontSize="small" />
                     </Link>
                 </Stack>
+            </Box>
 
-                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                    <Chip size="small" label={`${t("about.frontend")} v${frontendVersion}`} variant="outlined" />
-                    {backendVersion && <Chip size="small" label={`${t("about.backend")} v${backendVersion}`} variant="outlined" />}
-                </Stack>
-
-                <Typography variant="body2" sx={{ mt: 1.5, color: "text.secondary" }}>
-                    {t("about.body")}
-                </Typography>
-
+            <DialogContent sx={{ px: 3, py: 2.5 }}>
                 {isApproved ? (
-                    <Alert severity="success" sx={{ mt: 2 }}>{t("about.update.deploying")}</Alert>
+                    <Alert severity="success" variant="outlined" sx={{ mb: 2.5 }}>{t("about.update.deploying")}</Alert>
                 ) : status?.pending && (
                     <Alert
                         severity="info"
-                        sx={{ mt: 2 }}
+                        variant="outlined"
+                        sx={{ mb: 2.5 }}
                         action={
-                            <Button color="inherit" size="small" onClick={() => approve()} disabled={isApproving}>
+                            <Button color="inherit" size="small" variant="outlined" onClick={() => approve()} disabled={isApproving}>
                                 {isApproving ? t("about.update.approving") : t("about.update.approve")}
                             </Button>
                         }
@@ -64,80 +89,84 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                     </Alert>
                 )}
 
-                <Divider sx={{ my: 2 }} />
-
-                <Typography variant="subtitle2" gutterBottom>{t("about.whatsNew")}</Typography>
+                <Eyebrow>{t("about.whatsNew")}</Eyebrow>
                 {isLoading ? (
-                    <CircularProgress size={20} />
+                    <CircularProgress size={20} sx={{ color: "var(--brass)" }} />
                 ) : (
-                    <Stack spacing={2}>
-                        {changelog?.versions.map((version) => (
-                            <VersionBlock key={version.version} version={version} unseen={isUnseen(version.version)} />
-                        ))}
-                        {!changelog?.versions.length && (
-                            <Typography variant="body2" color="text.secondary">{t("about.noChanges")}</Typography>
-                        )}
-                    </Stack>
+                    <Box sx={{ position: "relative", pl: 2.5, "&::before": { content: '""', position: "absolute", left: 4, top: 4, bottom: 4, width: "1px", background: "var(--line)" } }}>
+                        <Stack spacing={2.5}>
+                            {changelog?.versions.map((version) => (
+                                <VersionBlock key={version.version} version={version} unseen={isUnseen(version.version)} />
+                            ))}
+                            {!changelog?.versions.length && (
+                                <Typography variant="body2" sx={{ color: "var(--mist)" }}>{t("about.noChanges")}</Typography>
+                            )}
+                        </Stack>
+                    </Box>
                 )}
 
                 {!!changelog?.roadmap.length && (
-                    <>
-                        <Divider sx={{ my: 2 }} />
-                        <Typography variant="subtitle2" gutterBottom>{t("about.roadmapTitle")}</Typography>
-                        <Stack spacing={1}>
+                    <Box sx={{ mt: 3.5 }}>
+                        <Eyebrow>{t("about.roadmapTitle")}</Eyebrow>
+                        <Stack spacing={1.25}>
                             {changelog.roadmap.map((item) => (
-                                <Stack key={item.id} direction="row" alignItems="center" spacing={1}>
+                                <Stack key={item.id} direction="row" alignItems="center" spacing={1.25}>
                                     <Chip
                                         size="small"
                                         label={t(`about.roadmapStatus.${item.status}`)}
-                                        sx={{ bgcolor: STATUS_COLOR[item.status], color: "#fff", minWidth: 92 }}
+                                        sx={{ bgcolor: STATUS_COLOR[item.status], color: "#0d1426", fontWeight: 600, minWidth: 96 }}
                                     />
                                     <Typography variant="body2">{t(item.title)}</Typography>
                                 </Stack>
                             ))}
                         </Stack>
-                    </>
+                    </Box>
                 )}
             </DialogContent>
-            <DialogActions>
-                <Button variant="contained" color="primary" onClick={onClose} autoFocus>
-                    {t("about.close")}
-                </Button>
-            </DialogActions>
         </Dialog>
     );
 }
 
+const CHIP_SX = {
+    fontFamily: "var(--font-display)",
+    color: "var(--parchment)",
+    border: "1px solid var(--line)",
+    background: "transparent",
+} as const;
+
 function VersionBlock({ version, unseen }: Readonly<{ version: ChangelogVersion; unseen: boolean }>) {
     const { t } = useTranslation();
     return (
-        <Box
-            sx={{
-                p: 1.5, borderRadius: 1,
-                border: "1px solid", borderColor: unseen ? "primary.main" : "divider",
-                bgcolor: unseen ? "action.hover" : "transparent",
-            }}
-        >
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <Typography variant="subtitle2">v{version.version}</Typography>
-                <Typography variant="caption" color="text.secondary">{version.date}</Typography>
-                {unseen && <Chip size="small" color="primary" label={t("about.new")} />}
+        <Box sx={{ position: "relative" }}>
+            {/* timeline node */}
+            <Box sx={{
+                position: "absolute", left: -24, top: 5, width: 9, height: 9, borderRadius: "50%",
+                background: unseen ? "var(--brass)" : "var(--surface)",
+                border: `1.5px solid ${unseen ? "var(--brass)" : "var(--line)"}`,
+                boxShadow: unseen ? "0 0 0 4px rgba(212,173,95,0.15)" : "none",
+            }} />
+            <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 1 }}>
+                <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1rem", color: "var(--parchment)" }}>
+                    v{version.version}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "var(--mist)" }}>{version.date}</Typography>
+                {unseen && <Chip size="small" label={t("about.new")} sx={{ height: 18, bgcolor: "var(--brass)", color: "#0d1426", fontWeight: 700, fontSize: "0.62rem" }} />}
             </Stack>
             {COMPONENTS.map((component) => {
                 const items = version.changes.filter((c) => c.component === component);
                 if (!items.length) return null;
                 return (
-                    <Box key={component} sx={{ mb: 1 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>{t(`about.${component}`)}</Typography>
-                        <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                    <Box key={component} sx={{ mb: 1.25 }}>
+                        <Typography sx={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--mist)", mb: 0.5 }}>
+                            {t(`about.${component}`)}
+                        </Typography>
+                        <Stack spacing={0.75}>
                             {items.map((change, i) => (
-                                <Stack key={i} direction="row" alignItems="flex-start" spacing={1}>
-                                    <Chip
-                                        size="small"
-                                        label={t(`about.types.${change.type}`)}
-                                        sx={{ bgcolor: TYPE_COLOR[change.type], color: "#fff", height: 18, fontSize: "0.65rem" }}
-                                    />
-                                    <Typography variant="body2">{change.summary}</Typography>
+                                <Stack key={i} direction="row" alignItems="center" spacing={1}>
+                                    <Box sx={{ width: 6, height: 6, borderRadius: "2px", flexShrink: 0, background: TYPE_COLOR[change.type] }} />
+                                    <Typography variant="body2" sx={{ color: "var(--parchment)", opacity: 0.92 }}>
+                                        {change.summary}
+                                    </Typography>
                                 </Stack>
                             ))}
                         </Stack>

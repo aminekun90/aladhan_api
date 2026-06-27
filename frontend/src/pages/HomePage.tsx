@@ -18,7 +18,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SyncIcon from "@mui/icons-material/Sync";
-import { Badge, Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Badge, Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -84,10 +84,24 @@ export function HomePage() {
                             </span>
                         </Tooltip>
                         <LanguageSwitcher />
-                        <Tooltip title={t("nav.about")}>
-                            <IconButton onClick={() => { markChangelogSeen(); setIsAboutOpen(true); }}>
-                                <Badge color="error" variant="dot" invisible={!hasUnseenChangelog}><InfoIcon /></Badge>
-                            </IconButton>
+                        <Tooltip title={hasUnseenChangelog ? t("about.whatsNew") : t("nav.about")}>
+                            <Badge color="error" variant="dot" overlap="circular" invisible={!hasUnseenChangelog} sx={{ ml: 0.5 }}>
+                                <Chip
+                                    icon={<InfoIcon sx={{ fontSize: "1rem !important" }} />}
+                                    label={`v${packageJson.version}`}
+                                    onClick={() => { markChangelogSeen(); setIsAboutOpen(true); }}
+                                    size="small"
+                                    variant="outlined"
+                                    clickable
+                                    sx={{
+                                        fontFamily: "var(--font-display)", letterSpacing: "0.04em",
+                                        color: "var(--parchment)",
+                                        borderColor: hasUnseenChangelog ? "var(--brass)" : "var(--line)",
+                                        "& .MuiChip-icon": { color: "var(--brass)" },
+                                        "&:hover": { borderColor: "var(--brass)", background: "rgba(212,173,95,0.08)" },
+                                    }}
+                                />
+                            </Badge>
                         </Tooltip>
                     </Stack>
                 </Stack>
