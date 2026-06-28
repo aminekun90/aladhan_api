@@ -104,6 +104,10 @@ export interface DeviceInfo {
     volume?: number;
     control_channel?: string;
     note?: string;
+    city?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export async function getDeviceInfo(deviceId: number): Promise<DeviceInfo> {

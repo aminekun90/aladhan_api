@@ -40,3 +40,9 @@ class DeviceInfo(BaseModel):
     # How transport control is routed ("box_api" for Freebox, "direct" otherwise)
     control_channel: Optional[str] = None
     note: Optional[str] = None
+
+    # Configured prayer location for this device (from its settings)
+    city: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None

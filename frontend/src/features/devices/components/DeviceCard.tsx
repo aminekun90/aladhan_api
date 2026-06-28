@@ -6,6 +6,7 @@ import { Device } from "@/features/devices/types/device";
 import { logger } from "@/utils/logger";
 import BluetoothIcon from "@mui/icons-material/Bluetooth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AirplayIcon from "@mui/icons-material/Airplay";
 import GraphicEqIcon from "@mui/icons-material/GraphicEq";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LaptopMacIcon from "@mui/icons-material/LaptopMac";
@@ -107,6 +108,7 @@ export default function DeviceCard({
     };
 
     const isFreeboxPlayer = device.type === "freebox_player";
+    const isAirMedia = device.type === "freebox_airmedia";
     const isBluetooth = device.type === "bluetooth_speaker";
 
     // Freebox players stay reachable when turned off with the remote (standby);
@@ -121,7 +123,10 @@ export default function DeviceCard({
     });
     const isStandby = liveState?.standby === true;
     const isLocal = device.type === "local_player";
-    const iconOnly = isBluetooth || isLocal; // no product photo for these
+    // No product photo for these — AirMedia targets are diverse (TV, speaker…)
+    // reachable via the Freebox's AirPlay-based casting, so show an icon, not a
+    // misleading Sonos/Freebox photo.
+    const iconOnly = isBluetooth || isLocal || isAirMedia;
     // Transport controls only make sense for a reachable network player.
     const controllable = available && !!device.getId() && !isBluetooth && !isLocal;
 
@@ -193,7 +198,11 @@ export default function DeviceCard({
             }}>
                 {iconOnly ? (
                     <Box sx={{ color: "var(--brass)", display: "grid", placeItems: "center", opacity: available ? 0.95 : 0.5 }}>
-                        {isLocal ? <LaptopMacIcon sx={{ fontSize: 64 }} /> : <GraphicEqIcon sx={{ fontSize: 64 }} />}
+                        {isLocal
+                            ? <LaptopMacIcon sx={{ fontSize: 64 }} />
+                            : isAirMedia
+                                ? <AirplayIcon sx={{ fontSize: 64 }} />
+                                : <GraphicEqIcon sx={{ fontSize: 64 }} />}
                     </Box>
                 ) : (
                     <CardMedia

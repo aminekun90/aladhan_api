@@ -135,6 +135,15 @@ export function DeviceInfoDialog({
                         <InfoRow label={t("deviceInfo.mac", { defaultValue: "Adresse MAC" })} value={info.mac} mono />
                         <InfoRow label="UID" value={info.uid} mono />
                         <InfoRow label={t("deviceInfo.control", { defaultValue: "Canal de contrôle" })} value={info.control_channel} />
+                        <InfoRow
+                            label={t("deviceInfo.location", { defaultValue: "Localisation" })}
+                            value={info.city ? [info.city, info.country].filter(Boolean).join(", ") : null}
+                        />
+                        <InfoRow
+                            label={t("deviceInfo.coordinates", { defaultValue: "Coordonnées" })}
+                            value={info.latitude != null && info.longitude != null ? `${info.latitude.toFixed(4)}, ${info.longitude.toFixed(4)}` : null}
+                            mono
+                        />
                         {info.note && (
                             <Typography variant="caption" sx={{ color: "var(--mist)", mt: 0.5 }}>{info.note}</Typography>
                         )}

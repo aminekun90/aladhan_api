@@ -187,6 +187,20 @@ class DeviceService:
             + [NetAddress(family="ipv6", address=a) for a in info.ipv6]
             + ([NetAddress(family="mac", address=info.mac)] if info.mac else [])
         )
+
+        # Configured prayer location for this device (best-effort, never fatal).
+        try:
+            setting = self.settings_repository.get_setting_by_device_id(device_id)
+            city = setting.city if setting else None
+            if isinstance(city, dict):
+                info.city, info.country = city.get("name"), city.get("country")
+                info.latitude, info.longitude = city.get("lat"), city.get("lon")
+            elif city is not None:
+                info.city, info.country = getattr(city, "name", None), getattr(city, "country", None)
+                info.latitude, info.longitude = getattr(city, "lat", None), getattr(city, "lon", None)
+        except Exception:
+            pass
+
         return info
 
     # ------------------------------
