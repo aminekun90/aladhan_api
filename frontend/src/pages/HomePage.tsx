@@ -11,6 +11,7 @@ import { useDeviceSelection } from "@/features/devices/hooks/useDeviceSelection"
 import { Device } from "@/features/devices/types/device";
 import { getSettings } from "@/features/prayers/api/apiPrayer";
 import { DateClock } from "@/features/prayers/components/Clock";
+import { NextPrayerCountdown } from "@/features/prayers/components/NextPrayerCountdown";
 import { usePrayerLocation } from "@/features/prayers/hooks/usePrayerLocation";
 import { PrayersSection } from "@/features/prayers/PrayersSection";
 import BluetoothSearchingIcon from "@mui/icons-material/BluetoothSearching";
@@ -125,6 +126,7 @@ export function HomePage() {
                                 </IconButton>
                             </Tooltip>
                         </Stack>
+                        <NextPrayerCountdown coord={coord} />
                     </Box>
                 </Box>
 

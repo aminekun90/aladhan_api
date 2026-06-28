@@ -3,7 +3,7 @@
   "nav": { "sync": "Gebeden synchroniseren", "scanBluetooth": "Bluetooth-luidsprekers zoeken", "about": "Over", "language": "Taal" },
   "location": { "useMyLocation": "Mijn locatie gebruiken", "denied": "Locatie geweigerd", "myPosition": "Mijn locatie", "default": "Standaardlocatie" },
   "sections": { "prayerTimes": "Gebedstijden", "devices": "Apparaten", "calendar": "Kalender" },
-  "prayers": { "loading": "Laden…", "error": "Fout bij het ophalen van gebeden", "next": "VOLGENDE" },
+  "prayers": { "nextPrayer": "Volgend gebed", "loading": "Laden…", "error": "Fout bij het ophalen van gebeden", "next": "VOLGENDE" },
   "devices": { "errorFetching": "Fout bij het ophalen van apparaten", "searching": "Luidsprekers zoeken…", "offline": "Offline", "standby": "Stand-by", "standbyHint": "Speler uitgeschakeld met de afstandsbediening — afspelen via AirMedia", "settings": "Apparaatinstellingen" },
   "deviceTypes": { "local_player": "Dit apparaat", "sonos_player": "Sonos", "freebox_player": "Freebox", "freebox_airmedia": "AirMedia", "bluetooth_speaker": "Bluetooth" },
   "settings": { "dateHint": "Standaard: vandaag", "title": "Instellingen", "city": "Stad", "coordinates": "Coördinaten", "method": "Berekeningsmethode", "audio": "Adhan-audio", "date": "Datum", "enableScheduler": "Gebedsoproep inschakelen", "save": "Opslaan", "saving": "Opslaan…", "importMp3": "Een MP3 importeren", "deleteAudio": "Deze audio verwijderen" },

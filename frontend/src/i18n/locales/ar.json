@@ -3,7 +3,7 @@
   "nav": { "sync": "مزامنة الصلوات", "scanBluetooth": "البحث عن مكبرات صوت بلوتوث", "about": "حول", "language": "اللغة" },
   "location": { "useMyLocation": "استخدام موقعي", "denied": "تم رفض تحديد الموقع", "myPosition": "موقعي", "default": "الموقع الافتراضي" },
   "sections": { "prayerTimes": "أوقات الصلاة", "devices": "الأجهزة", "calendar": "التقويم" },
-  "prayers": { "loading": "جارٍ التحميل…", "error": "خطأ في جلب أوقات الصلاة", "next": "التالية" },
+  "prayers": { "nextPrayer": "الصلاة القادمة", "loading": "جارٍ التحميل…", "error": "خطأ في جلب أوقات الصلاة", "next": "التالية" },
   "devices": { "errorFetching": "خطأ في جلب الأجهزة", "searching": "جارٍ البحث عن مكبرات الصوت…", "offline": "غير متصل", "standby": "وضع الاستعداد", "standbyHint": "المشغّل مُطفأ بجهاز التحكم — التشغيل عبر AirMedia", "settings": "إعدادات الجهاز" },
   "deviceTypes": { "local_player": "هذا الجهاز", "sonos_player": "Sonos", "freebox_player": "Freebox", "freebox_airmedia": "AirMedia", "bluetooth_speaker": "بلوتوث" },
   "settings": { "dateHint": "افتراضيًا: اليوم", "title": "الإعدادات", "city": "المدينة", "coordinates": "الإحداثيات", "method": "طريقة الحساب", "audio": "صوت الأذان", "date": "التاريخ", "enableScheduler": "تفعيل الأذان", "save": "حفظ", "saving": "جارٍ الحفظ…", "importMp3": "استيراد ملف MP3", "deleteAudio": "حذف هذا الصوت" },
