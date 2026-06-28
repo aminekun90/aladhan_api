@@ -43,6 +43,20 @@ def _latest_digest(repo: str) -> str:
     raise RuntimeError(f"No {arch} image found for {repo}:latest")
 
 
+def _latest_version_tag(repo: str, latest_digest: str) -> str:
+    """The version tag (e.g. 0.2.1) whose arch image matches :latest — the new version."""
+    response = requests.get(f"https://hub.docker.com/v2/repositories/{repo}/tags?page_size=25", timeout=_TIMEOUT)
+    response.raise_for_status()
+    arch = _node_arch()
+    for tag in response.json().get("results", []):
+        if tag["name"] in ("latest", "cache"):
+            continue
+        for image in tag.get("images", []):
+            if image.get("architecture") == arch and image.get("digest") == latest_digest:
+                return tag["name"]
+    return ""
+
+
 def _k8s(method: str, path: str, json: dict | None = None, content_type: str | None = None) -> requests.Response:
     namespace = (_SA_DIR / "namespace").read_text().strip()
     token = (_SA_DIR / "token").read_text().strip()
@@ -55,6 +69,24 @@ def _k8s(method: str, path: str, json: dict | None = None, content_type: str | N
     response = requests.request(method, url, json=json, headers=headers, verify=str(_SA_DIR / "ca.crt"), timeout=_TIMEOUT)
     response.raise_for_status()
     return response
+
+
+def check_update_available() -> dict:
+    """Whether a newer :latest image exists than the one the Deployment runs.
+
+    Compares the Deployment's pinned image digest to the current :latest digest.
+    Returns {"available": bool, "newVersion": str}.
+    """
+    if not is_in_cluster():
+        return {"available": False, "newVersion": ""}
+    repo = EnvService.get("KUBE_IMAGE_REPO", "aminekun90/adhan-api")
+    deployment = EnvService.get("KUBE_DEPLOYMENT", "adhan-api")
+    latest = _latest_digest(repo)
+    current = _k8s("GET", f"/deployments/{deployment}").json()
+    image = current["spec"]["template"]["spec"]["containers"][0].get("image", "")
+    running = image.split("@", 1)[1] if "@" in image else None
+    available = bool(running) and running != latest
+    return {"available": available, "newVersion": _latest_version_tag(repo, latest) if available else ""}
 
 
 def force_pull_latest() -> dict:

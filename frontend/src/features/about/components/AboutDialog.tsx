@@ -45,7 +45,7 @@ function Eyebrow({ children }: Readonly<{ children: ReactNode }>) {
 export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose?: () => void }>) {
     const { t } = useTranslation();
     const { changelog, isLoading, frontendVersion, backendVersion, isUnseen } = useChangelog();
-    const { status, approve, isApproving, isApproved, force, isForcing, isForced, forceResult } = useUpdateStatus({ enabled: open });
+    const { status, force, isForcing, isForced, forceResult } = useUpdateStatus({ enabled: open });
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper" PaperProps={{ sx: PAPER_SX }}>
@@ -75,20 +75,24 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
             </Box>
 
             <DialogContent sx={{ px: 3, py: 2.5 }}>
-                {isApproved ? (
-                    <Alert severity="success" variant="outlined" sx={{ mb: 2.5 }}>{t("about.update.deploying")}</Alert>
+                {isForced ? (
+                    <Alert severity="success" variant="outlined" sx={{ mb: 2.5 }}>
+                        {forceResult?.updated === false ? t("about.update.upToDate") : t("about.update.deploying")}
+                    </Alert>
                 ) : status?.pending && (
                     <Alert
                         severity="info"
                         variant="outlined"
                         sx={{ mb: 2.5 }}
                         action={
-                            <Button color="inherit" size="small" variant="outlined" onClick={() => approve()} disabled={isApproving}>
-                                {isApproving ? t("about.update.approving") : t("about.update.approve")}
+                            <Button color="inherit" size="small" variant="outlined" onClick={() => force()} disabled={isForcing}>
+                                {isForcing ? t("about.update.forcing") : t("about.update.force")}
                             </Button>
                         }
                     >
-                        {t("about.update.available", { version: status.newVersion })}
+                        {status.newVersion
+                            ? t("about.update.available", { version: status.newVersion })
+                            : t("about.update.availableNoVersion")}
                     </Alert>
                 )}
 
@@ -126,13 +130,9 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                     </Box>
                 )}
 
-                {/* Manual fallback: force a redeploy to pull the newest image. */}
-                <Box sx={{ mt: 3.5, pt: 2, borderTop: "1px solid var(--line)" }}>
-                    {isForced ? (
-                        <Alert severity="success" variant="outlined">
-                            {forceResult?.updated === false ? t("about.update.upToDate") : t("about.update.deploying")}
-                        </Alert>
-                    ) : (
+                {/* Up-to-date state + a manual re-pull, shown only when nothing is pending. */}
+                {!status?.pending && !isForced && (
+                    <Box sx={{ mt: 3.5, pt: 2, borderTop: "1px solid var(--line)" }}>
                         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
                             <Typography variant="caption" sx={{ color: "var(--mist)" }}>{t("about.update.forceHint")}</Typography>
                             <Button
@@ -145,8 +145,8 @@ export function AboutDialog({ open, onClose }: Readonly<{ open: boolean; onClose
                                 {isForcing ? t("about.update.forcing") : t("about.update.force")}
                             </Button>
                         </Stack>
-                    )}
-                </Box>
+                    </Box>
+                )}
             </DialogContent>
         </Dialog>
     );

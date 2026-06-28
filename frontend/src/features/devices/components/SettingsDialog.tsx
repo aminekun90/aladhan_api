@@ -26,8 +26,6 @@ import {
     FormControl,
     FormControlLabel,
     IconButton,
-    Input,
-    InputAdornment,
     InputLabel,
     MenuItem,
     Select,
@@ -133,16 +131,34 @@ export function SettingsDialog({
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={i18n.resolvedLanguage}>
-            <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth>
-                <Box sx={{ p: 2 }}>
-                    <Grid container justifyContent="space-between" sx={{ p: 2 }}>
-                        <Typography variant="h4">{t('settings.title')}</Typography>
-                        <IconButton onClick={onClose}>
+            <Dialog
+                open={isOpen}
+                onClose={onClose}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        background: "linear-gradient(180deg, rgba(20,28,48,0.98), rgba(13,20,38,0.98))",
+                        border: "1px solid var(--line)",
+                        borderRadius: "1.25rem",
+                        backdropFilter: "blur(14px)",
+                        color: "var(--parchment)",
+                    },
+                }}
+            >
+                <Box>
+                    {/* Branded header */}
+                    <Box sx={{ position: "relative", px: 3, pt: 3, pb: 2.5, borderBottom: "1px solid var(--line)" }}>
+                        <Box sx={{ position: "absolute", left: 0, bottom: -1, height: 2, width: "32%", background: "linear-gradient(90deg, var(--brass), transparent)" }} />
+                        <IconButton onClick={onClose} sx={{ position: "absolute", top: 14, right: 14, color: "var(--mist)" }}>
                             <CloseOutlined />
                         </IconButton>
-                    </Grid>
+                        <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", letterSpacing: "0.02em" }}>
+                            {t('settings.title')}
+                        </Typography>
+                    </Box>
 
-                    <Grid container direction="column" spacing={2} sx={{ p: 2 }}>
+                    <Grid container direction="column" spacing={2.5} sx={{ p: 3 }}>
                         <Autocomplete
                             freeSolo
                             value={selectedCity}
@@ -173,18 +189,17 @@ export function SettingsDialog({
                             sx={{ width: "100%", maxWidth: 360 }}
                         />
 
-                        <FormControl fullWidth sx={{ m: 1 }} variant="standard">
-                            <InputLabel>{t('settings.coordinates')}</InputLabel>
-                            <Input
-                                startAdornment={
-                                    <InputAdornment position="start">
-                                        <LocationPinIcon />
-                                    </InputAdornment>
-                                }
-                                value={`${selectedCity?.lat ?? ""}, ${selectedCity?.lon ?? ""}`}
-                                readOnly
-                            />
-                        </FormControl>
+                        <Box>
+                            <Typography sx={{ fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--mist)", mb: 0.75 }}>
+                                {t('settings.coordinates')}
+                            </Typography>
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                <LocationPinIcon sx={{ fontSize: 18, color: "var(--brass)" }} />
+                                <Typography sx={{ fontFamily: "monospace", color: "var(--parchment)" }}>
+                                    {selectedCity ? `${selectedCity.lat}, ${selectedCity.lon}` : "—"}
+                                </Typography>
+                            </Stack>
+                        </Box>
 
                         {methods && (
                             <FormControl fullWidth>
@@ -199,7 +214,15 @@ export function SettingsDialog({
                             </FormControl>
                         )}
 
-                        <DatePicker defaultValue={dayjs(settings.force_date)} label={t('settings.date')} onChange={(newValue) => { setForceDate(newValue?.toDate()); }} />
+                        <DatePicker
+                            label={t('settings.date')}
+                            value={forceDate ? dayjs(forceDate) : null}
+                            onChange={(newValue) => setForceDate(newValue?.toDate())}
+                            slotProps={{
+                                field: { clearable: true },
+                                textField: { helperText: t('settings.dateHint', { defaultValue: "Par défaut : aujourd'hui" }) },
+                            }}
+                        />
 
                         <Stack spacing={2} direction="row" sx={{ alignItems: "center", mb: 1 }}>
                             <VolumeDown />

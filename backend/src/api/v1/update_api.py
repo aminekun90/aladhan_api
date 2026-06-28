@@ -27,15 +27,24 @@ class ForceResult(BaseModel):
 
 @router.get("/update/status", response_model=UpdateStatus)
 def update_status():
-    """Whether a new image is waiting for approval (via Keel)."""
+    """Whether a new version is available — via a Keel approval or a newer image."""
+    # 1) Keel pending approval (only if Keel is installed).
     try:
         update = keel_service.get_pending_update()
+        if update:
+            return UpdateStatus(pending=True, **{k: update[k] for k in ("currentVersion", "newVersion", "votesReceived", "votesRequired")})
     except requests.RequestException:
-        # Keel unreachable / not deployed — treat as "nothing pending".
-        return UpdateStatus(pending=False)
-    if not update:
-        return UpdateStatus(pending=False)
-    return UpdateStatus(pending=True, **{k: update[k] for k in ("currentVersion", "newVersion", "votesReceived", "votesRequired")})
+        pass
+
+    # 2) Registry check: is a newer :latest image available than the one we run?
+    try:
+        check = k8s_service.check_update_available()
+        if check["available"]:
+            return UpdateStatus(pending=True, newVersion=check["newVersion"])
+    except (requests.RequestException, k8s_service.NotInClusterError, KeyError):
+        pass
+
+    return UpdateStatus(pending=False)
 
 
 @router.post("/update/approve", response_model=ApproveResult)
