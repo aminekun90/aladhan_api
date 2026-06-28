@@ -25,6 +25,7 @@ import {
     Chip,
     CircularProgress,
     IconButton,
+    Stack,
     styled,
     Tooltip,
     Typography,
@@ -47,10 +48,12 @@ const DeviceRoot = styled(Card, {
     opacity: available ? 1 : 0.55,
     borderRadius: "1.5rem",
     background: selected ? alpha(BRASS, 0.12) : "var(--surface)",
-    backdropFilter: "blur(10px)",
+    backdropFilter: "blur(16px)",
     border: `${selected ? 2 : 1}px solid ${selected ? BRASS : "var(--line)"}`,
     transform: selected ? "translateY(-4px)" : "none",
-    boxShadow: selected ? `0 16px 48px ${alpha(BRASS, 0.3)}` : "none",
+    boxShadow: selected
+        ? `inset 0 1px 0 rgba(236, 230, 214, 0.1), 0 18px 52px ${alpha(BRASS, 0.32)}`
+        : "inset 0 1px 0 rgba(236, 230, 214, 0.05)",
     transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease",
     "&:hover": {
         transform: "translateY(-4px)",
@@ -226,9 +229,18 @@ export default function DeviceCard({
                     <Typography variant="h6" color={available ? "text.primary" : "text.disabled"}>
                         {device.getName()}
                     </Typography>
-                    <Typography variant="subtitle2" color={available ? "text.secondary" : "text.disabled"}>
-                        {device.getPlayingTitle().title}
-                    </Typography>
+                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75}>
+                        {isPlaying && available && (
+                            <Box sx={{ display: "flex", alignItems: "flex-end", gap: "2px", height: 11 }}>
+                                {[0, 1, 2, 3].map((i) => (
+                                    <Box key={i} className="eq-bar" sx={{ width: "2.5px", height: "100%", borderRadius: "1px", background: "var(--brass-bright)" }} />
+                                ))}
+                            </Box>
+                        )}
+                        <Typography variant="subtitle2" color={available ? "text.secondary" : "text.disabled"}>
+                            {device.getPlayingTitle().title}
+                        </Typography>
+                    </Stack>
                 </CardContent>
 
                 <Box sx={{ display: "flex", alignItems: "center", pb: 1 }}>

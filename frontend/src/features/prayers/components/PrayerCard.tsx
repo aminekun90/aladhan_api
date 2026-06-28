@@ -14,8 +14,9 @@ const PrayerRoot = styled(Card, {
     ? `radial-gradient(120% 90% at 50% 0%, ${alpha(BRASS, 0.28)}, transparent 65%)`
     : "none",
   border: `1px solid ${next ? alpha(BRASS, 0.55) : "var(--line)"}`,
-  boxShadow: next ? `0 10px 40px ${alpha(BRASS, 0.25)}` : "none",
-  backdropFilter: "blur(8px)",
+  boxShadow: next ? "none" : "inset 0 1px 0 rgba(236, 230, 214, 0.05)",
+  animation: next ? "breathe 4.5s ease-in-out infinite" : "none",
+  backdropFilter: "blur(14px)",
   transition: "transform .25s ease, border-color .25s ease, box-shadow .25s ease",
   "&:hover": {
     transform: "translateY(-4px)",
